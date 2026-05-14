@@ -453,14 +453,28 @@ function urgScore(p){
 }
 
 // Calcula quantidade sugerida para N meses
-// min=3m, max=6m → proporcional linear
+// min=3m, max=6m → extrapolação linear para qualquer valor
 function calcQtdMeses(p, meses){
   meses = meses || 6;
-  if(meses <= 3) return p.comprar_min;
-  if(meses >= 6) return p.comprar_max;
-  // interpolação linear entre min(3m) e max(6m)
-  var t = (meses - 3) / (6 - 3); // 0=min, 1=max
-  return p.comprar_min + t * (p.comprar_max - p.comprar_min);
+  // Giro diário implícito: comprar_max cobre 6m, comprar_min cobre 3m
+  // giro_diario = comprar_max / (6*30) dias
+  // qtd para N meses = giro_diario * N * 30 - estoque_atual - pedido_forn
+  var diasMin = 3 * 30; // 90 dias
+  var diasMax = 6 * 30; // 180 dias
+  var diasAlvo = meses * 30;
+  
+  // Calcula giro diário a partir do comprar_max (mais preciso, 6 meses de base)
+  // comprar_max = necessidade_6m - estoque_atual - pedido_forn
+  // necessidade_6m = comprar_max + estoque_atual + pedido_forn
+  var necessidade6m = p.comprar_max + p.estoque_atual + p.pedido_forn;
+  var giroDiario = necessidade6m / diasMax;
+  
+  // Necessidade para N meses
+  var necessidadeAlvo = giroDiario * diasAlvo;
+  
+  // Quanto ainda precisa comprar (descontando o que já tem)
+  var qtd = necessidadeAlvo - p.estoque_atual - p.pedido_forn;
+  return Math.max(0, qtd);
 }
 
 function getMeses(){
@@ -603,9 +617,13 @@ function renderPedido(){
   var cobInfo = document.getElementById('cobertura-info');
   if(cobInfo){
     cobInfo.textContent = meses<=3?'Comprando para mínimo (3 meses)':
-      meses>=6?'Comprando para máximo (6 meses)':
-      'Interpolação proporcional: '+(meses-3)+'m além do mínimo';
+      meses===6?'Comprando para máximo (6 meses)':
+      meses<6?'Interpolando: '+meses+'m entre mínimo e máximo':
+      'Extrapolando além do máximo: '+meses+' meses';
   }
+  // Atualiza header da coluna
+  var hdrQtd = document.getElementById('hdr-qtd-sug');
+  if(hdrQtd) hdrQtd.textContent = 'Sugerido ('+meses+'m)';
 
   if(selectedGroups.size===0){
     empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';return;
@@ -630,8 +648,8 @@ function renderPedido(){
     +'<span>Cód</span><span>Produto</span><span>UN</span>'
     +'<span style="text-align:right">Atual</span>'
     +'<span style="text-align:right">Mínimo</span>'
-    +'<span style="text-align:right">Comprar Mín</span>'
-    +'<span style="text-align:right">Comprar Máx</span>'
+    +'<span style="text-align:right">Comprar Mín (3m)</span>'
+    +'<span style="text-align:right" id="hdr-qtd-sug">Sugerido (6m)</span>'
     +'<span style="text-align:right">Urgência</span>'
     +'<span style="text-align:right">Preço Unit.</span>'
     +'<span style="text-align:right">Valor Total</span>'
@@ -670,7 +688,7 @@ function renderPedido(){
         +'<span class="pcol">'+fmtN(p.estoque_atual)+'</span>'
         +'<span class="pcol">'+fmtN(p.est_min)+'</span>'
         +'<span class="pcol">'+fmtN(p.comprar_min)+'</span>'
-        +'<span class="pcol hi">'+fmtN(p.comprar_max)+'</span>'
+        +'<span class="pcol hi" title="Qtd sugerida para '+meses+' meses">'+fmtN(Math.ceil(qtdSug))+'</span>'
         +'<span class="pcol" style="color:'+urgColor+';font-weight:600">'+urgPct+'</span>'
         +'<span class="pcol" style="padding:2px">'
           +'<input type="number" min="0" step="0.01" placeholder="—" '
