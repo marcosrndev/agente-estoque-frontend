@@ -1073,6 +1073,10 @@ function exportExcel(){
     return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);
   });
   if(!selP.length){alert('Nenhum item para exportar.\n\nSelecione grupos na aba "Montar Pedido".');return}
+  // No modo "Todos os itens", exporta mesmo que não haja itens para comprar
+  if(!showAllItems && !selP.some(function(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);})){
+    if(!confirm('Todos os itens selecionados estão em estoque. Exportar mesmo assim?')) return;
+  }
 
   var precos=getPrecos();
   var cotacoes=getCotacoes();
