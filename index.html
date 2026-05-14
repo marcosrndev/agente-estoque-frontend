@@ -1084,7 +1084,8 @@ function exportExcel(){
   var wsData=[];
 
   // Cabeçalho do arquivo
-  wsData.push(['PEDIDO DE COMPRA — Cobertura: '+meses+' meses','','','','','','','','','','','','','','']);
+  var modoExport = showAllItems ? 'Todos os itens' : 'Itens para compra';
+  wsData.push(['PEDIDO DE COMPRA — '+modoExport+' — Cobertura: '+meses+' meses','','','','','','','','','','','','','','']);
   wsData.push([
     'Código','Nome do Produto','UN','Grupo','ABC',
     'Estoque Atual','Est. Mínimo','Est. Máximo',
@@ -1108,13 +1109,17 @@ function exportExcel(){
       var preco=precos[safeCod]||0;
       var valorTotal=preco>0?preco*qtdSug:0;
       valorTotalGeral+=valorTotal;
+      var isOkItem = urg(p)==='o' && p.comprar_min<=0;
       wsData.push([
         p.codigo,p.nome,p.un,p.grupo,p.abc,
         p.estoque_atual,p.est_min,p.est_max,
-        p.comprar_min,p.comprar_max,Math.ceil(qtdSug),
-        urgPct,
-        preco||'',valorTotal||'',
-        urgL(urg(p))
+        isOkItem?'':p.comprar_min,
+        isOkItem?'':p.comprar_max,
+        isOkItem?'':Math.ceil(qtdSug),
+        isOkItem?'Em estoque':urgPct,
+        isOkItem?'':preco||'',
+        isOkItem?'':valorTotal||'',
+        isOkItem?'Em estoque':urgL(urg(p))
       ]);
     });
   });
@@ -1421,29 +1426,6 @@ async function sendMsg(){
   }
 }
 
-// ── TOGGLE VIEW ──
-var showAllItems = false;
-
-function toggleView(){
-  showAllItems = !showAllItems;
-  var btn = document.getElementById('toggle-view-btn');
-  var lbl = document.getElementById('toggle-label');
-  var ico = document.getElementById('toggle-icon');
-  if(showAllItems){
-    lbl.textContent = 'Todos os itens';
-    btn.style.background = 'var(--blue)';
-    btn.style.color = '#fff';
-    btn.style.borderColor = 'var(--blue)';
-    ico.className = 'ti ti-eye';
-  } else {
-    lbl.textContent = 'Só itens a comprar';
-    btn.style.background = '';
-    btn.style.color = '';
-    btn.style.borderColor = '';
-    ico.className = 'ti ti-filter';
-  }
-  renderPedido();
-}
 
 function getPrecos(){
   var precos={};
