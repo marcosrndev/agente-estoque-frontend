@@ -259,6 +259,7 @@ function checkAuth(){
   var stored=localStorage.getItem('estoque_auth');
   if(stored && atob(stored)===APP_PASSWORD){
     document.getElementById('login-overlay').style.display='none';
+    checkSavedSession();
     return true;
   }
   return false;
@@ -416,16 +417,20 @@ function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();ren
 function saveSession(){
   if(!products.length){alert('Nenhum produto para salvar.');return}
   try{
-    localStorage.setItem('estoque_products', JSON.stringify(products));
+    var json=JSON.stringify(products);
+    localStorage.setItem('estoque_products', json);
     localStorage.setItem('estoque_saved_at', new Date().toLocaleString('pt-BR'));
+    // verifica se gravou mesmo
+    var check=localStorage.getItem('estoque_products');
+    if(!check||check.length<10){alert('Erro: dado não foi salvo. Tente recarregar a página.');return}
     var btn=document.getElementById('btn-save');
-    btn.innerHTML='<i class="ti ti-check"></i> Salvo!';
+    btn.innerHTML='<i class="ti ti-check"></i> Salvo! ('+products.length+' produtos)';
     btn.style.color='var(--green)';
     setTimeout(function(){
       btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar sessão';
       btn.style.color='';
-    },2000);
-  }catch(e){alert('Erro ao salvar: '+e.message+'. O navegador pode estar em modo privado.');}
+    },3000);
+  }catch(e){alert('Erro ao salvar: '+e.message+'. O navegador pode estar em modo privado ou sem espaço.');}
 }
 
 function restoreSession(){
@@ -682,7 +687,10 @@ function exportExcel(){
 
 
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
-if(!checkAuth()){/* wait for login */}
+// checkAuth chama checkSavedSession automaticamente se já estiver logado
+if(!checkAuth()){
+  // não logado — aguarda login, checkSavedSession será chamado pelo doLogin
+}
 </script>
 </body>
 </html>
