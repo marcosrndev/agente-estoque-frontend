@@ -646,12 +646,13 @@ function renderPedido(){
     var cotInfo = cotacoes[g];
     var qtdSugerida = fmtN(itens.reduce(function(s,p){return s+calcQtdMeses(p,meses)},0));
 
-    html+='<div class="grph" style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="abrirCotacao(''+g.replace(/'/g,"\'")+'')">'
+    var grpId='grp_'+sortedGroups.indexOf(g);
+    html+='<div class="grph" style="display:flex;align-items:center;gap:6px;cursor:pointer" id="'+grpId+'">'
       +'<i class="ti ti-tag" style="font-size:11px"></i><strong>'+g+'</strong>'
       +(aC?'<span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:10px">A:'+aC+'</span>':'')
       +(bC?'<span style="font-size:10px;background:var(--yellow-bg);color:var(--yellow);padding:1px 6px;border-radius:10px">B:'+bC+'</span>':'')
       +(cC?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:10px">C:'+cC+'</span>':'')
-      +(cotInfo?'<span class="grph-lock">🔒 Em cotação: '+cotInfo.nome+'</span>':'<span style="font-size:10px;color:var(--text3)">clique para marcar cotação</span>')
+      +(cotInfo?'<span class="grph-lock">Em cotacao: '+cotInfo.nome+'</span>':'<span style="font-size:10px;color:var(--text3)">clique para cotar</span>')
       +'</div>';
 
     itens.forEach(function(p){
@@ -683,6 +684,11 @@ function renderPedido(){
     });
   });
   tbl.innerHTML=html;
+  // Event delegation for group header clicks
+  tbl.querySelectorAll('.grph').forEach(function(el,idx){
+    var g=sortedGroups[idx];
+    if(g) el.addEventListener('click',function(){abrirCotacao(g);});
+  });
 }
 
 function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();renderPedido()}
