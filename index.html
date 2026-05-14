@@ -127,6 +127,27 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #login-box button{width:100%;padding:11px;border-radius:var(--radius);border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
 #login-box button:hover{background:#1864ab}
 
+
+/* Meses selector bar */
+#meses-bar{display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#meses-bar label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+#meses-sel{padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:13px;color:var(--text);font-family:var(--font);cursor:pointer}
+#meses-bar .cobertura-info{font-size:12px;color:var(--text3);margin-left:4px}
+#meses-bar .urgente-btn{margin-left:auto}
+
+/* Cotação badge on chips */
+.gchip.cotando{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-light);opacity:.85}
+.gchip.cotando::after{content:' 🔒';font-size:10px}
+.cotacao-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:150}
+.cotacao-modal{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:22px;width:360px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:14px}
+.cotacao-modal h3{font-size:15px;font-weight:600}
+.cotacao-modal input{width:100%;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;font-family:var(--font);outline:none}
+.cotacao-modal input:focus{border-color:var(--blue)}
+.cotacao-modal .btns{display:flex;gap:8px;justify-content:flex-end}
+
+/* Grph lock icon */
+.grph-lock{font-size:11px;background:var(--yellow-bg);color:var(--yellow);padding:1px 7px;border-radius:10px;margin-left:6px}
+
 </style>
 </head>
 <body>
@@ -182,6 +203,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
             <button class="qkb" onclick="ask('Gere a lista completa de compras para atingir o estoque mínimo, agrupada por grupo.')">📋 Lista p/ mínimo</button>
             <button class="qkb" onclick="ask('Quais grupos têm mais itens críticos? Faça um ranking.')">📊 Ranking de grupos</button>
             <button class="qkb" onclick="ask('Qual o resumo geral do estoque hoje?')">📈 Resumo geral</button>
+            <button class="qkb" onclick="proximoUrgente()">🔥 Próximo urgente</button>
           </div>
           <div id="inp-row">
             <textarea id="uinp" placeholder="Ex: o que falta no grupo Ziper 06 Colorido?" onkeydown="onKey(event)"></textarea>
@@ -194,6 +216,24 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
       <div id="ped-top">
         <h2>Selecione os grupos para este pedido</h2>
         <div id="grupo-chips"><span style="font-size:13px;color:var(--text3)">Importe produtos primeiro.</span></div>
+      </div>
+      <div id="meses-bar">
+        <label>Cobertura desejada:</label>
+        <select id="meses-sel" onchange="renderPedido()">
+          <option value="3">3 meses (mínimo)</option>
+          <option value="4">4 meses</option>
+          <option value="5">5 meses</option>
+          <option value="6" selected>6 meses (máximo)</option>
+          <option value="7">7 meses</option>
+          <option value="8">8 meses</option>
+          <option value="9">9 meses</option>
+          <option value="10">10 meses</option>
+          <option value="12">12 meses</option>
+        </select>
+        <span class="cobertura-info" id="cobertura-info">Min=3m · Máx=6m · ajuste proporcional automático</span>
+        <button class="btn urgente-btn" onclick="proximoUrgente()" title="Aponta o próximo grupo mais urgente sem responsável">
+          <i class="ti ti-alert-triangle"></i> Próximo urgente
+        </button>
       </div>
       <div id="ped-body">
         <div id="empty-ped"><i class="ti ti-shopping-cart-off"></i><span>Selecione grupos acima para montar o pedido</span><span style="font-size:12px">Você pode combinar múltiplos grupos no mesmo pedido</span></div>
@@ -388,21 +428,47 @@ function updateChips(){
     var at=pr.filter(function(p){return urg(p)==='a'}).length;
     var chip=document.createElement('button');chip.className='gchip'+(selectedGroups.has(g)?' sel':'');
     var dc=cr>0?'#c92a2a':at>0?'#e67700':'#2f9e44';
+    var cotInfo=getCotacoes()[g];
+    chip.className='gchip'+(selectedGroups.has(g)?' sel':'')+(cotInfo?' cotando':'');
+    chip.title=cotInfo?'Em cotação por: '+cotInfo.nome+' ('+cotInfo.desde+')':'';
     chip.innerHTML='<span class="gdot" style="background:'+dc+'"></span>'+g+' ('+pr.length+')';
-    chip.onclick=(function(grp,c){return function(){if(selectedGroups.has(grp))selectedGroups.delete(grp);else selectedGroups.add(grp);c.classList.toggle('sel');updateSelBadge();renderPedido()}})(g,chip);
+    chip.onclick=(function(grp,c){return function(){
+      var cotacoes=getCotacoes();
+      if(cotacoes[grp]&&!selectedGroups.has(grp)){
+        if(!confirm('Este grupo está em cotação por '+cotacoes[grp].nome+'. Deseja selecioná-lo mesmo assim?'))return;
+      }
+      if(selectedGroups.has(grp))selectedGroups.delete(grp);else selectedGroups.add(grp);
+      c.classList.toggle('sel');updateSelBadge();renderPedido();
+    }})(g,chip);
     el.appendChild(chip);
   });
 }
 function updateSelBadge(){var sb=document.getElementById('sel-badge'),n=selectedGroups.size;sb.textContent=n;sb.style.display=n>0?'inline-flex':'none'}
 
-// Urgência numérica: quanto falta proporcionalmente para atingir o mínimo
+// ── CÁLCULOS DE QUANTIDADE ──
 function urgScore(p){
   if(p.est_min<=0) return 0;
   var falta=p.est_min-(p.estoque_atual+p.pedido_forn);
   return falta/p.est_min;
 }
 
-// Ordena grupos: 1º A, 2º B, 3º C, 4º valor compra mínima, 5º alfabético
+// Calcula quantidade sugerida para N meses
+// min=3m, max=6m → proporcional linear
+function calcQtdMeses(p, meses){
+  meses = meses || 6;
+  if(meses <= 3) return p.comprar_min;
+  if(meses >= 6) return p.comprar_max;
+  // interpolação linear entre min(3m) e max(6m)
+  var t = (meses - 3) / (6 - 3); // 0=min, 1=max
+  return p.comprar_min + t * (p.comprar_max - p.comprar_min);
+}
+
+function getMeses(){
+  var sel = document.getElementById('meses-sel');
+  return sel ? parseInt(sel.value) || 6 : 6;
+}
+
+// ── ORDENAÇÃO DE GRUPOS ──
 function sortGroupsByPriority(byG){
   return Object.keys(byG).sort(function(ga,gb){
     var pa=byG[ga],pb=byG[gb];
@@ -418,7 +484,6 @@ function sortGroupsByPriority(byG){
   });
 }
 
-// Ordena itens dentro do grupo por urgência desc, depois ABC
 function sortItemsByUrgency(prods){
   return prods.slice().sort(function(a,b){
     var ua=urgScore(a),ub=urgScore(b);
@@ -436,16 +501,118 @@ function updateValor(input,comprarMin){
   }
 }
 
+// ── SISTEMA DE COTAÇÃO ──
+var cotacaoAtual = null; // grupo sendo marcado
+
+function getCotacoes(){
+  try{return JSON.parse(localStorage.getItem('estoque_cotacoes')||'{}');}catch(e){return {};}
+}
+function saveCotacoes(obj){localStorage.setItem('estoque_cotacoes',JSON.stringify(obj));}
+
+function abrirCotacao(grupo){
+  cotacaoAtual = grupo;
+  var cotacoes = getCotacoes();
+  var info = cotacoes[grupo];
+  document.getElementById('cotacao-title').textContent = info
+    ? 'Grupo em cotação por: ' + info.nome
+    : 'Marcar "'+grupo+'" em cotação';
+  document.getElementById('cotacao-desc').textContent = info
+    ? 'Este grupo está sendo cotado por '+info.nome+' desde '+info.desde+'. Você pode liberar abaixo.'
+    : 'Informe seu nome para marcar este grupo como em cotação.';
+  document.getElementById('cotacao-nome').value = '';
+  document.getElementById('cotacao-overlay').style.display = 'flex';
+}
+function fecharCotacao(){document.getElementById('cotacao-overlay').style.display='none';cotacaoAtual=null;}
+function confirmarCotacao(){
+  var nome = document.getElementById('cotacao-nome').value.trim();
+  if(!nome){alert('Informe seu nome.');return;}
+  var cotacoes = getCotacoes();
+  var agora = new Date().toLocaleString('pt-BR');
+  cotacoes[cotacaoAtual] = {nome:nome, desde:agora};
+  saveCotacoes(cotacoes);
+  fecharCotacao();
+  updateChips();
+  renderPedido();
+}
+function liberarCotacao(){
+  var cotacoes = getCotacoes();
+  delete cotacoes[cotacaoAtual];
+  saveCotacoes(cotacoes);
+  fecharCotacao();
+  updateChips();
+  renderPedido();
+}
+function resetCotacoes(){
+  localStorage.removeItem('estoque_cotacoes');
+}
+
+// ── PRÓXIMO URGENTE ──
+function proximoUrgente(){
+  if(!products.length){alert('Importe produtos primeiro.');return;}
+  var cotacoes = getCotacoes();
+  var gs = getGroups();
+  // Todos os grupos com itens críticos, não em cotação
+  var byG = {};
+  products.filter(function(p){return p.comprar_min>0;}).forEach(function(p){
+    if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p);
+  });
+  var sorted = sortGroupsByPriority(byG);
+  var candidatos = sorted.filter(function(g){return !cotacoes[g];});
+  if(!candidatos.length){
+    alert('Todos os grupos urgentes já estão em cotação ou não há grupos com itens para comprar.');
+    return;
+  }
+  var proximo = candidatos[0];
+  var pr = byG[proximo];
+  var crit = pr.filter(function(p){return urg(p)==='c';}).length;
+  var aCount = pr.filter(function(p){return p.abc==='A';}).length;
+  // Destaca o chip e muda para aba pedido
+  switchTab('pedido', document.querySelector('.tab:nth-child(2)'));
+  // Seleciona o grupo automaticamente se não estiver selecionado
+  if(!selectedGroups.has(proximo)){
+    selectedGroups.add(proximo);
+    updateChips();
+    updateSelBadge();
+    renderPedido();
+  }
+  // Scroll para o chip
+  var chips = document.querySelectorAll('.gchip');
+  for(var i=0;i<chips.length;i++){
+    if(chips[i].textContent.trim().startsWith(proximo)){
+      chips[i].scrollIntoView({behavior:'smooth',block:'nearest'});
+      chips[i].style.outline = '2px solid var(--blue)';
+      setTimeout(function(c){return function(){c.style.outline=''}}(chips[i]), 2000);
+      break;
+    }
+  }
+  addBot('<strong>Próximo grupo mais urgente:</strong> <em>'+proximo+'</em><br>'
+    +'• '+pr.length+' itens · '+crit+' críticos · '+aCount+' classe A<br>'
+    +'Grupo selecionado na aba Montar Pedido. Deseja marcar como em cotação?',null);
+}
+
+// ── RENDER PEDIDO ──
 function renderPedido(){
+  var meses = getMeses();
   var selP=products.filter(function(p){
     return selectedGroups.has(p.grupo)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max));
   });
   var empty=document.getElementById('empty-ped'),stats=document.getElementById('ped-stats'),
       tbl=document.getElementById('ped-tbl-wrap'),info=document.getElementById('ped-info');
+
+  // Atualiza info de cobertura
+  var cobInfo = document.getElementById('cobertura-info');
+  if(cobInfo){
+    cobInfo.textContent = meses<=3?'Comprando para mínimo (3 meses)':
+      meses>=6?'Comprando para máximo (6 meses)':
+      'Interpolação proporcional: '+(meses-3)+'m além do mínimo';
+  }
+
   if(selectedGroups.size===0){
     empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';return;
   }
   empty.style.display='none';stats.style.display='flex';tbl.style.display='block';
+
+  var cotacoes = getCotacoes();
   var crit=selP.filter(function(p){return urg(p)==='c'}).length;
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
   stats.innerHTML='<div class="ps"><div class="ps-n">'+selP.length+'</div><div class="ps-l">itens a comprar</div></div>'
@@ -458,12 +625,13 @@ function renderPedido(){
   selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var sortedGroups=sortGroupsByPriority(byG);
 
-  var COLS='52px 1fr 40px 68px 68px 68px 68px 82px 90px 60px';
+  var COLS='50px 1fr 38px 62px 62px 72px 72px 62px 80px 88px 58px';
   var html='<div class="pth" style="grid-template-columns:'+COLS+'">'
-    +'<span>Código</span><span>Produto</span><span>UN</span>'
+    +'<span>Cód</span><span>Produto</span><span>UN</span>'
     +'<span style="text-align:right">Atual</span>'
     +'<span style="text-align:right">Mínimo</span>'
-    +'<span style="text-align:right">Comprar</span>'
+    +'<span style="text-align:right">Comprar Mín</span>'
+    +'<span style="text-align:right">Comprar Máx</span>'
     +'<span style="text-align:right">Urgência</span>'
     +'<span style="text-align:right">Preço Unit.</span>'
     +'<span style="text-align:right">Valor Total</span>'
@@ -475,32 +643,39 @@ function renderPedido(){
     var aC=itens.filter(function(p){return p.abc==='A'}).length;
     var bC=itens.filter(function(p){return p.abc==='B'}).length;
     var cC=itens.filter(function(p){return p.abc==='C'}).length;
-    html+='<div class="grph" style="display:flex;align-items:center;gap:8px">'
+    var cotInfo = cotacoes[g];
+    var qtdSugerida = fmtN(itens.reduce(function(s,p){return s+calcQtdMeses(p,meses)},0));
+
+    html+='<div class="grph" style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="abrirCotacao(''+g.replace(/'/g,"\'")+'')">'
       +'<i class="ti ti-tag" style="font-size:11px"></i><strong>'+g+'</strong>'
       +(aC?'<span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:10px">A:'+aC+'</span>':'')
       +(bC?'<span style="font-size:10px;background:var(--yellow-bg);color:var(--yellow);padding:1px 6px;border-radius:10px">B:'+bC+'</span>':'')
       +(cC?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:10px">C:'+cC+'</span>':'')
+      +(cotInfo?'<span class="grph-lock">🔒 Em cotação: '+cotInfo.nome+'</span>':'<span style="font-size:10px;color:var(--text3)">clique para marcar cotação</span>')
       +'</div>';
 
     itens.forEach(function(p){
       var u=urg(p);
       var us=urgScore(p);
-      var urgPct=us>=1?'100% 🔴':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
       var urgColor=us>=1?'var(--red)':us>0.5?'var(--yellow)':'var(--green)';
-      var safeCod=p.codigo.replace(/[^a-zA-Z0-9_]/g,'_');
+      var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
+      var qtdSug = calcQtdMeses(p, meses);
+
       html+='<div class="ptr" style="grid-template-columns:'+COLS+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
         +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
         +'<span class="pcol">'+p.un+'</span>'
         +'<span class="pcol">'+fmtN(p.estoque_atual)+'</span>'
         +'<span class="pcol">'+fmtN(p.est_min)+'</span>'
-        +'<span class="pcol hi">'+fmtN(p.comprar_min)+'</span>'
+        +'<span class="pcol">'+fmtN(p.comprar_min)+'</span>'
+        +'<span class="pcol hi">'+fmtN(p.comprar_max)+'</span>'
         +'<span class="pcol" style="color:'+urgColor+';font-weight:600">'+urgPct+'</span>'
-        +'<span class="pcol" style="padding:0">'
+        +'<span class="pcol" style="padding:2px">'
           +'<input type="number" min="0" step="0.01" placeholder="—" '
-          +'style="width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:11px;text-align:right;background:var(--bg);color:var(--text)" '
-          +'data-cod="'+safeCod+'" data-cmp="'+p.comprar_min+'" '
-          +'oninput="updateValor(this,'+p.comprar_min+')">'
+          +'style="width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:11px;text-align:right;background:var(--bg);color:var(--text)" '
+          +'data-cod="'+safeCod+'" data-cmp="'+qtdSug+'" '
+          +'oninput="updateValor(this,'+qtdSug+')">'
           +'</span>'
         +'<span class="pcol hi" id="vt_'+safeCod+'" style="font-size:11px">—</span>'
         +'<span class="urg '+u+'">'+urgL(u)+'</span>'
@@ -509,6 +684,7 @@ function renderPedido(){
   });
   tbl.innerHTML=html;
 }
+
 function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();renderPedido()}
 
 // ── SESSÃO LOCAL ──
@@ -576,6 +752,7 @@ function importData(){
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
   products=parsed;closeModal();
+  resetCotacoes(); // limpa cotações ao importar novos dados
   updateSidebar();updateChips();
   var crit=products.filter(function(p){return urg(p)==='c'}).length;
   var atenc=products.filter(function(p){return urg(p)==='a'}).length;
@@ -675,7 +852,7 @@ function askGrp(grp){
   var subset=products.filter(function(p){return p.grupo===grp});
   var ctx='GRUPO: '+grp+' | '+subset.length+' produtos\n';
   ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
-  var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Use HTML simples: <strong>, <br>, •\n- Liste todos os itens que precisam reposição com quantidade e urgência';
+  var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
   var msgs=[{role:'user',content:text}];
   fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
   .then(function(r){return r.json()})
@@ -694,7 +871,310 @@ function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}
 async function sendMsg(){
   var inp=document.getElementById('uinp'),text=inp.value.trim();
   if(!text)return;inp.value='';addUserMsg(text);addTyping();
-  var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Use HTML simples: <strong>, <br>, •';
+  var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
+  chatHistory.push({role:'user',content:text});
+  try{
+    var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
+    var data=await res.json();
+    if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
+    var reply=(data.content&&data.content[0]&&data.content[0].text)||'Erro ao processar.';
+    chatHistory.push({role:'assistant',content:reply});rmTyping();
+    var tp=[],low=text.toLowerCase(),gs=getGroups();
+    if(products.length){
+      var gMen=gs.find(function(g){return low.includes(g.toLowerCase())});
+      var pMen=products.find(function(p){return low.includes(p.nome.toLowerCase().substring(0,10))});
+      if(gMen){tp=products.filter(function(p){return p.grupo===gMen&&p.comprar_min>0})}
+      else if(pMen){tp=products.filter(function(p){return p.grupo===pMen.grupo&&p.comprar_min>0})}
+      else if(/cr[ií]t|zero|urgente/.test(low)){tp=products.filter(function(p){return urg(p)==='c'})}
+      else if(/lista|compra|repor|m[ií]nimo/.test(low)){tp=products.filter(function(p){return p.comprar_min>0})}
+      tp.sort(function(a,b){return urg(a)==='c'&&urg(b)!=='c'?-1:urg(b)==='c'&&urg(a)!=='c'?1:a.abc<b.abc?-1:1});
+    }
+    addBot(reply,tp.length?tp:null);
+  }catch(e){
+    rmTyping();
+    var msg='Erro de conexão: '+e.message;
+    if(e.message&&e.message.indexOf('fetch')>-1){
+      msg='Proxy não encontrado.<br><br>Verifique se a janela preta (Proxy) está aberta. Se não estiver, dê duplo clique em <strong>INICIAR_AGENTE.bat</strong> e tente novamente.';
+    }
+    addBot(msg);
+  }
+}
+
+function getPrecos(){
+  var precos={};
+  document.querySelectorAll('#ped-tbl-wrap input[type=number]').forEach(function(inp){
+    var v=parseFloat(String(inp.value).replace(',','.'))||0;
+    if(v>0) precos[inp.dataset.cod]=v;
+  });
+  return precos;
+}
+
+function exportExcel(){
+  if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde e tente novamente.');return}
+  var meses=getMeses();
+  var selP=products.filter(function(p){
+    return selectedGroups.has(p.grupo)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max));
+  });
+  if(!selP.length){alert('Nenhum item para exportar.\n\nSelecione grupos na aba "Montar Pedido".');return}
+
+  var precos=getPrecos();
+  var cotacoes=getCotacoes();
+  var byG={};
+  selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
+  var sortedGroups=sortGroupsByPriority(byG);
+
+  var wb=XLSX.utils.book_new();
+  var wsData=[];
+
+  // Cabeçalho do arquivo
+  wsData.push(['PEDIDO DE COMPRA — Cobertura: '+meses+' meses','','','','','','','','','','','','','','']);
+  wsData.push([
+    'Código','Nome do Produto','UN','Grupo','ABC',
+    'Estoque Atual','Est. Mínimo','Est. Máximo',
+    'Comprar Mínimo (3m)','Comprar Máximo (6m)','Qtd Sugerida ('+meses+'m)',
+    'Urgência %','Preço Unit.','Valor Total Item','Status'
+  ]);
+
+  var valorTotalGeral=0;
+
+  sortedGroups.forEach(function(g){
+    var itens=sortItemsByUrgency(byG[g]);
+    var cotInfo=cotacoes[g];
+    var grpLabel='▸  '+g+(cotInfo?' [Em cotação: '+cotInfo.nome+']':'');
+    wsData.push([grpLabel,'','','','','','','','','','','','','','']);
+
+    itens.forEach(function(p){
+      var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
+      var us=urgScore(p);
+      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var qtdSug=calcQtdMeses(p,meses);
+      var preco=precos[safeCod]||0;
+      var valorTotal=preco>0?preco*qtdSug:0;
+      valorTotalGeral+=valorTotal;
+      wsData.push([
+        p.codigo,p.nome,p.un,p.grupo,p.abc,
+        p.estoque_atual,p.est_min,p.est_max,
+        p.comprar_min,p.comprar_max,Math.ceil(qtdSug),
+        urgPct,
+        preco||'',valorTotal||'',
+        urgL(urg(p))
+      ]);
+    });
+  });
+
+  wsData.push(['','','','','','','','','','','','','','','']);
+  wsData.push(['INFORMAÇÕES DO PEDIDO','','','','','','','','','','','','','','']);
+  [
+    ['Fornecedor',           document.getElementById('f-forn').value],
+    ['Empresa a faturar',    document.getElementById('f-emp').value],
+    ['Condição de pagamento',document.getElementById('f-pag').value],
+    ['Valor total do pedido',valorTotalGeral>0?'R$ '+fmtN(valorTotalGeral):''],
+    ['Tipo de nota',         document.getElementById('f-nota').value],
+    ['Transportadora',       document.getElementById('f-transp').value],
+    ['Observações',          document.getElementById('f-obs').value],
+    ['Data',                 document.getElementById('f-data').value],
+  ].forEach(function(f){wsData.push([f[0],f[1]||'','','','','','','','','','','','','',''])});
+
+  var ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols']=[
+    {wch:10},{wch:42},{wch:5},{wch:26},{wch:5},
+    {wch:12},{wch:12},{wch:12},
+    {wch:16},{wch:16},{wch:14},
+    {wch:10},{wch:12},{wch:14},{wch:10}
+  ];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:14}}];
+  XLSX.utils.book_append_sheet(wb,ws,'Pedido de Compra');
+
+  var forn=document.getElementById('f-forn').value||'pedido';
+  var hoje=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'Pedido_'+forn.replace(/\s+/g,'_')+'_'+meses+'m_'+hoje+'.xlsx');
+}
+
+// ── SESSÃO LOCAL ──
+function saveSession(){
+  if(!products.length){alert('Nenhum produto para salvar.');return}
+  try{
+    var json=JSON.stringify(products);
+    localStorage.setItem('estoque_products', json);
+    localStorage.setItem('estoque_saved_at', new Date().toLocaleString('pt-BR'));
+    // verifica se gravou mesmo
+    var check=localStorage.getItem('estoque_products');
+    if(!check||check.length<10){alert('Erro: dado não foi salvo. Tente recarregar a página.');return}
+    var btn=document.getElementById('btn-save');
+    btn.innerHTML='<i class="ti ti-check"></i> Salvo! ('+products.length+' produtos)';
+    btn.style.color='var(--green)';
+    setTimeout(function(){
+      btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar sessão';
+      btn.style.color='';
+    },3000);
+  }catch(e){alert('Erro ao salvar: '+e.message+'. O navegador pode estar em modo privado ou sem espaço.');}
+}
+
+function restoreSession(){
+  try{
+    var saved=localStorage.getItem('estoque_products');
+    var savedAt=localStorage.getItem('estoque_saved_at');
+    if(!saved){alert('Nenhuma sessão salva encontrada.');return}
+    var parsed=JSON.parse(saved);
+    if(!parsed||!parsed.length){alert('Sessão salva está vazia.');return}
+    if(!confirm('Restaurar '+parsed.length+' produtos salvos em '+savedAt+'?'))return;
+    products=parsed;
+    updateSidebar();updateChips();
+    var crit=products.filter(function(p){return urg(p)==='c'}).length;
+    var atenc=products.filter(function(p){return urg(p)==='a'}).length;
+    var sb=document.getElementById('sbadge');sb.textContent=products.length+' produtos';sb.className='badge on';
+    document.getElementById('stats-bar').style.display='flex';
+    document.getElementById('s-total').textContent=products.length;
+    document.getElementById('s-crit').textContent=crit;
+    document.getElementById('s-atenc').textContent=atenc;
+    document.getElementById('s-grupos').textContent=getGroups().length;
+    document.getElementById('qkbtns').style.display='flex';
+    document.getElementById('btn-save').style.display='inline-flex';
+    document.getElementById('btn-restore').style.display='none';
+    addBot('✅ Sessão restaurada: <strong>'+products.length+' produtos</strong> — salva em '+savedAt+'.<br>Importe novamente se quiser dados mais atualizados.');
+  }catch(e){alert('Erro ao restaurar: '+e.message);}
+}
+
+function checkSavedSession(){
+  try{
+    var saved=localStorage.getItem('estoque_products');
+    var savedAt=localStorage.getItem('estoque_saved_at');
+    if(saved&&savedAt){
+      var parsed=JSON.parse(saved);
+      if(parsed&&parsed.length){
+        document.getElementById('btn-restore').style.display='inline-flex';
+        document.getElementById('btn-restore').title='Restaurar '+parsed.length+' produtos salvos em '+savedAt;
+        addBot('💾 Encontrei uma sessão salva com <strong>'+parsed.length+' produtos</strong> (salva em '+savedAt+').<br>Clique em <strong>Restaurar</strong> no topo para carregar, ou <strong>Importar CSV</strong> para dados novos.');
+      }
+    }
+  }catch(e){}
+}
+
+function importData(){
+  var text=document.getElementById('csv-in').value;
+  var parsed=parseCSV(text);
+  if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
+  products=parsed;closeModal();
+  resetCotacoes(); // limpa cotações ao importar novos dados
+  updateSidebar();updateChips();
+  var crit=products.filter(function(p){return urg(p)==='c'}).length;
+  var atenc=products.filter(function(p){return urg(p)==='a'}).length;
+  var sb=document.getElementById('sbadge');sb.textContent=products.length+' produtos';sb.className='badge on';
+  document.getElementById('stats-bar').style.display='flex';
+  document.getElementById('s-total').textContent=products.length;
+  document.getElementById('s-crit').textContent=crit;
+  document.getElementById('s-atenc').textContent=atenc;
+  document.getElementById('s-grupos').textContent=getGroups().length;
+  document.getElementById('qkbtns').style.display='flex';
+  document.getElementById('btn-save').style.display='inline-flex';
+  document.getElementById('btn-restore').style.display='none';
+  addBot('✅ <strong>'+products.length+' produtos importados</strong> — <strong>'+getGroups().length+' grupos</strong>.<br><br>🔴 <strong>'+crit+' críticos</strong> · 🟡 <strong>'+atenc+' em atenção</strong><br><br>Clique em um grupo no painel esquerdo ou use os atalhos abaixo para começar!');
+}
+
+function addUserMsg(t){var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg u';d.innerHTML='<span class="lbl">Você</span><div class="bbl">'+t+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight}
+function addBot(html,tblP){
+  var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg b';
+  var c='<span class="lbl">Agente</span><div class="bbl">'+html+'</div>';
+  if(tblP&&tblP.length)c+=buildChatTbl(tblP);
+  d.innerHTML=c;m.appendChild(d);m.scrollTop=m.scrollHeight;
+}
+function buildChatTbl(prods){
+  var rows=prods.slice(0,15).map(function(p){
+    var u=urg(p),abcC=p.abc==='A'?'abc-a':p.abc==='B'?'abc-b':'abc-c';
+    return'<div class="ptbl-r"><span class="pn" title="'+p.nome+'">'+p.nome+'</span><span class="pnum '+abcC+'">'+p.abc+'</span><span class="pnum">'+fmtN(p.estoque_atual)+'</span><span class="pnum">'+fmtN(p.est_min)+'</span><span class="pnum hi">'+fmtN(p.comprar_min)+' '+p.un+'</span><span class="urg '+u+'">'+urgL(u)+'</span></div>';
+  }).join('');
+  var plus=prods.length>15?'<div style="padding:6px 10px;font-size:11px;color:var(--text3)">+'+(prods.length-15)+' itens — veja tudo na aba Montar Pedido</div>':'';
+  return'<div class="ptbl"><div class="ptbl-h"><span>Produto</span><span style="text-align:right">ABC</span><span style="text-align:right">Atual</span><span style="text-align:right">Mín</span><span style="text-align:right">Comprar</span><span>Status</span></div>'+rows+plus+'</div>';
+}
+function addTyping(){var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg b';d.id='typ';d.innerHTML='<span class="lbl">Agente</span><div class="bbl"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';m.appendChild(d);m.scrollTop=m.scrollHeight}
+function rmTyping(){var e=document.getElementById('typ');if(e)e.remove()}
+
+function buildCtx(filterGroup, filterText){
+  if(!products.length) return 'Nenhum produto importado.';
+
+  // Resumo geral sempre incluído
+  var total=products.length;
+  var crit=products.filter(function(p){return urg(p)==='c'}).length;
+  var atenc=products.filter(function(p){return urg(p)==='a'}).length;
+  var gs=getGroups();
+  var topGrps=gs.map(function(g){
+    var pr=products.filter(function(p){return p.grupo===g});
+    var c=pr.filter(function(p){return urg(p)==='c'}).length;
+    var a=pr.filter(function(p){return urg(p)==='a'}).length;
+    return{g:g,total:pr.length,crit:c,atenc:a};
+  }).sort(function(a,b){return(b.crit+b.atenc)-(a.crit+a.atenc)}).slice(0,30);
+
+  var resumo='RESUMO: '+total+' produtos | '+crit+' críticos | '+atenc+' em atenção | '+gs.length+' grupos\n';
+  resumo+='TOP GRUPOS COM PROBLEMAS:\n';
+  topGrps.forEach(function(g){resumo+=g.g+': '+g.total+' produtos, '+g.crit+' críticos, '+g.atenc+' atenção\n'});
+
+  // Filtrar produtos relevantes (máx 300 linhas)
+  var subset=[];
+  if(filterGroup){
+    subset=products.filter(function(p){return p.grupo===filterGroup});
+  } else if(filterText){
+    var ft=filterText.toLowerCase();
+    // grupo mencionado?
+    var gMen=gs.find(function(g){return ft.includes(g.toLowerCase())});
+    if(gMen){
+      subset=products.filter(function(p){return p.grupo===gMen});
+    } else if(/cr[ií]t|zero|urgente/.test(ft)){
+      subset=products.filter(function(p){return urg(p)==='c'}).slice(0,300);
+    } else if(/lista|compra|repor|m[ií]nimo/.test(ft)){
+      subset=products.filter(function(p){return p.comprar_min>0})
+        .sort(function(a,b){return urg(a)==='c'&&urg(b)!=='c'?-1:urg(b)==='c'&&urg(a)!=='c'?1:0})
+        .slice(0,300);
+    } else if(/resumo|geral|ranking|grupos/.test(ft)){
+      subset=[]; // só o resumo basta
+    } else {
+      // busca por nome de produto
+      subset=products.filter(function(p){return p.nome.toLowerCase().includes(ft)||p.codigo.includes(ft)}).slice(0,50);
+      if(!subset.length){
+        subset=products.filter(function(p){return p.comprar_min>0}).slice(0,200);
+      }
+    }
+  } else {
+    subset=products.filter(function(p){return p.comprar_min>0}).slice(0,200);
+  }
+
+  if(!subset.length) return resumo;
+
+  var linhas=subset.map(function(p){
+    return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | Grp:'+p.grupo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | Max:'+p.est_max+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max;
+  }).join('\n');
+
+  return resumo+'\nPRODUTOS DETALHADOS ('+subset.length+' itens):\n'+linhas;
+}
+
+function askGrp(grp){
+  var inp=document.getElementById('uinp');
+  inp.value='O que precisa repor no grupo "'+grp+'"?';
+  // pass group directly to avoid context limit
+  var text=inp.value; inp.value=''; addUserMsg(text); addTyping();
+  var gs=getGroups();
+  var subset=products.filter(function(p){return p.grupo===grp});
+  var ctx='GRUPO: '+grp+' | '+subset.length+' produtos\n';
+  ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
+  var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
+  var msgs=[{role:'user',content:text}];
+  fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
+    var reply=(data.content&&data.content[0]&&data.content[0].text)||'Sem resposta.';
+    rmTyping();
+    var tp=subset.filter(function(p){return p.comprar_min>0}).sort(function(a,b){return urg(a)==='c'&&urg(b)!=='c'?-1:urg(b)==='c'&&urg(a)!=='c'?1:a.abc<b.abc?-1:1});
+    addBot(reply,tp.length?tp:null);
+  })
+  .catch(function(e){rmTyping();addBot('Proxy não encontrado. Verifique se a janela do proxy está aberta.')});
+}
+async function ask(q){document.getElementById('uinp').value=q;await sendMsg()}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}}
+
+async function sendMsg(){
+  var inp=document.getElementById('uinp'),text=inp.value.trim();
+  if(!text)return;inp.value='';addUserMsg(text);addTyping();
+  var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
   chatHistory.push({role:'user',content:text});
   try{
     var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
@@ -883,6 +1363,7 @@ function importData(){
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
   products=parsed;closeModal();
+  resetCotacoes(); // limpa cotações ao importar novos dados
   updateSidebar();updateChips();
   var crit=products.filter(function(p){return urg(p)==='c'}).length;
   var atenc=products.filter(function(p){return urg(p)==='a'}).length;
@@ -982,7 +1463,7 @@ function askGrp(grp){
   var subset=products.filter(function(p){return p.grupo===grp});
   var ctx='GRUPO: '+grp+' | '+subset.length+' produtos\n';
   ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
-  var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Use HTML simples: <strong>, <br>, •\n- Liste todos os itens que precisam reposição com quantidade e urgência';
+  var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
   var msgs=[{role:'user',content:text}];
   fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
   .then(function(r){return r.json()})
@@ -1001,7 +1482,7 @@ function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}
 async function sendMsg(){
   var inp=document.getElementById('uinp'),text=inp.value.trim();
   if(!text)return;inp.value='';addUserMsg(text);addTyping();
-  var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Use HTML simples: <strong>, <br>, •';
+  var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
   chatHistory.push({role:'user',content:text});
   try{
     var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
@@ -1097,5 +1578,22 @@ if(!checkAuth()){
   // não logado — aguarda login, checkSavedSession será chamado pelo doLogin
 }
 </script>
+
+<!-- COTAÇÃO MODAL -->
+<div id="cotacao-overlay" style="display:none" class="cotacao-modal-overlay">
+  <div class="cotacao-modal">
+    <h3 id="cotacao-title">Marcar grupo em cotação</h3>
+    <p style="font-size:13px;color:var(--text2)" id="cotacao-desc">Informe seu nome para marcar este grupo como em cotação. Outros usuários verão que ele já está sendo tratado.</p>
+    <input id="cotacao-nome" placeholder="Seu nome (ex: Maria)" maxlength="40">
+    <div class="btns">
+      <button class="btn" onclick="fecharCotacao()">Cancelar</button>
+      <button class="btn primary" onclick="confirmarCotacao()"><i class="ti ti-lock"></i> Marcar em cotação</button>
+    </div>
+    <button class="btn" style="color:var(--red);border-color:var(--red-light);background:var(--red-bg);font-size:12px" onclick="liberarCotacao()">
+      <i class="ti ti-lock-open"></i> Liberar cotação deste grupo
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
