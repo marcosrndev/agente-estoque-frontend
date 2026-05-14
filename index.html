@@ -670,7 +670,9 @@ function renderPedido(){
       +(aC?'<span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:10px">A:'+aC+'</span>':'')
       +(bC?'<span style="font-size:10px;background:var(--yellow-bg);color:var(--yellow);padding:1px 6px;border-radius:10px">B:'+bC+'</span>':'')
       +(cC?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:10px">C:'+cC+'</span>':'')
-      +(cotInfo?'<span class="grph-lock">Em cotacao: '+cotInfo.nome+'</span>':'<span style="font-size:10px;color:var(--text3)">clique para cotar</span>')
+      +(cotInfo
+  ?'<span class="grph-lock" style="display:inline-flex;align-items:center;gap:4px;background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-light);padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500">🔒 Em cotação: '+cotInfo.nome+'</span>'
+  :'<span style="display:inline-flex;align-items:center;gap:5px;background:var(--blue);color:#fff;border:none;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer">🏷️ Marcar em cotação</span>')
       +'</div>';
 
     itens.forEach(function(p){
