@@ -145,6 +145,13 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cotacao-modal input:focus{border-color:var(--blue)}
 .cotacao-modal .btns{display:flex;gap:8px;justify-content:flex-end}
 
+/* OK item row (show-all mode) */
+.ptr.item-ok{opacity:.55}
+.ptr.item-ok:hover{opacity:1;background:var(--green-bg)}
+.ptr.item-ok .pn{color:var(--text3)}
+.ptr.item-ok .pnum{color:var(--text3)}
+.ok-badge{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center;white-space:nowrap}
+/* OK item row (show-all mode) */
 /* Grph lock icon */
 .grph-lock{font-size:11px;background:var(--yellow-bg);color:var(--yellow);padding:1px 7px;border-radius:10px;margin-left:6px}
 
@@ -168,6 +175,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <div class="logo"><i class="ti ti-package"></i> Agente de Estoque</div>
     <div id="spacer"></div>
     <span id="sbadge" class="badge">sem dados</span>
+    <span id="upload-status" style="font-size:11px;color:var(--text3)"></span>
     <button class="btn" id="btn-restore" onclick="restoreSession()" style="display:none" title="Restaurar última importação salva"><i class="ti ti-refresh"></i> Restaurar</button>
     <button class="btn" id="btn-save" onclick="saveSession()" style="display:none" title="Salvar dados no navegador para próxima vez"><i class="ti ti-device-floppy"></i> Salvar sessão</button>
     <button class="btn" onclick="openModal()"><i class="ti ti-upload"></i> Importar CSV</button>
@@ -231,6 +239,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
           <option value="12">12 meses</option>
         </select>
         <span class="cobertura-info" id="cobertura-info">Min=3m · Máx=6m · ajuste proporcional automático</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:12px;padding-left:12px;border-left:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Exibir:</span>
+          <button id="toggle-view-btn" class="btn" onclick="toggleView()" style="font-size:12px;padding:4px 12px">
+            <i class="ti ti-filter" id="toggle-icon"></i> <span id="toggle-label">Só itens a comprar</span>
+          </button>
+        </div>
         <button class="btn urgente-btn" onclick="proximoUrgente()" title="Aponta o próximo grupo mais urgente sem responsável">
           <i class="ti ti-alert-triangle"></i> Próximo urgente
         </button>
@@ -281,6 +295,7 @@ var APP_PASSWORD = 'compras2025';
 
 // URL do backend no Render — substitua após o deploy
 var BACKEND_URL = 'https://agente-estoque-proxy.onrender.com';
+var API_URL = BACKEND_URL; // base URL for all API calls
 
 function doLogin(){
   var pwd=document.getElementById('login-pwd').value;
@@ -500,6 +515,11 @@ function sortGroupsByPriority(byG){
 
 function sortItemsByUrgency(prods){
   return prods.slice().sort(function(a,b){
+    // OK items (no need to buy) go to bottom
+    var aOk=(a.comprar_min<=0&&!(a.comprar_max>0&&a.estoque_atual<a.est_max));
+    var bOk=(b.comprar_min<=0&&!(b.comprar_max>0&&b.estoque_atual<b.est_max));
+    if(aOk && !bOk) return 1;
+    if(!aOk && bOk) return -1;
     var ua=urgScore(a),ub=urgScore(b);
     if(Math.abs(ub-ua)>0.001)return ub-ua;
     return a.abc<b.abc?-1:a.abc>b.abc?1:0;
@@ -518,10 +538,22 @@ function updateValor(input,comprarMin){
 // ── SISTEMA DE COTAÇÃO ──
 var cotacaoAtual = null; // grupo sendo marcado
 
-function getCotacoes(){
-  try{return JSON.parse(localStorage.getItem('estoque_cotacoes')||'{}');}catch(e){return {};}
+// Cotações em memória (sincronizadas com servidor)
+var cotacoesCache = {};
+
+function getCotacoes(){ return cotacoesCache; }
+
+function carregarCotacoes(){
+  fetch(BACKEND_URL+'/cotacoes')
+  .then(function(r){return r.json()})
+  .then(function(data){cotacoesCache=data||{};updateChips();renderPedido();})
+  .catch(function(){});
 }
-function saveCotacoes(obj){localStorage.setItem('estoque_cotacoes',JSON.stringify(obj));}
+
+function saveCotacoes(obj){
+  cotacoesCache = obj;
+  // não persiste localmente, sempre no servidor
+}
 
 function abrirCotacao(grupo){
   cotacaoAtual = grupo;
@@ -540,24 +572,28 @@ function fecharCotacao(){document.getElementById('cotacao-overlay').style.displa
 function confirmarCotacao(){
   var nome = document.getElementById('cotacao-nome').value.trim();
   if(!nome){alert('Informe seu nome.');return;}
-  var cotacoes = getCotacoes();
   var agora = new Date().toLocaleString('pt-BR');
-  cotacoes[cotacaoAtual] = {nome:nome, desde:agora};
-  saveCotacoes(cotacoes);
+  cotacoesCache[cotacaoAtual] = {nome:nome, desde:agora};
   fecharCotacao();
   updateChips();
   renderPedido();
+  // Sincroniza com servidor
+  fetch(BACKEND_URL+'/cotacoes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({grupo:cotacaoAtual,nome:nome,desde:agora})}).catch(function(){});
 }
 function liberarCotacao(){
-  var cotacoes = getCotacoes();
-  delete cotacoes[cotacaoAtual];
-  saveCotacoes(cotacoes);
+  delete cotacoesCache[cotacaoAtual];
   fecharCotacao();
   updateChips();
   renderPedido();
+  // Sincroniza com servidor
+  fetch(BACKEND_URL+'/cotacoes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({grupo:cotacaoAtual,nome:'',desde:''})}).catch(function(){});
 }
 function resetCotacoes(){
+  cotacoesCache = {};
   localStorage.removeItem('estoque_cotacoes');
+  fetch(BACKEND_URL+'/cotacoes',{method:'DELETE'}).catch(function(){});
 }
 
 // ── PRÓXIMO URGENTE ──
@@ -608,7 +644,9 @@ function proximoUrgente(){
 function renderPedido(){
   var meses = getMeses();
   var selP=products.filter(function(p){
-    return selectedGroups.has(p.grupo)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max));
+    if(!selectedGroups.has(p.grupo)) return false;
+    if(showAllItems) return true; // show everything in selected groups
+    return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);
   });
   var empty=document.getElementById('empty-ped'),stats=document.getElementById('ped-stats'),
       tbl=document.getElementById('ped-tbl-wrap'),info=document.getElementById('ped-info');
@@ -637,7 +675,11 @@ function renderPedido(){
     +'<div class="ps"><div class="ps-n r">'+crit+'</div><div class="ps-l">críticos</div></div>'
     +'<div class="ps"><div class="ps-n w">'+atenc+'</div><div class="ps-l">atenção</div></div>'
     +'<div class="ps"><div class="ps-n">'+selectedGroups.size+'</div><div class="ps-l">grupos</div></div>';
-  info.textContent=selP.length+' itens de '+selectedGroups.size+' grupo(s)';
+  var compraCount = selP.filter(function(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max)}).length;
+  var okCount = selP.length - compraCount;
+  info.textContent = showAllItems
+    ? selP.length+' itens totais ('+compraCount+' a comprar, '+okCount+' em estoque)'
+    : compraCount+' itens a comprar de '+selectedGroups.size+' grupo(s)';
 
   var byG={};
   selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
@@ -683,23 +725,25 @@ function renderPedido(){
       var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
       var qtdSug = calcQtdMeses(p, meses);
 
-      html+='<div class="ptr" style="grid-template-columns:'+COLS+'">'
+      var isOk = u==='o' && p.comprar_min<=0;
+      var rowClass = 'ptr'+(isOk?' item-ok':'');
+      html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
         +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
         +'<span class="pcol">'+p.un+'</span>'
         +'<span class="pcol">'+fmtN(p.estoque_atual)+'</span>'
         +'<span class="pcol">'+fmtN(p.est_min)+'</span>'
-        +'<span class="pcol">'+fmtN(p.comprar_min)+'</span>'
-        +'<span class="pcol hi" title="Qtd sugerida para '+meses+' meses">'+fmtN(Math.ceil(qtdSug))+'</span>'
+        +'<span class="pcol">'+(!isOk?fmtN(p.comprar_min):'—')+'</span>'
+        +'<span class="pcol '+(isOk?'':'hi')+'" title="Qtd sugerida para '+meses+' meses">'+(isOk?'—':fmtN(Math.ceil(qtdSug)))+'</span>'
         +'<span class="pcol" style="color:'+urgColor+';font-weight:600">'+urgPct+'</span>'
         +'<span class="pcol" style="padding:2px">'
-          +'<input type="number" min="0" step="0.01" placeholder="—" '
+          +(!isOk?'<input type="number" min="0" step="0.01" placeholder="—" '
           +'style="width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:11px;text-align:right;background:var(--bg);color:var(--text)" '
           +'data-cod="'+safeCod+'" data-cmp="'+qtdSug+'" '
-          +'oninput="updateValor(this,'+qtdSug+')">'
+          +'oninput="updateValor(this,'+qtdSug+')">':'<span style="font-size:11px;color:var(--text3)">—</span>')
           +'</span>'
         +'<span class="pcol hi" id="vt_'+safeCod+'" style="font-size:11px">—</span>'
-        +'<span class="urg '+u+'">'+urgL(u)+'</span>'
+        +(isOk?'<span class="ok-badge">Em estoque</span>':'<span class="urg '+u+'">'+urgL(u)+'</span>')
         +'</div>';
     });
   });
@@ -759,39 +803,100 @@ function restoreSession(){
 }
 
 function checkSavedSession(){
-  try{
-    var saved=localStorage.getItem('estoque_products');
-    var savedAt=localStorage.getItem('estoque_saved_at');
-    if(saved&&savedAt){
-      var parsed=JSON.parse(saved);
-      if(parsed&&parsed.length){
-        document.getElementById('btn-restore').style.display='inline-flex';
-        document.getElementById('btn-restore').title='Restaurar '+parsed.length+' produtos salvos em '+savedAt;
-        addBot('💾 Encontrei uma sessão salva com <strong>'+parsed.length+' produtos</strong> (salva em '+savedAt+').<br>Clique em <strong>Restaurar</strong> no topo para carregar, ou <strong>Importar CSV</strong> para dados novos.');
-      }
+  // Tenta carregar do servidor primeiro
+  addBot('🔄 Carregando dados do servidor...');
+  fetch(BACKEND_URL+'/produtos')
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.produtos && data.produtos.length){
+      products = data.produtos;
+      updateSidebar();updateChips();
+      aplicarDados(products);
+      var meta = data.meta || {};
+      var infoExtra = meta.importado_por
+        ? '<br>Última importação por <strong>'+meta.importado_por+'</strong> em '+meta.importado_em
+        : '';
+      addBot('✅ <strong>'+products.length+' produtos carregados do servidor</strong> — '+getGroups().length+' grupos.'+infoExtra+'<br><br>Dados sincronizados para toda a equipe.');
+      // Carrega cotações do servidor
+      carregarCotacoes();
+    } else {
+      addBot('📭 Nenhum dado no servidor ainda.<br>Clique em <strong>Importar CSV</strong> para carregar os produtos pela primeira vez.');
     }
-  }catch(e){}
+  })
+  .catch(function(){
+    // Fallback: tenta localStorage
+    try{
+      var saved=localStorage.getItem('estoque_products');
+      var savedAt=localStorage.getItem('estoque_saved_at');
+      if(saved&&savedAt){
+        var parsed=JSON.parse(saved);
+        if(parsed&&parsed.length){
+          products=parsed;
+          updateSidebar();updateChips();
+          aplicarDados(products);
+          addBot('⚠️ Servidor indisponível. Carregados <strong>'+products.length+' produtos</strong> do cache local ('+savedAt+').');
+          return;
+        }
+      }
+    }catch(e){}
+    addBot('⚠️ Não foi possível conectar ao servidor.<br>Verifique sua conexão ou clique em <strong>Importar CSV</strong>.');
+  });
 }
 
 function importData(){
   var text=document.getElementById('csv-in').value;
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
-  products=parsed;closeModal();
-  resetCotacoes(); // limpa cotações ao importar novos dados
+  
+  var nomeUsuario = prompt('Seu nome (para registrar quem fez a importação):', '') || 'Usuário';
+  products=parsed;
+  closeModal();
+  resetCotacoes();
   updateSidebar();updateChips();
-  var crit=products.filter(function(p){return urg(p)==='c'}).length;
-  var atenc=products.filter(function(p){return urg(p)==='a'}).length;
-  var sb=document.getElementById('sbadge');sb.textContent=products.length+' produtos';sb.className='badge on';
+  aplicarDados(products);
+
+  // Upload para o servidor
+  var agora = new Date().toLocaleString('pt-BR');
+  var payload = {
+    produtos: products,
+    importado_por: nomeUsuario,
+    importado_em: agora
+  };
+
+  var uploadBtn = document.getElementById('upload-status');
+  if(uploadBtn) uploadBtn.textContent = '⏳ Enviando para o servidor...';
+
+  fetch(BACKEND_URL+'/produtos', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.ok){
+      if(uploadBtn) uploadBtn.textContent = '';
+      addBot('✅ <strong>'+products.length+' produtos importados e sincronizados</strong> com todos os usuários!<br>Importado por: <strong>'+nomeUsuario+'</strong> em '+agora);
+    } else {
+      addBot('⚠️ Produtos carregados localmente, mas houve erro ao sincronizar com o servidor: '+(data.error||'erro desconhecido'));
+    }
+  })
+  .catch(function(){
+    addBot('⚠️ Produtos carregados localmente, mas não foi possível sincronizar. Verifique a conexão.');
+  });
+}
+
+function aplicarDados(prods){
+  var crit=prods.filter(function(p){return urg(p)==='c'}).length;
+  var atenc=prods.filter(function(p){return urg(p)==='a'}).length;
+  var sb=document.getElementById('sbadge');sb.textContent=prods.length+' produtos';sb.className='badge on';
   document.getElementById('stats-bar').style.display='flex';
-  document.getElementById('s-total').textContent=products.length;
+  document.getElementById('s-total').textContent=prods.length;
   document.getElementById('s-crit').textContent=crit;
   document.getElementById('s-atenc').textContent=atenc;
   document.getElementById('s-grupos').textContent=getGroups().length;
   document.getElementById('qkbtns').style.display='flex';
   document.getElementById('btn-save').style.display='inline-flex';
   document.getElementById('btn-restore').style.display='none';
-  addBot('✅ <strong>'+products.length+' produtos importados</strong> — <strong>'+getGroups().length+' grupos</strong>.<br><br>🔴 <strong>'+crit+' críticos</strong> · 🟡 <strong>'+atenc+' em atenção</strong><br><br>Clique em um grupo no painel esquerdo ou use os atalhos abaixo para começar!');
 }
 
 function addUserMsg(t){var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg u';d.innerHTML='<span class="lbl">Você</span><div class="bbl">'+t+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight}
@@ -880,7 +985,7 @@ function askGrp(grp){
   ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
   var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
   var msgs=[{role:'user',content:text}];
-  fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
+  fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
   .then(function(r){return r.json()})
   .then(function(data){
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
@@ -900,7 +1005,7 @@ async function sendMsg(){
   var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
   chatHistory.push({role:'user',content:text});
   try{
-    var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
+    var res=await fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
     var data=await res.json();
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
     var reply=(data.content&&data.content[0]&&data.content[0].text)||'Erro ao processar.';
@@ -926,6 +1031,30 @@ async function sendMsg(){
   }
 }
 
+// ── TOGGLE VIEW ──
+var showAllItems = false;
+
+function toggleView(){
+  showAllItems = !showAllItems;
+  var btn = document.getElementById('toggle-view-btn');
+  var lbl = document.getElementById('toggle-label');
+  var ico = document.getElementById('toggle-icon');
+  if(showAllItems){
+    lbl.textContent = 'Todos os itens';
+    btn.style.background = 'var(--blue)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--blue)';
+    ico.className = 'ti ti-eye';
+  } else {
+    lbl.textContent = 'Só itens a comprar';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    ico.className = 'ti ti-filter';
+  }
+  renderPedido();
+}
+
 function getPrecos(){
   var precos={};
   document.querySelectorAll('#ped-tbl-wrap input[type=number]').forEach(function(inp){
@@ -939,7 +1068,9 @@ function exportExcel(){
   if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde e tente novamente.');return}
   var meses=getMeses();
   var selP=products.filter(function(p){
-    return selectedGroups.has(p.grupo)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max));
+    if(!selectedGroups.has(p.grupo)) return false;
+    if(showAllItems) return true; // show everything in selected groups
+    return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);
   });
   if(!selP.length){alert('Nenhum item para exportar.\n\nSelecione grupos na aba "Montar Pedido".');return}
 
@@ -1062,39 +1193,100 @@ function restoreSession(){
 }
 
 function checkSavedSession(){
-  try{
-    var saved=localStorage.getItem('estoque_products');
-    var savedAt=localStorage.getItem('estoque_saved_at');
-    if(saved&&savedAt){
-      var parsed=JSON.parse(saved);
-      if(parsed&&parsed.length){
-        document.getElementById('btn-restore').style.display='inline-flex';
-        document.getElementById('btn-restore').title='Restaurar '+parsed.length+' produtos salvos em '+savedAt;
-        addBot('💾 Encontrei uma sessão salva com <strong>'+parsed.length+' produtos</strong> (salva em '+savedAt+').<br>Clique em <strong>Restaurar</strong> no topo para carregar, ou <strong>Importar CSV</strong> para dados novos.');
-      }
+  // Tenta carregar do servidor primeiro
+  addBot('🔄 Carregando dados do servidor...');
+  fetch(BACKEND_URL+'/produtos')
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.produtos && data.produtos.length){
+      products = data.produtos;
+      updateSidebar();updateChips();
+      aplicarDados(products);
+      var meta = data.meta || {};
+      var infoExtra = meta.importado_por
+        ? '<br>Última importação por <strong>'+meta.importado_por+'</strong> em '+meta.importado_em
+        : '';
+      addBot('✅ <strong>'+products.length+' produtos carregados do servidor</strong> — '+getGroups().length+' grupos.'+infoExtra+'<br><br>Dados sincronizados para toda a equipe.');
+      // Carrega cotações do servidor
+      carregarCotacoes();
+    } else {
+      addBot('📭 Nenhum dado no servidor ainda.<br>Clique em <strong>Importar CSV</strong> para carregar os produtos pela primeira vez.');
     }
-  }catch(e){}
+  })
+  .catch(function(){
+    // Fallback: tenta localStorage
+    try{
+      var saved=localStorage.getItem('estoque_products');
+      var savedAt=localStorage.getItem('estoque_saved_at');
+      if(saved&&savedAt){
+        var parsed=JSON.parse(saved);
+        if(parsed&&parsed.length){
+          products=parsed;
+          updateSidebar();updateChips();
+          aplicarDados(products);
+          addBot('⚠️ Servidor indisponível. Carregados <strong>'+products.length+' produtos</strong> do cache local ('+savedAt+').');
+          return;
+        }
+      }
+    }catch(e){}
+    addBot('⚠️ Não foi possível conectar ao servidor.<br>Verifique sua conexão ou clique em <strong>Importar CSV</strong>.');
+  });
 }
 
 function importData(){
   var text=document.getElementById('csv-in').value;
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
-  products=parsed;closeModal();
-  resetCotacoes(); // limpa cotações ao importar novos dados
+  
+  var nomeUsuario = prompt('Seu nome (para registrar quem fez a importação):', '') || 'Usuário';
+  products=parsed;
+  closeModal();
+  resetCotacoes();
   updateSidebar();updateChips();
-  var crit=products.filter(function(p){return urg(p)==='c'}).length;
-  var atenc=products.filter(function(p){return urg(p)==='a'}).length;
-  var sb=document.getElementById('sbadge');sb.textContent=products.length+' produtos';sb.className='badge on';
+  aplicarDados(products);
+
+  // Upload para o servidor
+  var agora = new Date().toLocaleString('pt-BR');
+  var payload = {
+    produtos: products,
+    importado_por: nomeUsuario,
+    importado_em: agora
+  };
+
+  var uploadBtn = document.getElementById('upload-status');
+  if(uploadBtn) uploadBtn.textContent = '⏳ Enviando para o servidor...';
+
+  fetch(BACKEND_URL+'/produtos', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.ok){
+      if(uploadBtn) uploadBtn.textContent = '';
+      addBot('✅ <strong>'+products.length+' produtos importados e sincronizados</strong> com todos os usuários!<br>Importado por: <strong>'+nomeUsuario+'</strong> em '+agora);
+    } else {
+      addBot('⚠️ Produtos carregados localmente, mas houve erro ao sincronizar com o servidor: '+(data.error||'erro desconhecido'));
+    }
+  })
+  .catch(function(){
+    addBot('⚠️ Produtos carregados localmente, mas não foi possível sincronizar. Verifique a conexão.');
+  });
+}
+
+function aplicarDados(prods){
+  var crit=prods.filter(function(p){return urg(p)==='c'}).length;
+  var atenc=prods.filter(function(p){return urg(p)==='a'}).length;
+  var sb=document.getElementById('sbadge');sb.textContent=prods.length+' produtos';sb.className='badge on';
   document.getElementById('stats-bar').style.display='flex';
-  document.getElementById('s-total').textContent=products.length;
+  document.getElementById('s-total').textContent=prods.length;
   document.getElementById('s-crit').textContent=crit;
   document.getElementById('s-atenc').textContent=atenc;
   document.getElementById('s-grupos').textContent=getGroups().length;
   document.getElementById('qkbtns').style.display='flex';
   document.getElementById('btn-save').style.display='inline-flex';
   document.getElementById('btn-restore').style.display='none';
-  addBot('✅ <strong>'+products.length+' produtos importados</strong> — <strong>'+getGroups().length+' grupos</strong>.<br><br>🔴 <strong>'+crit+' críticos</strong> · 🟡 <strong>'+atenc+' em atenção</strong><br><br>Clique em um grupo no painel esquerdo ou use os atalhos abaixo para começar!');
 }
 
 function addUserMsg(t){var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg u';d.innerHTML='<span class="lbl">Você</span><div class="bbl">'+t+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight}
@@ -1183,7 +1375,7 @@ function askGrp(grp){
   ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
   var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
   var msgs=[{role:'user',content:text}];
-  fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
+  fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
   .then(function(r){return r.json()})
   .then(function(data){
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
@@ -1203,7 +1395,7 @@ async function sendMsg(){
   var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
   chatHistory.push({role:'user',content:text});
   try{
-    var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
+    var res=await fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
     var data=await res.json();
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
     var reply=(data.content&&data.content[0]&&data.content[0].text)||'Erro ao processar.';
@@ -1229,6 +1421,30 @@ async function sendMsg(){
   }
 }
 
+// ── TOGGLE VIEW ──
+var showAllItems = false;
+
+function toggleView(){
+  showAllItems = !showAllItems;
+  var btn = document.getElementById('toggle-view-btn');
+  var lbl = document.getElementById('toggle-label');
+  var ico = document.getElementById('toggle-icon');
+  if(showAllItems){
+    lbl.textContent = 'Todos os itens';
+    btn.style.background = 'var(--blue)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--blue)';
+    ico.className = 'ti ti-eye';
+  } else {
+    lbl.textContent = 'Só itens a comprar';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    ico.className = 'ti ti-filter';
+  }
+  renderPedido();
+}
+
 function getPrecos(){
   var precos={};
   document.querySelectorAll('#ped-tbl-wrap input[type=number]').forEach(function(inp){
@@ -1242,7 +1458,9 @@ function exportExcel(){
   if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde e tente novamente.');return}
 
   var selP=products.filter(function(p){
-    return selectedGroups.has(p.grupo)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max));
+    if(!selectedGroups.has(p.grupo)) return false;
+    if(showAllItems) return true; // show everything in selected groups
+    return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);
   });
   if(!selP.length){alert('Nenhum item para exportar.\n\nSelecione grupos com itens para comprar na aba "Montar Pedido".');return}
 
@@ -1370,39 +1588,100 @@ function restoreSession(){
 }
 
 function checkSavedSession(){
-  try{
-    var saved=localStorage.getItem('estoque_products');
-    var savedAt=localStorage.getItem('estoque_saved_at');
-    if(saved&&savedAt){
-      var parsed=JSON.parse(saved);
-      if(parsed&&parsed.length){
-        document.getElementById('btn-restore').style.display='inline-flex';
-        document.getElementById('btn-restore').title='Restaurar '+parsed.length+' produtos salvos em '+savedAt;
-        addBot('💾 Encontrei uma sessão salva com <strong>'+parsed.length+' produtos</strong> (salva em '+savedAt+').<br>Clique em <strong>Restaurar</strong> no topo para carregar, ou <strong>Importar CSV</strong> para dados novos.');
-      }
+  // Tenta carregar do servidor primeiro
+  addBot('🔄 Carregando dados do servidor...');
+  fetch(BACKEND_URL+'/produtos')
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.produtos && data.produtos.length){
+      products = data.produtos;
+      updateSidebar();updateChips();
+      aplicarDados(products);
+      var meta = data.meta || {};
+      var infoExtra = meta.importado_por
+        ? '<br>Última importação por <strong>'+meta.importado_por+'</strong> em '+meta.importado_em
+        : '';
+      addBot('✅ <strong>'+products.length+' produtos carregados do servidor</strong> — '+getGroups().length+' grupos.'+infoExtra+'<br><br>Dados sincronizados para toda a equipe.');
+      // Carrega cotações do servidor
+      carregarCotacoes();
+    } else {
+      addBot('📭 Nenhum dado no servidor ainda.<br>Clique em <strong>Importar CSV</strong> para carregar os produtos pela primeira vez.');
     }
-  }catch(e){}
+  })
+  .catch(function(){
+    // Fallback: tenta localStorage
+    try{
+      var saved=localStorage.getItem('estoque_products');
+      var savedAt=localStorage.getItem('estoque_saved_at');
+      if(saved&&savedAt){
+        var parsed=JSON.parse(saved);
+        if(parsed&&parsed.length){
+          products=parsed;
+          updateSidebar();updateChips();
+          aplicarDados(products);
+          addBot('⚠️ Servidor indisponível. Carregados <strong>'+products.length+' produtos</strong> do cache local ('+savedAt+').');
+          return;
+        }
+      }
+    }catch(e){}
+    addBot('⚠️ Não foi possível conectar ao servidor.<br>Verifique sua conexão ou clique em <strong>Importar CSV</strong>.');
+  });
 }
 
 function importData(){
   var text=document.getElementById('csv-in').value;
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
-  products=parsed;closeModal();
-  resetCotacoes(); // limpa cotações ao importar novos dados
+  
+  var nomeUsuario = prompt('Seu nome (para registrar quem fez a importação):', '') || 'Usuário';
+  products=parsed;
+  closeModal();
+  resetCotacoes();
   updateSidebar();updateChips();
-  var crit=products.filter(function(p){return urg(p)==='c'}).length;
-  var atenc=products.filter(function(p){return urg(p)==='a'}).length;
-  var sb=document.getElementById('sbadge');sb.textContent=products.length+' produtos';sb.className='badge on';
+  aplicarDados(products);
+
+  // Upload para o servidor
+  var agora = new Date().toLocaleString('pt-BR');
+  var payload = {
+    produtos: products,
+    importado_por: nomeUsuario,
+    importado_em: agora
+  };
+
+  var uploadBtn = document.getElementById('upload-status');
+  if(uploadBtn) uploadBtn.textContent = '⏳ Enviando para o servidor...';
+
+  fetch(BACKEND_URL+'/produtos', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.ok){
+      if(uploadBtn) uploadBtn.textContent = '';
+      addBot('✅ <strong>'+products.length+' produtos importados e sincronizados</strong> com todos os usuários!<br>Importado por: <strong>'+nomeUsuario+'</strong> em '+agora);
+    } else {
+      addBot('⚠️ Produtos carregados localmente, mas houve erro ao sincronizar com o servidor: '+(data.error||'erro desconhecido'));
+    }
+  })
+  .catch(function(){
+    addBot('⚠️ Produtos carregados localmente, mas não foi possível sincronizar. Verifique a conexão.');
+  });
+}
+
+function aplicarDados(prods){
+  var crit=prods.filter(function(p){return urg(p)==='c'}).length;
+  var atenc=prods.filter(function(p){return urg(p)==='a'}).length;
+  var sb=document.getElementById('sbadge');sb.textContent=prods.length+' produtos';sb.className='badge on';
   document.getElementById('stats-bar').style.display='flex';
-  document.getElementById('s-total').textContent=products.length;
+  document.getElementById('s-total').textContent=prods.length;
   document.getElementById('s-crit').textContent=crit;
   document.getElementById('s-atenc').textContent=atenc;
   document.getElementById('s-grupos').textContent=getGroups().length;
   document.getElementById('qkbtns').style.display='flex';
   document.getElementById('btn-save').style.display='inline-flex';
   document.getElementById('btn-restore').style.display='none';
-  addBot('✅ <strong>'+products.length+' produtos importados</strong> — <strong>'+getGroups().length+' grupos</strong>.<br><br>🔴 <strong>'+crit+' críticos</strong> · 🟡 <strong>'+atenc+' em atenção</strong><br><br>Clique em um grupo no painel esquerdo ou use os atalhos abaixo para começar!');
 }
 
 function addUserMsg(t){var m=document.getElementById('msgs'),d=document.createElement('div');d.className='msg u';d.innerHTML='<span class="lbl">Você</span><div class="bbl">'+t+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight}
@@ -1491,7 +1770,7 @@ function askGrp(grp){
   ctx+=subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Cod:'+p.codigo+' | ABC:'+p.abc+' | UN:'+p.un+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | CmpMax:'+p.comprar_max}).join('\n');
   var sys='Você é um agente especialista em gestão de estoque. Responda em português brasileiro, direto e prático.\n\nDADOS DO GRUPO:\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque<=0 ou <50% do mínimo\n- [A] ATENÇÃO: CmpMin>0\n- [O] OK\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Por item: • Nome (Cód) — Atual: X — Comprar Mín: Y Máx: Z — Status\n- Seja direto e conciso';
   var msgs=[{role:'user',content:text}];
-  fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
+  fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:msgs})})
   .then(function(r){return r.json()})
   .then(function(data){
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
@@ -1511,7 +1790,7 @@ async function sendMsg(){
   var ctx=buildCtx(null,text);var sys='Você é um agente especialista em gestão de estoque e compras industriais. Responda em português brasileiro, direto e prático.\n\nESTOQUE ('+products.length+' produtos):\n'+ctx+'\n\nREGRAS:\n- [C] CRÍTICO: estoque <= 0 ou < 50% do mínimo\n- [A] ATENÇÃO: CmpMin > 0\n- [O] OK\n- CmpMin/CmpMax já calculados pelo ERP\n- Ao analisar produto específico, mostre também o grupo dele\n- Priorize: Crítico > Atenção, ABC A > B > C\n- Responda sem markdown: sem **, ##, emojis desnecessários\n- Use HTML: <strong>, <br>, •\n- Seja conciso: máximo 4 parágrafos\n- Listas de produtos: • Nome (Cód) — Comprar Mín: X, Máx: Y';
   chatHistory.push({role:'user',content:text});
   try{
-    var res=await fetch(BACKEND_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
+    var res=await fetch(BACKEND_URL+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,system:sys,messages:chatHistory})});
     var data=await res.json();
     if(data.error){rmTyping();addBot('Erro da API: '+(data.error.message||JSON.stringify(data.error)));return}
     var reply=(data.content&&data.content[0]&&data.content[0].text)||'Erro ao processar.';
@@ -1599,6 +1878,10 @@ function exportExcel(){
 
 
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+// Auto-refresh cotacoes a cada 30 segundos
+setInterval(function(){
+  if(products.length>0) carregarCotacoes();
+}, 30000);
 // checkAuth chama checkSavedSession automaticamente se já estiver logado
 if(!checkAuth()){
   // não logado — aguarda login, checkSavedSession será chamado pelo doLogin
