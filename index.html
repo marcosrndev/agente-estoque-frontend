@@ -311,6 +311,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
         <div id="ped-actions">
           <span id="ped-info"></span>
           <button class="btn" onclick="clearPedido()"><i class="ti ti-trash"></i> Limpar</button>
+          <button class="btn" onclick="exportERP()" title="Exportar no formato de importação do ERP"><i class="ti ti-database-import"></i> Exportar p/ ERP</button>
           <button class="btn success" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
       </div>
@@ -1065,6 +1066,93 @@ function _renderPedidoInterno(meses){
 }
 
 function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();renderPedido()}
+
+// ── EXPORT ERP ──
+function exportERP(){
+  if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde.');return}
+
+  // Collect items with price and qty
+  var precos={},qtds={};
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+  });
+  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    var cod=qi.dataset.cod;if(cod&&qi.value){var v=pNum(qi.value);if(v>0)qtds[cod]=v;}
+  });
+
+  // Get selected products that have MANUAL qty filled
+  var selP=products.filter(function(p){
+    if(!selectedGroups.has(p.grupo))return false;
+    var cod=p.codigo;
+    return qtds[cod]>0; // só exporta itens com quantidade manual preenchida
+  });
+
+  if(!selP.length){
+    alert('Nenhum item com quantidade preenchida.\n\nPreencha as quantidades na coluna QTD antes de exportar para o ERP.');
+    return;
+  }
+
+  // ERP format:
+  // Col A (pos 1) = Descrição do Produto
+  // Col B (pos 2) = Código
+  // Col C (pos 3) = Quantidade
+  // Col D (pos 4) = Unidade
+  // Col E (pos 5) = Preço Unit.
+  // Row 1 = Header, Row 2+ = Products (up to 500 items)
+
+  var wsData = [];
+
+  // Row 1: Header
+  wsData.push([
+    'Descrição do Produto',
+    'Código',
+    'Quantidade',
+    'Unidade',
+    'Preço Unit.'
+  ]);
+
+  // Rows 2-501: Products (max 500)
+  var maxItens = 500;
+  var count = 0;
+  selP.forEach(function(p){
+    if(count >= maxItens) return;
+    var cod = p.codigo;
+    var qtd = qtds[cod] || 0;
+    var preco = precos[cod] || 0;
+    wsData.push([
+      p.nome,           // A - Descrição
+      cod,              // B - Código
+      qtd,              // C - Quantidade
+      p.un,             // D - Unidade
+      preco             // E - Preço Unit.
+    ]);
+    count++;
+  });
+
+  if(count >= maxItens){
+    alert('Atenção: o arquivo foi limitado a 500 itens conforme o limite do ERP.');
+  }
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  ws['!cols'] = [{wch:50},{wch:12},{wch:12},{wch:8},{wch:14}];
+
+  // Format qty and price as numbers
+  for(var r=1;r<wsData.length;r++){
+    var cellQtd = XLSX.utils.encode_cell({r:r,c:2}); // C
+    var cellPreco = XLSX.utils.encode_cell({r:r,c:4}); // E
+    if(ws[cellQtd]) ws[cellQtd].t = 'n';
+    if(ws[cellPreco]) ws[cellPreco].t = 'n';
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Importacao ERP');
+
+  var forn = document.getElementById('f-forn').value || 'pedido';
+  var data = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'ERP_Importacao_'+forn.replace(/\s+/g,'_')+'_'+data+'.xlsx');
+}
 
 // ── EXPORT EXCEL ──
 function exportExcel(){
