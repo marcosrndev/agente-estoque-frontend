@@ -199,6 +199,15 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #cotacao-box{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:22px;width:380px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:14px}
 #cotacao-box h3{font-size:14px;font-weight:600}
 
+.manual-card{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:all .15s}
+.manual-card:hover{border-color:var(--blue-light)}
+.manual-header{padding:12px 16px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;background:var(--bg2)}
+.manual-header i{color:var(--blue);font-size:16px}
+.manual-body{padding:0 16px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;font-size:13px;line-height:1.7;color:var(--text2)}
+.manual-body p{margin-bottom:6px}
+.manual-card.open .manual-body{max-height:600px;padding:12px 16px}
+.manual-card.open .manual-header{background:var(--blue-bg);color:var(--blue)}
+.manual-tip{background:var(--yellow-bg);border-left:3px solid var(--yellow);padding:8px 12px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--yellow);margin-top:8px}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
@@ -240,6 +249,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <button class="tab" onclick="switchTab('pedido',this)"><i class="ti ti-shopping-cart"></i> Montar Pedido <span class="tbdg" id="sel-badge" style="display:none">0</span></button>
     <button class="tab" onclick="switchTab('cotacoes',this)"><i class="ti ti-clipboard-list"></i> Cotações <span class="tbdg" id="cot-badge" style="display:none">0</span></button>
     <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)"><i class="ti ti-settings"></i> Admin</button>
+    <button class="tab" onclick="switchTab('ajuda',this)"><i class="ti ti-help-circle"></i> Ajuda</button>
   </div>
 
   <div id="panels">
@@ -355,6 +365,126 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
         </div>
       </div>
     </div>
+    <!-- AJUDA -->
+    <div class="panel" id="panel-ajuda">
+      <div style="flex:1;overflow-y:auto;padding:20px;max-width:800px;margin:0 auto;width:100%">
+        <div style="margin-bottom:24px">
+          <h1 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px">Manual do Agente de Estoque</h1>
+          <p style="font-size:13px;color:var(--text3)">Tire suas dúvidas ou pergunte ao agente abaixo.</p>
+        </div>
+
+        <!-- SEÇÕES DO MANUAL -->
+        <div id="manual-sections">
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-login"></i> Como entrar no sistema</div>
+            <div class="manual-body">
+              <p>Digite seu <strong>usuário</strong> e <strong>senha</strong> fornecidos pelo administrador (Marcos) e clique em <strong>Entrar</strong>.</p>
+              <p>Cada pessoa tem seu próprio login — as cotações e ações ficam registradas com seu nome.</p>
+              <p>Se esqueceu a senha, peça ao administrador para redefini-la.</p>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-upload"></i> Como importar os dados do ERP</div>
+            <div class="manual-body">
+              <p>1. Exporte a aba <strong>"Sugestão de compra"</strong> do seu ERP como CSV ou copie as células</p>
+              <p>2. Clique em <strong>Importar CSV</strong> no canto superior direito</p>
+              <p>3. Cole os dados na caixa de texto e clique em <strong>Importar</strong></p>
+              <p>4. Os dados são enviados automaticamente para o servidor — <strong>todos os usuários verão os dados atualizados</strong> imediatamente</p>
+              <div class="manual-tip">💡 Faça a importação uma vez por semana, preferencialmente na segunda-feira. Cotações concluídas são apagadas automaticamente. Cotações em andamento são mantidas com aviso de "dados atualizados".</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-message-circle"></i> Como usar o Chat com Agente</div>
+            <div class="manual-body">
+              <p>O Chat é um assistente inteligente que conhece todo o seu estoque. Você pode perguntar em português normal:</p>
+              <ul style="margin:8px 0 8px 16px;display:flex;flex-direction:column;gap:4px">
+                <li><em>"Quais produtos estão críticos agora?"</em></li>
+                <li><em>"O que falta no grupo Ziper 06 Colorido?"</em></li>
+                <li><em>"Quais grupos têm mais itens classe A críticos?"</em></li>
+                <li><em>"Qual o resumo geral do estoque hoje?"</em></li>
+              </ul>
+              <p>Use também os <strong>botões de atalho</strong> abaixo do chat para consultas rápidas.</p>
+              <p>Clique em qualquer <strong>grupo no painel esquerdo</strong> para analisar automaticamente aquele grupo.</p>
+              <div class="manual-tip">💡 O botão <strong>🔥 Próximo urgente</strong> indica qual grupo você deve cotar agora com base na prioridade automática.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-shopping-cart"></i> Como montar um pedido</div>
+            <div class="manual-body">
+              <p>1. Vá na aba <strong>Montar Pedido</strong></p>
+              <p>2. Clique nos <strong>chips de grupos</strong> para selecionar os que entram neste pedido (pode selecionar vários juntos)</p>
+              <p>3. Escolha a <strong>cobertura em meses</strong> — de 3 (mínimo) a 12 meses. O sistema calcula a quantidade proporcional automaticamente</p>
+              <p>4. Use o botão <strong>Exibir</strong> para ver só os itens a comprar ou todos os itens do grupo</p>
+              <p>5. Preencha o <strong>Preço Unit.</strong> dos produtos — o Valor Total é calculado automaticamente</p>
+              <p>6. Preencha o rodapé: Fornecedor, Condição de pagamento, etc.</p>
+              <p>7. Clique em <strong>Exportar Excel</strong> — o arquivo baixa pronto para enviar ao fornecedor</p>
+              <div class="manual-tip">💡 Os grupos são ordenados automaticamente por prioridade: primeiro os com mais itens Classe A, depois B, depois C. O número #1, #2... mostra a ordem de prioridade.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-clipboard-list"></i> Como usar as Cotações</div>
+            <div class="manual-body">
+              <p><strong>Marcar em cotação:</strong> no Montar Pedido, clique no cabeçalho azul de qualquer grupo e depois em "Marcar cotação". Seu nome aparece automaticamente.</p>
+              <p><strong>O que isso faz:</strong> avisa os outros usuários que você está cuidando daquele grupo, evitando trabalho duplicado.</p>
+              <p><strong>Concluir:</strong> quando terminar a cotação, clique em "Concluído" — fica registrado com data e hora.</p>
+              <p><strong>Aba Cotações:</strong> veja tudo que está em andamento e o histórico de concluídos, com a prioridade de cada grupo.</p>
+              <div class="manual-tip">⚠️ Se os dados forem atualizados enquanto você está cotando, o sistema avisa com um alerta laranja "Dados atualizados". Verifique se as quantidades ainda fazem sentido.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-alert-triangle"></i> Entendendo as urgências e prioridades</div>
+            <div class="manual-body">
+              <p><strong>Status dos produtos:</strong></p>
+              <div style="display:flex;flex-direction:column;gap:6px;margin:8px 0">
+                <div style="display:flex;align-items:center;gap:8px"><span class="urg c">Crítico</span> <span style="font-size:12px">Estoque zerado ou abaixo de 50% do mínimo — compra imediata</span></div>
+                <div style="display:flex;align-items:center;gap:8px"><span class="urg a">Atenção</span> <span style="font-size:12px">Abaixo do estoque mínimo — comprar esta semana</span></div>
+                <div style="display:flex;align-items:center;gap:8px"><span class="urg o">OK</span> <span style="font-size:12px">Estoque adequado</span></div>
+              </div>
+              <p><strong>Urgência %</strong> = quanto falta proporcionalmente para atingir o mínimo. 100% = zerado.</p>
+              <p><strong>Prioridade dos grupos</strong> é calculada automaticamente: primeiro os grupos com mais produtos Classe A, depois B, depois C, depois por maior valor de compra mínima.</p>
+              <div class="manual-tip">💡 Use o botão <strong>🔥 Próximo urgente</strong> para ir direto ao grupo mais prioritário que ainda não está em cotação.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-file-spreadsheet"></i> Sobre o Excel exportado</div>
+            <div class="manual-body">
+              <p>O arquivo Excel contém:</p>
+              <ul style="margin:8px 0 8px 16px;display:flex;flex-direction:column;gap:4px">
+                <li>Todos os itens selecionados, agrupados por grupo</li>
+                <li>Número de prioridade de cada grupo (#1, #2...)</li>
+                <li>Comprar Mínimo (3m), Sugerido para o período escolhido, Urgência %</li>
+                <li>Preço e Valor Total (se preenchidos)</li>
+                <li>Rodapé com Fornecedor, Condição de pagamento, Transportadora, Data, etc.</li>
+              </ul>
+              <p>O nome do arquivo inclui o fornecedor, os meses de cobertura e a data: <code style="font-size:11px;background:var(--bg2);padding:2px 5px;border-radius:3px">Pedido_Fornecedor_6m_2026-05-15.xlsx</code></p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CHAT DE AJUDA -->
+        <div style="margin-top:24px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div style="padding:10px 14px;background:var(--blue);color:#fff;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px">
+            <i class="ti ti-robot"></i> Ainda tem dúvida? Pergunte aqui
+          </div>
+          <div id="help-msgs" style="padding:12px;min-height:80px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:12px;color:var(--text3)">Faça sua pergunta sobre como usar o sistema...</div>
+          </div>
+          <div style="display:flex;gap:7px;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg2)">
+            <input id="help-input" type="text" placeholder="Ex: como marco uma cotação como concluída?" style="flex:1;padding:7px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12px;font-family:var(--font);outline:none" onkeydown="if(event.key==='Enter')sendHelp()">
+            <button class="btn primary" onclick="sendHelp()" style="font-size:12px"><i class="ti ti-send"></i> Perguntar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -414,6 +544,11 @@ function doLogin(){
       document.getElementById('user-info').style.display='flex';
       document.getElementById('user-nome').textContent=data.nome;
       if(data.is_admin)document.getElementById('tab-admin').style.display='flex';
+      // Garante que a aba Chat fica ativa ao entrar
+      document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+      document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+      document.querySelectorAll('.tab')[0].classList.add('active');
+      document.getElementById('panel-chat').classList.add('active');
       inicializar();
     } else {
       document.getElementById('login-err').style.display='block';
@@ -439,7 +574,47 @@ function doLogout(){
 }
 
 function inicializar(){
-  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  // ── MANUAL ──
+function toggleManual(card){
+  var isOpen = card.classList.contains('open');
+  document.querySelectorAll('.manual-card').forEach(function(c){c.classList.remove('open')});
+  if(!isOpen) card.classList.add('open');
+}
+
+async function sendHelp(){
+  var inp = document.getElementById('help-input');
+  var text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  var msgs = document.getElementById('help-msgs');
+
+  var userDiv = document.createElement('div');
+  userDiv.style.cssText = 'align-self:flex-end;background:var(--blue);color:#fff;padding:7px 12px;border-radius:10px;font-size:12px;max-width:85%';
+  userDiv.textContent = text;
+  msgs.appendChild(userDiv);
+
+  var loadDiv = document.createElement('div');
+  loadDiv.style.cssText = 'font-size:12px;color:var(--text3)';
+  loadDiv.textContent = 'Respondendo...';
+  msgs.appendChild(loadDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  var sysHelp = 'Você é um assistente de suporte do Agente de Estoque. Responda dúvidas sobre como usar o sistema em português claro e direto, sem markdown, usando HTML simples (<strong>, <br>). O sistema tem: Chat com IA, aba Montar Pedido (selecionar grupos, cobertura em meses, exportar Excel), aba Cotações (marcar/concluir cotações por grupo), aba Admin (só admin marcos). Login individual por usuário. Dados vêm do ERP via CSV semanal. Seja objetivo, máximo 3 parágrafos.';
+
+  try {
+    var r = await fetch(BACKEND+'/ai', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-5', max_tokens:600, system:sysHelp, messages:[{role:'user',content:text}]})});
+    var data = await r.json();
+    var reply = (data.content&&data.content[0]&&data.content[0].text)||'Não consegui responder agora.';
+    loadDiv.style.cssText = 'background:var(--bg2);border:1px solid var(--border2);padding:8px 12px;border-radius:10px;font-size:12px;max-width:90%;line-height:1.6';
+    loadDiv.innerHTML = reply;
+  } catch(e) {
+    loadDiv.textContent = 'Erro de conexão. Tente novamente.';
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados do servidor...');
   carregarProdutos();
   setInterval(function(){if(products.length>0)carregarCotacoes();},30000);
@@ -1052,6 +1227,46 @@ async function sendMsg(){
     tp.sort(function(a,b){return urgScore(b)-urgScore(a)});
     addBot(reply,tp.length?tp:null);
   }catch(e){rmTyping();addBot('Erro de conexão: '+e.message)}
+}
+
+// ── MANUAL ──
+function toggleManual(card){
+  var isOpen = card.classList.contains('open');
+  document.querySelectorAll('.manual-card').forEach(function(c){c.classList.remove('open')});
+  if(!isOpen) card.classList.add('open');
+}
+
+async function sendHelp(){
+  var inp = document.getElementById('help-input');
+  var text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  var msgs = document.getElementById('help-msgs');
+
+  var userDiv = document.createElement('div');
+  userDiv.style.cssText = 'align-self:flex-end;background:var(--blue);color:#fff;padding:7px 12px;border-radius:10px;font-size:12px;max-width:85%';
+  userDiv.textContent = text;
+  msgs.appendChild(userDiv);
+
+  var loadDiv = document.createElement('div');
+  loadDiv.style.cssText = 'font-size:12px;color:var(--text3)';
+  loadDiv.textContent = 'Respondendo...';
+  msgs.appendChild(loadDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  var sysHelp = 'Você é um assistente de suporte do Agente de Estoque. Responda dúvidas sobre como usar o sistema em português claro e direto, sem markdown, usando HTML simples (<strong>, <br>). O sistema tem: Chat com IA, aba Montar Pedido (selecionar grupos, cobertura em meses, exportar Excel), aba Cotações (marcar/concluir cotações por grupo), aba Admin (só admin marcos). Login individual por usuário. Dados vêm do ERP via CSV semanal. Seja objetivo, máximo 3 parágrafos.';
+
+  try {
+    var r = await fetch(BACKEND+'/ai', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-5', max_tokens:600, system:sysHelp, messages:[{role:'user',content:text}]})});
+    var data = await r.json();
+    var reply = (data.content&&data.content[0]&&data.content[0].text)||'Não consegui responder agora.';
+    loadDiv.style.cssText = 'background:var(--bg2);border:1px solid var(--border2);padding:8px 12px;border-radius:10px;font-size:12px;max-width:90%;line-height:1.6';
+    loadDiv.innerHTML = reply;
+  } catch(e) {
+    loadDiv.textContent = 'Erro de conexão. Tente novamente.';
+  }
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
