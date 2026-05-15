@@ -131,8 +131,9 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .fld.w2{grid-column:span 2}.fld.w3{grid-column:span 3}
 #ped-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}
 #ped-info{font-size:11px;color:var(--text3);flex:1}
-.item-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:11px;text-align:right;background:var(--bg);color:var(--text);font-family:var(--font)}
-.item-input:focus{outline:none;border-color:var(--blue)}
+.item-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:11px;text-align:right;background:var(--bg);color:var(--text);font-family:var(--font);-moz-appearance:textfield}
+.item-input::-webkit-outer-spin-button,.item-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.item-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)}
 .auto-btn{font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid var(--blue-light);background:var(--blue-bg);color:var(--blue);cursor:pointer;white-space:nowrap;font-family:var(--font)}
 .auto-btn:hover{background:var(--blue);color:#fff}
 #panel-cotacoes{flex-direction:column;overflow:hidden}
@@ -425,6 +426,27 @@ var itensCache={}, autoSaveTimer=null;
 // ── UTILS ──
 function norm(s){return(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function pNum(v){if(v===undefined||v===null||v==='')return 0;var s=String(v).trim().replace(/[^\d,.-]/g,'');if(s.indexOf(',')>-1&&s.indexOf('.')>-1){if(s.lastIndexOf(',')>s.lastIndexOf('.')){s=s.replace(/\./g,'').replace(',','.')}else{s=s.replace(/,/g,'')}}else if(s.indexOf(',')>-1){s=s.replace(',','.')}return parseFloat(s)||0}
+
+function navInput(e,el){
+  // Tab or Enter: move to next input
+  if(e.key==='Enter'||e.key==='Tab'){
+    e.preventDefault();
+    var all=[].slice.call(document.querySelectorAll('#ped-tbl-wrap .item-input:not([disabled])'));
+    var i=all.indexOf(el);
+    var next=e.shiftKey?all[i-1]:all[i+1];
+    if(next){next.focus();next.select()}
+    return;
+  }
+  // Arrow up/down: move between same-type inputs in adjacent rows
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    var cls=el.classList.contains('preco-input')?'.preco-input':'.qtd-input';
+    var all=[].slice.call(document.querySelectorAll('#ped-tbl-wrap '+cls+':not([disabled])'));
+    var i=all.indexOf(el);
+    var next=e.key==='ArrowDown'?all[i+1]:all[i-1];
+    if(next){next.focus();next.select()}
+  }
+}
 function fmtN(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2})}
 function fmtDate(){return new Date().toLocaleString('pt-BR')}
 function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
@@ -451,43 +473,53 @@ function scheduleAutoSave(grupo){
 
 function autoSaveGrupo(grupo){
   var itens=[];
-  var rows=document.querySelectorAll('#ped-tbl-wrap .ptr[data-grupo]');
-  rows.forEach(function(row){
-    if(row.dataset.grupo!==grupo)return;
-    var cod=row.dataset.cod;if(!cod)return;
-    var pi=row.querySelector('.preco-input');
-    var qi=row.querySelector('.qtd-input');
-    var preco=pi?pNum(pi.value):0;
+  // Collect all inputs with matching grupo
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    if(pi.dataset.grupoKey!==grupo&&pi.getAttribute('data-grupo-key')!==grupo)return;
+    var cod=pi.dataset.cod;if(!cod)return;
+    var row=pi.closest('.ptr');
+    var qi=row?row.querySelector('.qtd-input'):null;
+    var preco=pNum(pi.value);
     var qtd=qi?pNum(qi.value):0;
     if(preco||qtd)itens.push({codigo:cod,preco:preco,qtd_manual:qtd});
   });
   fetch(BACKEND+'/cotacao-itens',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({grupo:grupo,itens:itens,username:currentUser.username,nome:currentUser.nome,agora:fmtDate()})})
-  .then(function(){setSaveStatus('saved')}).catch(function(){setSaveStatus('')});
+  .then(function(){setSaveStatus('saved')}).catch(function(e){console.error('Save error:',e);setSaveStatus('')});
 }
 
 function carregarItensGrupo(grupo,cb){
-  var enc=grupo.replace(/\//g,'__SLASH__');
+  var enc=grupo.replace(/\/g,'__SLASH__');
   fetch(BACKEND+'/cotacao-itens/'+encodeURIComponent(enc))
   .then(function(r){return r.json()})
   .then(function(data){
     if(!itensCache[grupo])itensCache[grupo]={};
-    data.forEach(function(it){itensCache[grupo][it.codigo]={preco:it.preco||0,qtd_manual:it.qtd_manual||0,editado_por:it.editado_por,ultima_edicao:it.ultima_edicao}});
+    data.forEach(function(it){
+      itensCache[grupo][it.codigo]={
+        preco:parseFloat(it.preco)||0,
+        qtd_manual:parseFloat(it.qtd_manual)||0,
+        editado_por:it.editado_por,
+        ultima_edicao:it.ultima_edicao
+      };
+    });
     if(cb)cb();
-  }).catch(function(){if(cb)cb()});
+  }).catch(function(e){console.error('Load itens error',e);if(cb)cb()});
 }
 
 // ── INPUT HANDLERS ──
+function calcVt(cod,preco,qtd,qtdSug){
+  var useQtd=qtd>0?qtd:qtdSug;
+  var vt=document.getElementById('vt_'+cod.replace(/[^a-zA-Z0-9]/g,'_'));
+  if(vt){if(preco>0&&useQtd>0){vt.textContent='R$ '+fmtN(preco*useQtd);vt.style.color='var(--green)'}else{vt.textContent='—';vt.style.color=''}}
+}
+
 function onPrecoChange(input,qtdSug,grupo){
   var preco=pNum(input.value);
   var row=input.closest('.ptr');
   var qi=row?row.querySelector('.qtd-input'):null;
   var qtd=qi?pNum(qi.value):0;
-  var useQtd=qtd>0?qtd:qtdSug;
-  var cod=input.dataset.cod;
-  var vt=document.getElementById('vt_'+cod);
-  if(vt){if(preco>0&&useQtd>0){vt.textContent='R$ '+fmtN(preco*useQtd);vt.style.color='var(--green)'}else{vt.textContent='—';vt.style.color=''}}
-  if(grupo)scheduleAutoSave(grupo);
+  calcVt(input.dataset.cod,preco,qtd,qtdSug);
+  triggerSave(grupo);
 }
 
 function onQtdChange(input,qtdSug,grupo){
@@ -495,11 +527,34 @@ function onQtdChange(input,qtdSug,grupo){
   var row=input.closest('.ptr');
   var pi=row?row.querySelector('.preco-input'):null;
   var preco=pi?pNum(pi.value):0;
-  var useQtd=qtd>0?qtd:qtdSug;
-  var cod=input.dataset.cod;
-  var vt=document.getElementById('vt_'+cod);
-  if(vt){if(preco>0&&useQtd>0){vt.textContent='R$ '+fmtN(preco*useQtd);vt.style.color='var(--green)'}else{vt.textContent='—';vt.style.color=''}}
-  if(grupo)scheduleAutoSave(grupo);
+  calcVt(input.dataset.cod,preco,qtd,qtdSug);
+  triggerSave(grupo);
+}
+
+var saveTimers={};
+function triggerSave(grupo){
+  if(!grupo)return;
+  setSaveStatus('saving');
+  if(saveTimers[grupo])clearTimeout(saveTimers[grupo]);
+  saveTimers[grupo]=setTimeout(function(){doSave(grupo)},1500);
+}
+
+function doSave(grupo){
+  var itens=[];
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    if(pi.getAttribute('data-grupo-key')!==grupo)return;
+    var cod=pi.dataset.cod; if(!cod)return;
+    var row=pi.closest('.ptr');
+    var qi=row?row.querySelector('.qtd-input'):null;
+    var preco=pNum(pi.value);
+    var qtd=qi?pNum(qi.value):0;
+    if(preco>0||qtd>0)itens.push({codigo:cod,preco:preco,qtd_manual:qtd});
+  });
+  fetch(BACKEND+'/cotacao-itens',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({grupo:grupo,itens:itens,username:currentUser.username,nome:currentUser.nome,agora:fmtDate()})})
+  .then(function(r){return r.json()})
+  .then(function(){setSaveStatus('saved')})
+  .catch(function(e){console.error('Save error',e);setSaveStatus('')});
 }
 
 function autoFillQtd(grupo){
@@ -719,14 +774,25 @@ function carregarCotacoes(){
   }).catch(function(){});
 }
 
+function abrirGrupoB64(btn){
+  var b64=btn.getAttribute('data-grupos');
+  var grupos=JSON.parse(decodeURIComponent(escape(atob(b64))));
+  abrirGrupoNoPedido(grupos);
+}
+
 function abrirGrupoNoPedido(grupos){
   if(typeof grupos==='string')grupos=[grupos];
   grupos.forEach(function(g){selectedGroups.add(g)});
-  // Carrega itens salvos para cada grupo
+  updateChips();updateSelBadge();
   var pending=grupos.length;
-  grupos.forEach(function(g){
-    carregarItensGrupo(g,function(){pending--;if(pending<=0){updateChips();updateSelBadge();renderPedido();switchTab('pedido',document.querySelectorAll('.tab')[1])}});
-  });
+  function done(){
+    pending--;
+    if(pending<=0){
+      renderPedido();
+      switchTab('pedido',document.querySelectorAll('.tab')[1]);
+    }
+  }
+  grupos.forEach(function(g){carregarItensGrupo(g,done)});
 }
 
 function abrirCotacao(grupo){
@@ -800,7 +866,9 @@ function renderCotacoes(){
     var gruposHtml=grupos.length>1
       ?'<div class="cot-grupo">📦 '+grupos.length+' grupos em sessão</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+grupos.slice(0,3).join(' · ')+(grupos.length>3?' +' +(grupos.length-3)+' mais':'')+'</div>'
       :'<div class="cot-grupo">'+cot.grupo+'</div>';
-    var actHtml='<div class="cot-actions"><button class="btn primary" style="font-size:11px" onclick="abrirGrupoNoPedido('+JSON.stringify(grupos)+')"><i class="ti ti-external-link"></i> Abrir</button>';
+    // Store grupos in data attr to avoid quote escaping issues
+var gruposB64=btoa(unescape(encodeURIComponent(JSON.stringify(grupos))));
+var actHtml='<div class="cot-actions"><button class="btn primary" style="font-size:11px" onclick="abrirGrupoB64(this);" data-grupos="'+gruposB64+'"><i class="ti ti-external-link"></i> Abrir</button>';
     if(cot.status==='em_cotacao'&&(cot.username===currentUser.username||currentUser.is_admin)){
       actHtml+='<button class="btn success" style="font-size:11px" onclick="grupoAtualCotacao=\''+cot.grupo.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\';concluirCotacao()"><i class="ti ti-check"></i> Concluir</button>';
       actHtml+='<button class="btn" style="font-size:11px" onclick="abrirCotacao(\''+cot.grupo.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti ti-dots"></i></button>';
@@ -852,6 +920,21 @@ function renderPedido(){
   var cobInfo=document.getElementById('cob-info');
   if(cobInfo)cobInfo.textContent=meses<=3?'Mínimo (3m)':meses===6?'Máximo (6m)':meses<6?'Entre mín e máx':'Extrapolado ('+meses+'m)';
 
+  // Load saved items for any new selected groups not yet in cache
+  var gruposNaoCarregados=[];
+  selectedGroups.forEach(function(g){if(!itensCache[g])gruposNaoCarregados.push(g)});
+  if(gruposNaoCarregados.length>0){
+    var pending=gruposNaoCarregados.length;
+    gruposNaoCarregados.forEach(function(g){
+      carregarItensGrupo(g,function(){pending--;if(pending<=0)_renderPedidoInterno(meses)});
+    });
+    return;
+  }
+  _renderPedidoInterno(meses);
+}
+
+function _renderPedidoInterno(meses){
+  if(!meses)meses=getMeses();
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
     if(showAllItems)return true;
@@ -876,10 +959,10 @@ function renderPedido(){
   var sortedGroups=sortGroupsByPriority(byG);
 
   // COLS: Cód | Nome | Preço | Qtd | Auto | Comprar Mín | Sugerido | Urgência | Valor Total | Status
-  var COLS='46px 1fr 74px 64px 38px 62px 64px 58px 80px 52px';
+  var COLS='46px 1fr 76px 70px 64px 66px 58px 82px 54px';
   var html='<div class="pth" style="grid-template-columns:'+COLS+'">'
     +'<span>Cód</span><span>Produto</span><span style="text-align:right">Preço</span>'
-    +'<span style="text-align:right">Qtd</span><span></span>'
+    +'<span style="text-align:right">Qtd</span>'
     +'<span style="text-align:right">Comprar Mín</span>'
     +'<span style="text-align:right">Sugerido ('+meses+'m)</span>'
     +'<span style="text-align:right">Urgência</span>'
@@ -919,21 +1002,30 @@ function renderPedido(){
       var savedItem=(itensCache[g]&&itensCache[g][p.codigo])||{};
       var savedPreco=savedItem.preco||0;
       var savedQtd=savedItem.qtd_manual||0;
-      var initVt=savedPreco>0&&(savedQtd||qtdSug)>0?'R$ '+fmtN(savedPreco*(savedQtd||qtdSug)):'—';
+      var initQtd=savedQtd>0?savedQtd:(showAllItems?0:Math.ceil(qtdSug));
+      var initVt=savedPreco>0&&initQtd>0?'R$ '+fmtN(savedPreco*initQtd):'—';
       var gEsc=g.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
         +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
         // Preço (col 3)
-        +(!isOk?'<span class="pcol" style="padding:1px"><input class="item-input preco-input" type="number" min="0" step="0.01" placeholder="0,00" value="'+(savedPreco||'')+'" data-cod="'+safeCod+'" oninput="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\')"></span>'
-          :'<span class="pcol">—</span>')
-        // Qtd manual (col 4)
-        +(!isOk?'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="number" min="0" step="0.01" placeholder="auto" value="'+(savedQtd||'')+'" data-cod="'+safeCod+'" oninput="onQtdChange(this,'+qtdSug+',\''+gEsc+'\')"></span>'
-          :'<span class="pcol">—</span>')
-        // Auto button col (empty, auto-fill is per group now)
-        +'<span></span>'
-        // Comprar mín
+        +(!isOk?'<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
+            +'<span style="font-size:10px;color:var(--text3)">R$</span>'
+            +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
+            +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
+            +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
+            +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
+            +' onkeydown="navInput(event,this)"></span>'
+            :'<span class="pcol">—</span>')
+        // Qtd (col 4)
+        +(!isOk?'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
+            +' value="'+(savedQtd?fmtN(savedQtd):'')+'"'
+            +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
+            +' onchange="onQtdChange(this,'+qtdSug+',\''+gEsc+'\');"'
+            +' onkeydown="navInput(event,this)"></span>'
+            :'<span class="pcol">—</span>')
+                // Comprar mín
         +'<span class="pcol">'+(!isOk?fmtN(p.comprar_min):'—')+'</span>'
         // Sugerido
         +'<span class="pcol '+(isOk?'':'hi')+'">'+(isOk?'—':fmtN(Math.ceil(qtdSug)))+'</span>'
@@ -964,11 +1056,11 @@ function exportExcel(){
 
   // Collect preços e qtds from inputs
   var precos={},qtds={};
-  document.querySelectorAll('#ped-tbl-wrap .ptr').forEach(function(row){
-    var cod=row.dataset.cod;if(!cod)return;
-    var pi=row.querySelector('.preco-input');var qi=row.querySelector('.qtd-input');
-    if(pi&&pi.value)precos[cod]=pNum(pi.value);
-    if(qi&&qi.value)qtds[cod]=pNum(qi.value);
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+  });
+  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    var cod=qi.dataset.cod;if(cod&&qi.value){var v=pNum(qi.value);if(v>0)qtds[cod]=v;}
   });
 
   var byG={};selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
@@ -992,8 +1084,8 @@ function exportExcel(){
       var us=urgScore(p);
       var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
       var qtdSug=calcQtdMeses(p,meses);
-      var preco=precos[safeCod]||0;
-      var qtdManual=qtds[safeCod]||0;
+      var preco=precos[p.codigo]||precos[safeCod]||0;
+      var qtdManual=qtds[p.codigo]||qtds[safeCod]||0;
       var qtdUsar=qtdManual>0?qtdManual:Math.ceil(qtdSug);
       var vt=preco>0?preco*qtdUsar:0;
       totalGeral+=vt;
