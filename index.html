@@ -507,10 +507,15 @@ function carregarItensGrupo(grupo,cb){
 }
 
 // ── INPUT HANDLERS ──
-function calcVt(cod,preco,qtd,qtdSug){
-  var useQtd=qtd>0?qtd:qtdSug;
-  var vt=document.getElementById('vt_'+cod.replace(/[^a-zA-Z0-9]/g,'_'));
-  if(vt){if(preco>0&&useQtd>0){vt.textContent='R$ '+fmtN(preco*useQtd);vt.style.color='var(--green)'}else{vt.textContent='—';vt.style.color=''}}
+function calcVt(cod,preco,qtd,qtdFallback){
+  // qtdFallback=0 means only calc if both preco AND qtd are manually set
+  var useQtd=qtd>0?qtd:(qtdFallback>0?qtdFallback:0);
+  var safeCod=cod.replace(/[^a-zA-Z0-9]/g,'_');
+  var vt=document.getElementById('vt_'+safeCod);
+  if(vt){
+    if(preco>0&&useQtd>0){vt.textContent='R$ '+fmtN(preco*useQtd);vt.style.color='var(--green)'}
+    else{vt.textContent='—';vt.style.color=''}
+  }
 }
 
 function onPrecoChange(input,qtdSug,grupo){
@@ -518,7 +523,8 @@ function onPrecoChange(input,qtdSug,grupo){
   var row=input.closest('.ptr');
   var qi=row?row.querySelector('.qtd-input'):null;
   var qtd=qi?pNum(qi.value):0;
-  calcVt(input.dataset.cod,preco,qtd,qtdSug);
+  // Só calcula total se QTD manual também estiver preenchida
+  calcVt(input.dataset.cod,preco,qtd,0);
   triggerSave(grupo);
 }
 
@@ -527,7 +533,8 @@ function onQtdChange(input,qtdSug,grupo){
   var row=input.closest('.ptr');
   var pi=row?row.querySelector('.preco-input'):null;
   var preco=pi?pNum(pi.value):0;
-  calcVt(input.dataset.cod,preco,qtd,qtdSug);
+  // Só calcula total se PREÇO também estiver preenchido
+  calcVt(input.dataset.cod,preco,qtd,0);
   triggerSave(grupo);
 }
 
@@ -767,7 +774,11 @@ function carregarCotacoes(){
   .then(function(r){return r.json()})
   .then(function(data){
     cotacoesCache=Array.isArray(data)?data:[];
-    updateChips();renderPedido();
+    updateChips();
+    // Only re-render pedido if no inputs are focused (avoid losing typed values)
+    var activeEl=document.activeElement;
+    var isEditingPedido=activeEl&&(activeEl.classList.contains('item-input'));
+    if(!isEditingPedido)renderPedido();
     var emCot=cotacoesCache.filter(function(c){return c.status==='em_cotacao'}).length;
     var cb=document.getElementById('cot-badge');cb.textContent=emCot;cb.style.display=emCot>0?'inline-flex':'none';
     if(document.getElementById('panel-cotacoes').classList.contains('active'))renderCotacoes();
@@ -935,6 +946,29 @@ function renderPedido(){
 
 function _renderPedidoInterno(meses){
   if(!meses)meses=getMeses();
+  // Don't re-render while user is typing in a pedido input
+  var ae=document.activeElement;
+  if(ae&&ae.classList&&ae.classList.contains('item-input')){
+    setTimeout(function(){_renderPedidoInterno(meses)},2000);
+    return;
+  }
+  // Capture current input values before re-render (preserve user edits)
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
+    if(g&&cod){
+      if(!itensCache[g])itensCache[g]={};
+      if(!itensCache[g][cod])itensCache[g][cod]={};
+      var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;
+    }
+  });
+  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
+    if(g&&cod){
+      if(!itensCache[g])itensCache[g]={};
+      if(!itensCache[g][cod])itensCache[g][cod]={};
+      var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;
+    }
+  });
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
     if(showAllItems)return true;
@@ -1002,7 +1036,7 @@ function _renderPedidoInterno(meses){
       var savedItem=(itensCache[g]&&itensCache[g][p.codigo])||{};
       var savedPreco=savedItem.preco||0;
       var savedQtd=savedItem.qtd_manual||0;
-      var initQtd=savedQtd>0?savedQtd:(showAllItems?0:Math.ceil(qtdSug));
+      var initQtd=savedQtd>0?savedQtd:0; // só calcula se qtd manual preenchida
       var initVt=savedPreco>0&&initQtd>0?'R$ '+fmtN(savedPreco*initQtd):'—';
       var gEsc=g.replace(/'/g,"\\'");
 
@@ -1098,11 +1132,11 @@ function exportExcel(){
       var vt=preco>0?preco*qtdUsar:0;
       totalGeral+=vt;
       var isOk=urg(p)==='o'&&p.comprar_min<=0;
-      var total=preco>0&&qtdUsar>0?preco*qtdUsar:'';
+      var total=preco>0&&qtdManual>0?preco*qtdManual:preco>0&&Math.ceil(qtdSug)>0?preco*Math.ceil(qtdSug):'';
       wsData.push([
         p.codigo, p.nome, p.un,
         isOk?'':preco||'',
-        isOk?'':qtdManual||Math.ceil(qtdSug),
+        isOk?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
         isOk?'':total,
         '',  // Fornecedor (preenchido no rodapé)
         p.estoque_atual, p.est_min, p.est_max,
