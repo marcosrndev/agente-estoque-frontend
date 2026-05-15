@@ -1071,14 +1071,22 @@ function exportExcel(){
   var wb=XLSX.utils.book_new(),wsData=[];
   // COLS: Código | Nome | Preço Unit. | Qtd | Comprar Mín | Sugerido(Nm) | Urgência% | Valor Total | Status | Prioridade
   var modo=showAllItems?'Todos os itens':'Itens para compra';
-  wsData.push(['Casa São José — '+modo+' — Cobertura: '+meses+' meses','','','','','','','','','']);
-  wsData.push(['Código','Nome do Produto','Preço Unit.','Qtd','Comprar Mín (3m)','Sugerido ('+meses+'m)','Urgência %','Valor Total','Status','Prioridade Grupo']);
+  wsData.push(['Casa São José — '+modo+' — Cobertura: '+meses+' meses','','','','','','','','','','','','','','','']);
+  wsData.push([
+    'Código','Nome do Produto','UN',
+    'Preço Unit.','Qtd','Total',
+    'Fornecedor',
+    'Estoque Atual','Est. Mínimo','Est. Máximo',
+    'Grupo','ABC',
+    'Comprar Mín (3m)','Sugerido ('+meses+'m)','Urgência %',
+    'Status','Prioridade Grupo'
+  ]);
 
   var totalGeral=0;
   sortedGroups.forEach(function(g){
     var itens=sortItemsByUrgency(byG[g]);
     var prio=allSorted.indexOf(g)+1;
-    wsData.push(['▸  '+g,'','','','','','','','','#'+prio]);
+    wsData.push(['▸  '+g,'','','','','','','','','','','','','','','','#'+prio]);
     itens.forEach(function(p){
       var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
       var us=urgScore(p);
@@ -1090,19 +1098,25 @@ function exportExcel(){
       var vt=preco>0?preco*qtdUsar:0;
       totalGeral+=vt;
       var isOk=urg(p)==='o'&&p.comprar_min<=0;
-      wsData.push([p.codigo,p.nome,
+      var total=preco>0&&qtdUsar>0?preco*qtdUsar:'';
+      wsData.push([
+        p.codigo, p.nome, p.un,
         isOk?'':preco||'',
-        isOk?'':qtdManual||'',
+        isOk?'':qtdManual||Math.ceil(qtdSug),
+        isOk?'':total,
+        '',  // Fornecedor (preenchido no rodapé)
+        p.estoque_atual, p.est_min, p.est_max,
+        p.grupo, p.abc,
         isOk?'':p.comprar_min,
         isOk?'':Math.ceil(qtdSug),
         isOk?'Em estoque':urgPct,
-        isOk?'':vt||'',
         isOk?'Em estoque':urgL(urg(p)),
-        '#'+prio]);
+        '#'+prio
+      ]);
     });
   });
-  wsData.push(['','','','','','','','','','']);
-  wsData.push(['INFORMAÇÕES DO PEDIDO','','','','','','','','','']);
+  wsData.push(['','','','','','','','','','','','','','','','','']);
+  wsData.push(['INFORMAÇÕES DO PEDIDO','','','','','','','','','','','','','','','','']);
   [['Fornecedor',document.getElementById('f-forn').value],
    ['Empresa a faturar',document.getElementById('f-emp').value],
    ['Condição de pagamento',document.getElementById('f-pag').value],
@@ -1111,10 +1125,10 @@ function exportExcel(){
    ['Transportadora',document.getElementById('f-transp').value],
    ['Observações',document.getElementById('f-obs').value],
    ['Data',document.getElementById('f-data').value]
-  ].forEach(function(f){wsData.push([f[0],f[1]||'','','','','','','','',''])});
+  ].forEach(function(f){wsData.push([f[0],f[1]||'','','','','','','','','','','','','','','',''])});
   var ws=XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols']=[{wch:10},{wch:42},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10},{wch:13},{wch:10},{wch:12}];
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:9}}];
+  ws['!cols']=[{wch:8},{wch:40},{wch:5},{wch:12},{wch:8},{wch:14},{wch:20},{wch:12},{wch:12},{wch:12},{wch:22},{wch:5},{wch:14},{wch:14},{wch:10},{wch:10},{wch:14}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:16}}];
   XLSX.utils.book_append_sheet(wb,ws,'Pedido de Compra');
   var forn=document.getElementById('f-forn').value||'pedido';
   XLSX.writeFile(wb,'CasaSaoJose_Pedido_'+forn.replace(/\s+/g,'_')+'_'+meses+'m_'+new Date().toISOString().slice(0,10)+'.xlsx');
