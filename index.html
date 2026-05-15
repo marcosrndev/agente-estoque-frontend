@@ -489,7 +489,7 @@ function autoSaveGrupo(grupo){
 }
 
 function carregarItensGrupo(grupo,cb){
-  var enc=grupo.replace(/\/g,'__SLASH__');
+  var enc=grupo.replace(/\//g,'__SLASH__');
   fetch(BACKEND+'/cotacao-itens/'+encodeURIComponent(enc))
   .then(function(r){return r.json()})
   .then(function(data){
@@ -1004,7 +1004,7 @@ function _renderPedidoInterno(meses){
       var savedQtd=savedItem.qtd_manual||0;
       var initQtd=savedQtd>0?savedQtd:(showAllItems?0:Math.ceil(qtdSug));
       var initVt=savedPreco>0&&initQtd>0?'R$ '+fmtN(savedPreco*initQtd):'—';
-      var gEsc=g.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var gEsc=g.replace(/'/g,"\\'");
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
