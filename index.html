@@ -421,7 +421,8 @@ var BACKEND = 'https://agente-estoque-proxy.onrender.com';
 
 var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
-var itensCache={}, autoSaveTimer=null;
+var itensCache={}, saveTimers={};
+var userEditedInputs=false; // flag: user has typed in pedido
 
 // ── UTILS ──
 function norm(s){return(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -541,9 +542,10 @@ function onQtdChange(input,qtdSug,grupo){
 var saveTimers={};
 function triggerSave(grupo){
   if(!grupo)return;
+  userEditedInputs=true; // mark that user is editing
   setSaveStatus('saving');
   if(saveTimers[grupo])clearTimeout(saveTimers[grupo]);
-  saveTimers[grupo]=setTimeout(function(){doSave(grupo)},1500);
+  saveTimers[grupo]=setTimeout(function(){doSave(grupo);},1500);
 }
 
 function doSave(grupo){
@@ -560,7 +562,7 @@ function doSave(grupo){
   fetch(BACKEND+'/cotacao-itens',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({grupo:grupo,itens:itens,username:currentUser.username,nome:currentUser.nome,agora:fmtDate()})})
   .then(function(r){return r.json()})
-  .then(function(){setSaveStatus('saved')})
+  .then(function(){setSaveStatus('saved');userEditedInputs=false;})
   .catch(function(e){console.error('Save error',e);setSaveStatus('')});
 }
 
@@ -775,10 +777,8 @@ function carregarCotacoes(){
   .then(function(data){
     cotacoesCache=Array.isArray(data)?data:[];
     updateChips();
-    // Only re-render pedido if no inputs are focused (avoid losing typed values)
-    var activeEl=document.activeElement;
-    var isEditingPedido=activeEl&&(activeEl.classList.contains('item-input'));
-    if(!isEditingPedido)renderPedido();
+    // Never re-render pedido from cotacao refresh if user has edited inputs
+    if(!userEditedInputs){renderPedido();}
     var emCot=cotacoesCache.filter(function(c){return c.status==='em_cotacao'}).length;
     var cb=document.getElementById('cot-badge');cb.textContent=emCot;cb.style.display=emCot>0?'inline-flex':'none';
     if(document.getElementById('panel-cotacoes').classList.contains('active'))renderCotacoes();
@@ -946,29 +946,20 @@ function renderPedido(){
 
 function _renderPedidoInterno(meses){
   if(!meses)meses=getMeses();
-  // Don't re-render while user is typing in a pedido input
-  var ae=document.activeElement;
-  if(ae&&ae.classList&&ae.classList.contains('item-input')){
-    setTimeout(function(){_renderPedidoInterno(meses)},2000);
-    return;
+  // Capture inputs before re-render
+
+  // Always capture current inputs to cache before re-rendering
+  function captureInputs(){
+    document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+      var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
+      if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;}
+    });
+    document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+      var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
+      if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;}
+    });
   }
-  // Capture current input values before re-render (preserve user edits)
-  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
-    var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
-    if(g&&cod){
-      if(!itensCache[g])itensCache[g]={};
-      if(!itensCache[g][cod])itensCache[g][cod]={};
-      var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;
-    }
-  });
-  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
-    var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
-    if(g&&cod){
-      if(!itensCache[g])itensCache[g]={};
-      if(!itensCache[g][cod])itensCache[g][cod]={};
-      var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;
-    }
-  });
+  captureInputs();
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
     if(showAllItems)return true;
@@ -1044,21 +1035,19 @@ function _renderPedidoInterno(meses){
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
         +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
         // Preço (col 3)
-        +(!isOk?'<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
+        +'<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
             +'<span style="font-size:10px;color:var(--text3)">R$</span>'
             +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
             +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
             +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
             +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
             +' onkeydown="navInput(event,this)"></span>'
-            :'<span class="pcol">—</span>')
         // Qtd (col 4)
-        +(!isOk?'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
+        +'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
             +' value="'+(savedQtd?fmtN(savedQtd):'')+'"'
             +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
             +' onchange="onQtdChange(this,'+qtdSug+',\''+gEsc+'\');"'
             +' onkeydown="navInput(event,this)"></span>'
-            :'<span class="pcol">—</span>')
                 // Comprar mín
         +'<span class="pcol">'+(!isOk?fmtN(p.comprar_min):'—')+'</span>'
         // Sugerido
