@@ -1294,5 +1294,17 @@ async function sendMsg(){
   }
 }
 
+document.getElementById('f-data').value = new Date().toISOString().slice(0,10);
 
+// Auto-refresh cotacoes a cada 30 segundos
+setInterval(function(){
+  if(products.length > 0) carregarCotacoes();
+}, 30000);
 
+// checkAuth chama checkSavedSession automaticamente se já estiver logado
+if(!checkAuth()){
+  // não logado — aguarda login
+}
+</script>
+</body>
+</html>
