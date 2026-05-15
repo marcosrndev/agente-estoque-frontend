@@ -2,8 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agente de Estoque</title>
+<!-- v2.5 -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
@@ -1072,10 +1076,9 @@ function exportExcel(){
     if(showAllItems) return true; // show everything in selected groups
     return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);
   });
-  if(!selP.length){alert('Nenhum item para exportar.\n\nSelecione grupos na aba "Montar Pedido".');return}
-  // No modo "Todos os itens", exporta mesmo que não haja itens para comprar
-  if(!showAllItems && !selP.some(function(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max);})){
-    if(!confirm('Todos os itens selecionados estão em estoque. Exportar mesmo assim?')) return;
+  if(!selP.length){
+    alert('Nenhum item para exportar.\n\nSelecione grupos na aba "Montar Pedido".');
+    return;
   }
 
   var precos=getPrecos();
