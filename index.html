@@ -418,7 +418,15 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 </div>
 
 <script>
-var BACKEND = 'https://agente-estoque-proxy.onrender.com';
+// BACKEND escolhido dinamicamente: previews da branch dev no Vercel usam o
+// proxy/Supabase de teste; produção e qualquer outro host usam o de produção.
+var BACKEND = (function(){
+  var h = (typeof location !== 'undefined' && location.hostname) || '';
+  if (h.indexOf('-git-dev-') >= 0) {
+    return 'https://agente-estoque-proxy-dev.onrender.com';
+  }
+  return 'https://agente-estoque-proxy.onrender.com';
+})();
 
 var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
