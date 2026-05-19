@@ -86,14 +86,25 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:bk 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes bk{0%,80%,100%{opacity:.2}40%{opacity:1}}
-#ped-top{padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;max-height:180px;display:flex;flex-direction:column}
-#ped-top h2{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;flex-shrink:0}
-#grupo-chips{display:flex;flex-wrap:wrap;gap:5px;overflow-y:auto;padding-bottom:3px}
-.gchip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s}
-.gchip:hover{border-color:var(--blue-light);color:var(--blue)}
-.gchip.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
-.gchip.cotando{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-light)}
-.gdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+#ped-wrap{flex:1;display:flex;overflow:hidden;min-height:0}
+#ped-sidebar{width:220px;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0}
+#ped-search-wrap{padding:8px 10px;border-bottom:1px solid var(--border);position:relative}
+#ped-search{width:100%;padding:6px 26px 6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font);outline:none}
+#ped-search:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)}
+#ped-search-clear{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;display:none}
+#ped-search-clear:hover{color:var(--text)}
+#ped-grupos-list{flex:1;overflow-y:auto;padding:5px}
+.gitem{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--font);background:none;border:1px solid transparent;width:100%;text-align:left;margin-bottom:2px;transition:all .15s}
+.gitem:hover{background:var(--bg);color:var(--text)}
+.gitem.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+.gitem.sel:hover{background:#1864ab;color:#fff}
+.gitem.cotando{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-light)}
+.gitem.sel.cotando{background:var(--yellow);color:#fff;border-color:var(--yellow)}
+.gitem-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gitem-count{font-size:10px;opacity:.75;flex-shrink:0}
+.gitem-icon{font-size:12px;flex-shrink:0}
+.gitem-check{font-size:11px;flex-shrink:0;color:inherit}
+#ped-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 #meses-bar{display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
 #meses-bar label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
 #meses-sel{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font)}
@@ -149,6 +160,14 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cot-grupo{font-size:13px;font-weight:500;color:var(--text)}
 .cot-meta{font-size:11px;color:var(--text3);margin-top:2px}
 .cot-actions{display:flex;gap:5px;flex-shrink:0}
+#cot-filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.cot-filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.cot-filter-btn:hover{background:var(--bg);color:var(--text)}
+.cot-filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+#dados-pedido-wrap{max-height:0;overflow:hidden;transition:max-height .3s ease;margin-top:0}
+#dados-pedido-wrap.open{max-height:400px;margin-top:7px}
+.dados-toggle-arrow{display:inline-block;transition:transform .2s ease}
+.dados-toggle-arrow.open{transform:rotate(180deg)}
 #panel-admin{flex-direction:column;overflow:hidden}
 #admin-body{flex:1;overflow-y:auto;padding:18px}
 .admin-section{max-width:580px}
@@ -265,54 +284,64 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 
     <!-- PEDIDO -->
     <div class="panel" id="panel-pedido">
-      <div id="ped-top">
-        <h2>Selecione grupos para este pedido</h2>
-        <div id="grupo-chips"><span style="font-size:12px;color:var(--text3)">Importe produtos primeiro.</span></div>
-      </div>
-      <div id="meses-bar">
-        <label>Cobertura:</label>
-        <select id="meses-sel" onchange="renderPedido()">
-          <option value="3">3 meses (mínimo)</option>
-          <option value="4">4 meses</option>
-          <option value="5">5 meses</option>
-          <option value="6" selected>6 meses (máximo)</option>
-          <option value="7">7 meses</option>
-          <option value="8">8 meses</option>
-          <option value="9">9 meses</option>
-          <option value="10">10 meses</option>
-          <option value="12">12 meses</option>
-        </select>
-        <span id="cob-info" style="font-size:11px;color:var(--text3)"></span>
-        <div class="view-toggle-wrap">
-          <button id="toggle-view-btn" class="btn" onclick="toggleView()">
-            <i class="ti ti-filter" id="toggle-icon"></i> <span id="toggle-label">Só a comprar</span>
-          </button>
+      <div id="ped-wrap">
+        <div id="ped-sidebar">
+          <div id="ped-search-wrap">
+            <input id="ped-search" placeholder="Buscar grupo..." oninput="filtrarGrupos(this.value)">
+            <button id="ped-search-clear" onclick="limparBuscaGrupos()" title="Limpar">×</button>
+          </div>
+          <div id="ped-grupos-list"><span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span></div>
         </div>
-        <div id="save-bar">
-          <span id="save-indicator-ped"></span>
-          <button class="btn" onclick="proximoUrgente()"><i class="ti ti-alert-triangle"></i> Próximo urgente</button>
-        </div>
-      </div>
-      <div id="ped-body">
-        <div id="empty-ped" style="display:flex"><i class="ti ti-shopping-cart-off"></i><span>Selecione grupos para montar o pedido</span></div>
-        <div id="ped-stats" style="display:none"></div>
-        <div id="ped-tbl-wrap" style="display:none"></div>
-      </div>
-      <div id="ped-footer">
-        <div id="form-grid">
-          <div class="fld w2"><label>Fornecedor</label><input id="f-forn" placeholder="Nome do fornecedor"></div>
-          <div class="fld"><label>Empresa a faturar</label><input id="f-emp" placeholder="Razão social"></div>
-          <div class="fld w2"><label>Condição de pagamento</label><input id="f-pag" placeholder="Ex: 30/60/90 dias"></div>
-          <div class="fld"><label>Transportadora</label><input id="f-transp" placeholder="Nome"></div>
-          <div class="fld"><label>Tipo de nota</label><select id="f-nota"><option value="">Selecione...</option><option>Compra</option><option>Bonificação</option><option>Transferência</option><option>Outro</option></select></div>
-          <div class="fld"><label>Data</label><input id="f-data" type="date"></div>
-          <div class="fld w3"><label>Observações</label><input id="f-obs" placeholder="Informações adicionais"></div>
-        </div>
-        <div id="ped-actions">
-          <span id="ped-info"></span>
-          <button class="btn" onclick="clearPedido()"><i class="ti ti-trash"></i> Limpar</button>
-          <button class="btn" onclick="exportERP()" title="Exportar no formato de importação do ERP"><i class="ti ti-database-import"></i> Exportar p/ ERP</button>
-          <button class="btn success" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+        <div id="ped-main">
+          <div id="meses-bar">
+            <label>Cobertura:</label>
+            <select id="meses-sel" onchange="renderPedido()">
+              <option value="3">3 meses (mínimo)</option>
+              <option value="4">4 meses</option>
+              <option value="5">5 meses</option>
+              <option value="6" selected>6 meses (máximo)</option>
+              <option value="7">7 meses</option>
+              <option value="8">8 meses</option>
+              <option value="9">9 meses</option>
+              <option value="10">10 meses</option>
+              <option value="12">12 meses</option>
+            </select>
+            <span id="cob-info" style="font-size:11px;color:var(--text3)"></span>
+            <div class="view-toggle-wrap">
+              <button id="toggle-view-btn" class="btn" onclick="toggleView()">
+                <i class="ti ti-filter" id="toggle-icon"></i> <span id="toggle-label">Só a comprar</span>
+              </button>
+            </div>
+            <div id="save-bar">
+              <span id="save-indicator-ped"></span>
+              <button class="btn" onclick="proximoUrgente()"><i class="ti ti-alert-triangle"></i> Próximo urgente</button>
+            </div>
+          </div>
+          <div id="ped-body">
+            <div id="empty-ped" style="display:flex"><i class="ti ti-shopping-cart-off"></i><span>Selecione grupos para montar o pedido</span></div>
+            <div id="ped-stats" style="display:none"></div>
+            <div id="ped-tbl-wrap" style="display:none"></div>
+          </div>
+          <div id="ped-footer">
+            <div id="ped-actions">
+              <span id="ped-info"></span>
+              <button class="btn" onclick="toggleDadosPedido()" id="btn-dados-pedido">📋 Dados do Pedido <span class="dados-toggle-arrow" id="dados-arrow">▼</span></button>
+              <button class="btn" onclick="clearPedido()"><i class="ti ti-trash"></i> Limpar</button>
+              <button class="btn" onclick="exportERP()" title="Exportar no formato de importação do ERP"><i class="ti ti-database-import"></i> Exportar p/ ERP</button>
+              <button class="btn success" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+            </div>
+            <div id="dados-pedido-wrap">
+              <div id="form-grid">
+                <div class="fld w2"><label>Fornecedor</label><input id="f-forn" placeholder="Nome do fornecedor"></div>
+                <div class="fld"><label>Empresa a faturar</label><input id="f-emp" placeholder="Razão social"></div>
+                <div class="fld w2"><label>Condição de pagamento</label><input id="f-pag" placeholder="Ex: 30/60/90 dias"></div>
+                <div class="fld"><label>Transportadora</label><input id="f-transp" placeholder="Nome"></div>
+                <div class="fld"><label>Tipo de nota</label><select id="f-nota"><option value="">Selecione...</option><option>Compra</option><option>Bonificação</option><option>Transferência</option><option>Outro</option></select></div>
+                <div class="fld"><label>Data</label><input id="f-data" type="date"></div>
+                <div class="fld w3"><label>Observações</label><input id="f-obs" placeholder="Informações adicionais"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -320,6 +349,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <!-- COTAÇÕES -->
     <div class="panel" id="panel-cotacoes">
       <div id="cot-body">
+        <div id="cot-filter-bar"></div>
         <div class="cot-section">
           <h3><span style="width:7px;height:7px;border-radius:50%;background:var(--yellow);display:inline-block"></span> Em Cotação</h3>
           <div id="cot-em-cotacao"><div style="color:var(--text3);font-size:13px">Nenhum grupo em cotação.</div></div>
@@ -432,6 +462,8 @@ var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
+var filtroUsuarioCot='todos';
+var buscaGrupos='';
 
 // ── UTILS ──
 function norm(s){return(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -751,31 +783,44 @@ function updateSidebar(){
 }
 function setAct(el){document.querySelectorAll('.cbt').forEach(function(b){b.classList.remove('active')});el.classList.add('active')}
 
-// ── CHIPS ──
+// ── SIDEBAR DE GRUPOS (PEDIDO) ──
 function updateChips(){
-  var el=document.getElementById('grupo-chips'),gs=getGroups();
-  if(!gs.length){el.innerHTML='<span style="font-size:12px;color:var(--text3)">Importe produtos primeiro.</span>';return}
+  var el=document.getElementById('ped-grupos-list'),gs=getGroups();
+  if(!gs.length){el.innerHTML='<span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span>';return}
   el.innerHTML='';
+  var termo=norm(buscaGrupos);
   gs.forEach(function(g){
     var pr=products.filter(function(p){return p.grupo===g});
-    var cr=pr.filter(function(p){return urg(p)==='c'}).length;
-    var at=pr.filter(function(p){return urg(p)==='a'}).length;
     var cot=cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'});
-    var chip=document.createElement('button');
-    chip.className='gchip'+(selectedGroups.has(g)?' sel':'')+(cot?' cotando':'');
-    var dc=cr>0?'#c92a2a':at>0?'#e67700':'#2f9e44';
-    chip.innerHTML='<span class="gdot" style="background:'+dc+'"></span>'+g+' ('+pr.length+')';
-    chip.title=cot?'Em cotação por: '+cot.nome:'';
-    chip.onclick=(function(grp,c){return function(){
+    var cotaOutro=cot&&currentUser&&cot.username!==currentUser.username;
+    var btn=document.createElement('button');
+    btn.className='gitem'+(selectedGroups.has(g)?' sel':'')+(cotaOutro?' cotando':'');
+    var hidden=termo&&norm(g).indexOf(termo)<0;
+    if(hidden)btn.style.display='none';
+    var icon=cotaOutro?'<span class="gitem-icon" title="Em cotação por '+cot.nome+'">🔒</span>':'';
+    var check=selectedGroups.has(g)?'<span class="gitem-check">✓</span>':'';
+    btn.innerHTML=icon+'<span class="gitem-name">'+g+'</span><span class="gitem-count">('+pr.length+')</span>'+check;
+    btn.title=cot?'Em cotação por: '+cot.nome:'';
+    btn.onclick=(function(grp){return function(){
       var cotInfo=cotacoesCache.find(function(x){return x.grupo===grp&&x.status==='em_cotacao'});
       if(cotInfo&&cotInfo.username!==currentUser.username&&!selectedGroups.has(grp)){
         if(!confirm('Este grupo está em cotação por '+cotInfo.nome+'. Selecionar mesmo assim?'))return;
       }
       if(selectedGroups.has(grp))selectedGroups.delete(grp);else selectedGroups.add(grp);
-      c.classList.toggle('sel');updateSelBadge();renderPedido();
-    }})(g,chip);
-    el.appendChild(chip);
+      updateChips();updateSelBadge();renderPedido();
+    }})(g);
+    el.appendChild(btn);
   });
+}
+function filtrarGrupos(termo){
+  buscaGrupos=termo||'';
+  var clear=document.getElementById('ped-search-clear');
+  if(clear)clear.style.display=buscaGrupos?'block':'none';
+  updateChips();
+}
+function limparBuscaGrupos(){
+  var inp=document.getElementById('ped-search');if(inp)inp.value='';
+  filtrarGrupos('');
 }
 function updateSelBadge(){var sb=document.getElementById('sel-badge'),n=selectedGroups.size;sb.textContent=n;sb.style.display=n>0?'inline-flex':'none'}
 
@@ -850,9 +895,19 @@ function marcarCotacao(){
   selectedGroups.forEach(function(sg){if(sg!==g)outrosGrupos.push(sg)});
   var marcarTodos=outrosGrupos.length>0&&confirm('Marcar todos os '+selectedGroups.size+' grupos selecionados em cotação juntos?\n\nOK = Todos\nCancelar = Só "'+g+'"');
   var grupos=marcarTodos?[g].concat(outrosGrupos):[g];
+  var sessaoId=Date.now().toString();
   Promise.all(grupos.map(function(grp){
     return fetch(BACKEND+'/cotacoes',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({grupo:grp,username:currentUser.username,nome:currentUser.nome,desde:agora,grupos:grupos})});
+      body:JSON.stringify({grupo:grp,username:currentUser.username,nome:currentUser.nome,desde:agora,sessao_id:sessaoId})});
+  })).then(function(){carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
+}
+
+function concluirSessao(grupos){
+  var agora=fmtDate();
+  Promise.all(grupos.map(function(g){
+    var enc=g.replace(/\//g,'__SLASH__');
+    return fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:agora})});
   })).then(function(){carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
 }
 
@@ -874,6 +929,39 @@ function renderCotacoes(){
   products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var sortedAll=sortGroupsByPriority(byG);
   function getPrio(g){var i=sortedAll.indexOf(g);return i>=0?i+1:null}
+  function bestPrio(grupos){
+    var best=null;
+    grupos.forEach(function(g){var p=getPrio(g);if(p!=null&&(best==null||p<best))best=p});
+    return best;
+  }
+
+  function agruparPorSessao(cots){
+    var bySession={}, ordem=[], avulsos=[];
+    cots.forEach(function(c){
+      if(c.sessao_id){
+        if(!bySession[c.sessao_id]){bySession[c.sessao_id]={items:[],grupos:[]};ordem.push(c.sessao_id)}
+        bySession[c.sessao_id].items.push(c);
+        bySession[c.sessao_id].grupos.push(c.grupo);
+      }else{
+        avulsos.push(c);
+      }
+    });
+    var consolidados=ordem.map(function(sid){
+      var s=bySession[sid],first=s.items[0];
+      return{
+        sessao_id:sid,
+        grupos:s.grupos,
+        grupo:s.grupos[0],
+        nome:first.nome,
+        username:first.username,
+        desde:first.desde,
+        status:first.status,
+        dados_atualizados:s.items.some(function(it){return it.dados_atualizados}),
+        concluido_em:first.concluido_em
+      };
+    });
+    return consolidados.concat(avulsos);
+  }
 
   function renderCard(cot,prio){
     var div=document.createElement('div');
@@ -883,29 +971,59 @@ function renderCotacoes(){
       ?'<span class="grph-lock ok">Concluído em '+cot.concluido_em+'</span>'
       :(cot.dados_atualizados?'<span class="grph-lock upd">⚠️ Dados atualizados</span>':'<span class="grph-lock em">🟡 Em cotação</span>');
     var grupos=cot.grupos||[cot.grupo];
+    var rotulo=cot.status==='concluido'?'concluídos':'em cotação';
     var gruposHtml=grupos.length>1
-      ?'<div class="cot-grupo">📦 '+grupos.length+' grupos em sessão</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+grupos.slice(0,3).join(' · ')+(grupos.length>3?' +' +(grupos.length-3)+' mais':'')+'</div>'
+      ?'<div class="cot-grupo">📦 '+grupos.length+' grupos '+rotulo+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+grupos.slice(0,3).join(' · ')+(grupos.length>3?' + '+(grupos.length-3)+' mais':'')+'</div>'
       :'<div class="cot-grupo">'+cot.grupo+'</div>';
-    // Store grupos in data attr to avoid quote escaping issues
-var gruposB64=btoa(unescape(encodeURIComponent(JSON.stringify(grupos))));
-var actHtml='<div class="cot-actions"><button class="btn primary" style="font-size:11px" onclick="abrirGrupoB64(this);" data-grupos="'+gruposB64+'"><i class="ti ti-external-link"></i> Abrir</button>';
+    var gruposB64=btoa(unescape(encodeURIComponent(JSON.stringify(grupos))));
+    var actHtml='<div class="cot-actions"><button class="btn primary" style="font-size:11px" onclick="abrirGrupoB64(this);" data-grupos="'+gruposB64+'"><i class="ti ti-external-link"></i> Abrir</button>';
     if(cot.status==='em_cotacao'&&(cot.username===currentUser.username||currentUser.is_admin)){
-      actHtml+='<button class="btn success" style="font-size:11px" onclick="grupoAtualCotacao=\''+cot.grupo.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\';concluirCotacao()"><i class="ti ti-check"></i> Concluir</button>';
-      actHtml+='<button class="btn" style="font-size:11px" onclick="abrirCotacao(\''+cot.grupo.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti ti-dots"></i></button>';
+      actHtml+='<button class="btn success" style="font-size:11px" onclick="concluirSessaoB64(this)" data-grupos="'+gruposB64+'"><i class="ti ti-check"></i> Concluir</button>';
+      if(grupos.length===1){
+        actHtml+='<button class="btn" style="font-size:11px" onclick="abrirCotacao(\''+cot.grupo.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti ti-dots"></i></button>';
+      }
     }
     actHtml+='</div>';
     div.innerHTML=prioHtml+'<div class="cot-info">'+gruposHtml+'<div class="cot-meta">Por: <strong>'+cot.nome+'</strong> · Desde: '+cot.desde+'</div><div style="margin-top:3px">'+statusTag+'</div></div>'+actHtml;
     return div;
   }
 
-  var emCot=cotacoesCache.filter(function(c){return c.status==='em_cotacao'});
-  var concl=cotacoesCache.filter(function(c){return c.status==='concluido'});
+  var usersMap={};
+  cotacoesCache.forEach(function(c){if(c.username)usersMap[c.username]=c.nome||c.username});
+  var users=Object.keys(usersMap);
+  if(filtroUsuarioCot!=='todos'&&users.indexOf(filtroUsuarioCot)<0)filtroUsuarioCot='todos';
+  var fb=document.getElementById('cot-filter-bar');
+  if(fb){
+    fb.innerHTML='';
+    var btnAll=document.createElement('button');
+    btnAll.className='cot-filter-btn'+(filtroUsuarioCot==='todos'?' active':'');
+    btnAll.textContent='Todos';
+    btnAll.onclick=function(){filtroUsuarioCot='todos';renderCotacoes()};
+    fb.appendChild(btnAll);
+    users.sort(function(a,b){return usersMap[a].localeCompare(usersMap[b])}).forEach(function(u){
+      var b=document.createElement('button');
+      b.className='cot-filter-btn'+(filtroUsuarioCot===u?' active':'');
+      b.textContent=usersMap[u];
+      b.onclick=(function(uu){return function(){filtroUsuarioCot=uu;renderCotacoes()}})(u);
+      fb.appendChild(b);
+    });
+  }
+  function passaFiltro(c){return filtroUsuarioCot==='todos'||c.username===filtroUsuarioCot}
+
+  var emCot=agruparPorSessao(cotacoesCache.filter(function(c){return c.status==='em_cotacao'&&passaFiltro(c)}));
+  var concl=agruparPorSessao(cotacoesCache.filter(function(c){return c.status==='concluido'&&passaFiltro(c)}));
   var elEm=document.getElementById('cot-em-cotacao');elEm.innerHTML='';
   if(!emCot.length)elEm.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum em cotação.</div>';
-  else emCot.forEach(function(c){elEm.appendChild(renderCard(c,getPrio(c.grupo)))});
+  else emCot.forEach(function(c){elEm.appendChild(renderCard(c,bestPrio(c.grupos||[c.grupo])))});
   var elCon=document.getElementById('cot-concluidos');elCon.innerHTML='';
   if(!concl.length)elCon.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum concluído.</div>';
   else concl.forEach(function(c){elCon.appendChild(renderCard(c,null))});
+}
+
+function concluirSessaoB64(btn){
+  var b64=btn.getAttribute('data-grupos');
+  var grupos=JSON.parse(decodeURIComponent(escape(atob(b64))));
+  concluirSessao(grupos);
 }
 
 // ── PRÓXIMO URGENTE ──
@@ -932,6 +1050,12 @@ function toggleView(){
   if(showAllItems){lbl.textContent='Todos os itens';btn.style.background='var(--blue)';btn.style.color='#fff';btn.style.borderColor='var(--blue)';ico.className='ti ti-eye'}
   else{lbl.textContent='Só a comprar';btn.style.background='';btn.style.color='';btn.style.borderColor='';ico.className='ti ti-filter'}
   renderPedido();
+}
+
+function toggleDadosPedido(){
+  var wrap=document.getElementById('dados-pedido-wrap'),arrow=document.getElementById('dados-arrow');
+  var open=wrap.classList.toggle('open');
+  if(arrow)arrow.classList.toggle('open',open);
 }
 
 // ── RENDER PEDIDO ──
