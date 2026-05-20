@@ -168,9 +168,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .export-warn strong{color:var(--yellow)}
 .export-warn.danger{background:var(--red-bg);border-color:var(--red-light)}
 .export-warn.danger strong{color:var(--red)}
-#forn-picker{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:3px;z-index:200;min-width:280px;max-width:360px}
-#forn-picker .forn-picker-scroll{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:2px}
-#forn-picker .forn-picker-item{font-size:12px;padding:5px 9px;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg2);border:1px solid transparent;font-family:var(--font);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#forn-picker{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:3px;z-index:200;min-width:340px;max-width:500px;width:max-content}
+#forn-picker .forn-picker-scroll{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:2px}
+#forn-picker .forn-picker-item{font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg2);border:1px solid transparent;font-family:var(--font);text-align:left;line-height:1.35;white-space:normal;word-break:break-word}
+#forn-picker .forn-picker-item .fp-nome{display:block;font-weight:500;color:var(--text)}
+#forn-picker .forn-picker-item .fp-cnpj{display:block;font-size:10px;color:var(--text3);margin-top:1px}
+#forn-picker .forn-picker-item:hover .fp-cnpj{color:var(--blue)}
 #forn-picker .forn-picker-item:hover{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-light)}
 #forn-picker .forn-picker-novo{background:var(--green-bg);color:var(--green);font-weight:500}
 #forn-picker .forn-picker-novo:hover{background:var(--green);color:#fff}
@@ -200,9 +203,9 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .ind-table .num{text-align:right;font-variant-numeric:tabular-nums}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
-.forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px}
-.forn-cad-card .fc-nome{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.forn-cad-card .fc-meta{font-size:10px;color:var(--text3)}
+.forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
+.forn-cad-card .fc-nome{flex:1;font-weight:500;word-break:break-word;min-width:0}
+.forn-cad-card .fc-meta{font-size:10px;color:var(--text3);white-space:nowrap}
 .forn-cad-card .btn{padding:3px 6px}
 #forn-cad-wrap{display:flex;flex-direction:column;gap:6px}
 #forn-cad-search{padding:6px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg)}
@@ -2651,10 +2654,11 @@ function _filtrarFornPickerLista(disponiveis){
     scroll.appendChild(nores);return;
   }
   // Limita exibição a 80 itens (scroll cobre os demais via busca)
+  function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   lista.slice(0,80).forEach(function(f){
     var b=document.createElement('button');b.className='forn-picker-item';
-    b.textContent=f.nome+(f.cnpj?'  ·  '+_fmtCnpj(f.cnpj):'');
-    b.title=f.nome+(f.cnpj?'  ·  '+_fmtCnpj(f.cnpj):'');
+    b.innerHTML='<span class="fp-nome">'+escHtml(f.nome)+'</span>'
+      +(f.cnpj?'<span class="fp-cnpj">'+escHtml(_fmtCnpj(f.cnpj))+'</span>':'');
     b.onclick=(function(forn){return function(){adicionarFornecedorCadastrado(forn);fecharFornPicker()}})(f);
     scroll.appendChild(b);
   });
