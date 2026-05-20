@@ -539,7 +539,8 @@ var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
 var buscaGrupos='';
-var fornecedoresCols=[]; // [{id:'f1',nome:'Fornecedor 1'}] máx 4
+var fornecedoresCols=[]; // [{id:'f1',nome:'Fornecedor 1'}] máx 4 — derivado da seleção atual
+var nomesFornCache={};   // {grupo: {f1: 'Karsten', f2: 'Corttex'}} — última versão salva por grupo
 var categoriasCache=[]; // [{id,nome,grupos:[]}]
 var fornSeq=0;
 var catEditandoId=null; // null = nova; id = editando
@@ -632,16 +633,75 @@ function carregarItensGrupo(grupo,cb){
         ultima_edicao:it.ultima_edicao
       };
     });
-    // Se ainda não temos fornecedoresCols na UI mas o grupo tinha, restaura
-    if(nomesForn&&fornecedoresCols.length===0){
-      Object.keys(nomesForn).slice(0,4).forEach(function(fid){
-        var n=parseInt(fid.replace(/[^0-9]/g,''))||0;
-        if(n>fornSeq)fornSeq=n;
-        fornecedoresCols.push({id:fid,nome:nomesForn[fid]||'Fornecedor'});
-      });
-    }
+    // Armazena os nomes de fornecedores deste grupo para reconstrução posterior
+    nomesFornCache[grupo]=nomesForn||{};
     if(cb)cb();
   }).catch(function(e){console.error('Load itens error',e);if(cb)cb()});
+}
+
+// ── Reconstrói fornecedoresCols a partir do primeiro grupo selecionado que tem dados salvos ──
+function rebuildFornecedoresFromSelection(){
+  fornecedoresCols=[];
+  fornSeq=0;
+  var arr=[];selectedGroups.forEach(function(g){arr.push(g)});
+  for(var i=0;i<arr.length;i++){
+    var g=arr[i],nf=nomesFornCache[g];
+    if(nf&&Object.keys(nf).length>0){
+      Object.keys(nf).slice(0,4).forEach(function(fid){
+        var n=parseInt(fid.replace(/[^0-9]/g,''))||0;
+        if(n>fornSeq)fornSeq=n;
+        fornecedoresCols.push({id:fid,nome:nf[fid]||'Fornecedor'});
+      });
+      break;
+    }
+  }
+}
+
+// Captura os valores atuais dos inputs (preço, qtd, forn-preco) para itensCache
+function capturePedidoInputs(){
+  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+    var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
+    if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;}
+  });
+  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
+    if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;}
+  });
+  document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(fi){
+    var g=fi.getAttribute('data-grupo-key'),cod=fi.dataset.cod,fid=fi.dataset.fornId;
+    if(g&&cod&&fid){
+      if(!itensCache[g])itensCache[g]={};
+      if(!itensCache[g][cod])itensCache[g][cod]={};
+      if(!itensCache[g][cod].precos_fornecedores)itensCache[g][cod].precos_fornecedores={};
+      var v=pNum(fi.value);
+      if(v>0)itensCache[g][cod].precos_fornecedores[fid]=v;
+      else delete itensCache[g][cod].precos_fornecedores[fid];
+    }
+  });
+}
+
+// Chamado SEMPRE que a seleção (selectedGroups) muda:
+// captura inputs → reseta fornecedoresCols → garante grupos carregados →
+// reconstrói fornecedoresCols da seleção → re-renderiza
+function aoMudarSelecao(){
+  capturePedidoInputs();
+  fornecedoresCols=[];
+  fornSeq=0;
+  if(selectedGroups.size===0){renderPedido();return}
+  var pendentes=[];
+  selectedGroups.forEach(function(g){if(!(g in nomesFornCache))pendentes.push(g)});
+  if(!pendentes.length){
+    rebuildFornecedoresFromSelection();
+    renderPedido();
+    return;
+  }
+  var pend=pendentes.length;
+  pendentes.forEach(function(g){
+    carregarItensGrupo(g,function(){
+      pend--;
+      if(pend<=0){rebuildFornecedoresFromSelection();renderPedido()}
+    });
+  });
 }
 
 // ── INPUT HANDLERS ──
@@ -688,6 +748,8 @@ function triggerSave(grupo){
 function doSave(grupo){
   var hasForn=fornecedoresCols.length>0;
   var nomesForn={};fornecedoresCols.forEach(function(f){nomesForn[f.id]=f.nome});
+  // Mantém a cache de nomes por grupo sincronizada com o que será enviado
+  nomesFornCache[grupo]=nomesForn;
   var rowsByCod={};
   // Linhas (cada produto) deste grupo
   document.querySelectorAll('#ped-tbl-wrap .ptr[data-grupo="'+grupo+'"]').forEach(function(row){
@@ -760,7 +822,7 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};categoriasCache=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};nomesFornCache={};categoriasCache=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
 function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
@@ -919,7 +981,7 @@ function updateChips(){
         if(!confirm('Este grupo está em cotação por '+cotInfo.nome+'. Selecionar mesmo assim?'))return;
       }
       if(selectedGroups.has(grp))selectedGroups.delete(grp);else selectedGroups.add(grp);
-      updateChips();updateSelBadge();renderPedido();
+      updateChips();updateSelBadge();aoMudarSelecao();
     }})(g);
     el.appendChild(btn);
   });
@@ -958,7 +1020,7 @@ function renderCategoriasSidebar(){
       +'<button class="cat-act" title="Remover" onclick="event.stopPropagation();removerCategoria('+cat.id+')">×</button>';
     div.onclick=(function(gs){return function(){
       gs.forEach(function(g){selectedGroups.add(g)});
-      updateChips();updateSelBadge();renderPedido();
+      updateChips();updateSelBadge();aoMudarSelecao();
     }})(grupos);
     el.appendChild(div);
   });
@@ -1035,12 +1097,15 @@ function abrirGrupoB64(btn){
 
 function abrirGrupoNoPedido(grupos){
   if(typeof grupos==='string')grupos=[grupos];
+  capturePedidoInputs();
   grupos.forEach(function(g){selectedGroups.add(g)});
+  fornecedoresCols=[];fornSeq=0;
   updateChips();updateSelBadge();
   var pending=grupos.length;
   function done(){
     pending--;
     if(pending<=0){
+      rebuildFornecedoresFromSelection();
       renderPedido();
       switchTab('pedido',document.querySelectorAll('.tab')[1]);
     }
@@ -1227,7 +1292,7 @@ function proximoUrgente(){
   var prio=sorted.indexOf(proximo)+1;
   var crit=pr.filter(function(p){return urg(p)==='c'}).length;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
-  if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();renderPedido()}
+  if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
   addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+pr.length+' itens · '+crit+' críticos. Selecionado na aba Montar Pedido.');
 }
 
@@ -1267,31 +1332,8 @@ function renderPedido(){
 
 function _renderPedidoInterno(meses){
   if(!meses)meses=getMeses();
-  // Capture inputs before re-render
-
-  // Always capture current inputs to cache before re-rendering
-  function captureInputs(){
-    document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
-      var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
-      if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;}
-    });
-    document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
-      var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
-      if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;}
-    });
-    document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(fi){
-      var g=fi.getAttribute('data-grupo-key'),cod=fi.dataset.cod,fid=fi.dataset.fornId;
-      if(g&&cod&&fid){
-        if(!itensCache[g])itensCache[g]={};
-        if(!itensCache[g][cod])itensCache[g][cod]={};
-        if(!itensCache[g][cod].precos_fornecedores)itensCache[g][cod].precos_fornecedores={};
-        var v=pNum(fi.value);
-        if(v>0)itensCache[g][cod].precos_fornecedores[fid]=v;
-        else delete itensCache[g][cod].precos_fornecedores[fid];
-      }
-    });
-  }
-  captureInputs();
+  // Captura inputs antes de re-renderizar (preserva valores não-salvos)
+  capturePedidoInputs();
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
     if(showAllItems)return true;
@@ -1451,7 +1493,7 @@ function _renderPedidoInterno(meses){
   }
 }
 
-function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();renderPedido()}
+function clearPedido(){capturePedidoInputs();selectedGroups.clear();fornecedoresCols=[];fornSeq=0;updateChips();updateSelBadge();renderPedido()}
 
 // ── FORNECEDORES ──
 function nextFornId(){fornSeq++;return'f'+fornSeq}
