@@ -277,8 +277,8 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .manual-card.open .manual-body{max-height:600px;padding:11px 14px}
 .manual-card.open .manual-header{background:var(--blue-bg);color:var(--blue)}
 .manual-tip{background:var(--yellow-bg);border-left:3px solid var(--yellow);padding:7px 11px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--yellow);margin-top:7px}
-.hp-ico{font-size:12px;color:var(--text3);cursor:pointer;margin-right:4px;vertical-align:middle}
-.hp-ico:hover{color:var(--blue)}
+.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:11px;color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-light,#cfe0f1);border-radius:4px;cursor:pointer;margin-right:5px;vertical-align:middle;transition:all .15s ease}
+.hp-ico:hover{background:var(--blue);color:#fff}
 .modal-box.wide{width:640px;max-width:92vw}
 .modal-box.xwide{width:880px;max-width:96vw}
 .hist-tbl{width:100%;border-collapse:collapse;font-size:12px}
@@ -661,6 +661,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <div id="hp-prod-body" style="max-height:60vh;overflow-y:auto"></div>
     <div class="modal-btns">
       <button class="btn" onclick="fecharHistoricoProduto()">Fechar</button>
+      <button class="btn primary" id="hp-ver-aba-btn" onclick="verHistoricoNaAba()"><i class="ti ti-chart-line"></i> Ver na aba Histórico (com gráfico)</button>
     </div>
   </div>
 </div>
@@ -2332,10 +2333,23 @@ function snapshotHistoricoGrupo(grupo){
 }
 
 // ── MODAL: histórico de preços do produto ──
+var _hpProdAtual=null;
 function fecharHistoricoProduto(){document.getElementById('hist-prod-overlay').style.display='none'}
+function verHistoricoNaAba(){
+  var cod=_hpProdAtual;if(!cod)return;
+  fecharHistoricoProduto();
+  // Pula pra aba Histórico
+  var tabs=document.querySelectorAll('.tab');
+  var alvo=null;tabs.forEach(function(t){if(t.textContent.trim().indexOf('Histórico')>=0&&!alvo)alvo=t});
+  if(alvo){switchTab('historico',alvo);}
+  setTimeout(function(){
+    var inp=document.getElementById('hist-q');if(inp){inp.value=cod;renderHistoricoBusca();inp.focus()}
+  },150);
+}
 function abrirHistoricoProduto(elIco){
   var row=elIco.closest('.ptr');if(!row)return;
   var cod=row.dataset.cod;var grupo=row.dataset.grupo||'';
+  _hpProdAtual=cod;
   var prod=products.find(function(p){return p.codigo===cod})||{nome:cod,un:''};
   document.getElementById('hp-prod-title').textContent=cod+' — '+(prod.nome||'');
   document.getElementById('hp-prod-meta').textContent='Grupo: '+(grupo||'—')+(prod.un?' · UN '+prod.un:'');
@@ -2407,19 +2421,27 @@ function renderHistoricoBusca(){
     return h.codigo.toLowerCase().indexOf(q)>=0||nome.indexOf(q)>=0;
   });
 
-  if(!q){
-    res.innerHTML='<div class="hist-empty">Digite um código ou nome do produto para ver a evolução de preços.</div>';
-    return;
-  }
   if(!rows.length){
-    res.innerHTML='<div class="hist-empty">Nenhum registro encontrado para os filtros atuais.</div>';
+    res.innerHTML='<div class="hist-empty">'+(q?'Nenhum registro encontrado para os filtros atuais.':'Nenhum histórico de preço ainda. Conclua uma cotação no Montar Pedido pra começar a alimentar.')+'</div>';
     return;
   }
 
-  // agrupa por código
-  var porCod={};rows.forEach(function(h){if(!porCod[h.codigo])porCod[h.codigo]=[];porCod[h.codigo].push(h)});
-  var codigos=Object.keys(porCod).sort();
+  // agrupa por código; quando sem busca, ordena os códigos pelo registro mais recente
+  var porCod={},maisRecente={};
+  rows.forEach(function(h){
+    if(!porCod[h.codigo])porCod[h.codigo]=[];
+    porCod[h.codigo].push(h);
+    var t=Date.parse(h.data||'')||0;
+    if(!maisRecente[h.codigo]||t>maisRecente[h.codigo])maisRecente[h.codigo]=t;
+  });
+  var codigos=Object.keys(porCod);
+  if(q)codigos.sort();
+  else codigos.sort(function(a,b){return maisRecente[b]-maisRecente[a]});
+
   var html='';
+  if(!q){
+    html+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 10px;background:var(--blue-bg);border-radius:var(--radius-sm);border-left:3px solid var(--blue)"><i class="ti ti-info-circle"></i> Mostrando os 8 produtos mais recentes do histórico. Use a busca pra filtrar por código ou nome.</div>';
+  }
   codigos.slice(0,8).forEach(function(cod){
     var hs=porCod[cod].slice().sort(function(a,b){return(a.data||'').localeCompare(b.data||'')});
     var prod=products.find(function(x){return x.codigo===cod});
