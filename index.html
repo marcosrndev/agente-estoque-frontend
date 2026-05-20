@@ -131,6 +131,39 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .grph-lock.upd{background:var(--red-bg);color:var(--red)}
 .pcol{font-size:11px;text-align:right;color:var(--text2)}.pcol.hi{color:var(--text);font-weight:600}
 .ok-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center}
+#forn-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:34px}
+#forn-bar>label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.forn-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px 4px}
+.forn-chip input{border:none;outline:none;background:none;font-size:11px;color:var(--text);padding:2px 4px;width:120px;font-family:var(--font);font-weight:500}
+.forn-chip input:focus{background:var(--blue-bg)}
+.forn-chip .forn-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 3px}
+.forn-chip .forn-rm:hover{color:var(--red)}
+.forn-add-btn{font-size:11px;padding:3px 9px;border-radius:var(--radius-sm);border:1px dashed var(--blue);background:var(--blue-bg);color:var(--blue);cursor:pointer;font-family:var(--font)}
+.forn-add-btn:disabled{opacity:.45;cursor:not-allowed}
+.forn-preco.best{background:var(--green-bg);color:var(--green);font-weight:600}
+.forn-preco.notbest{background:var(--red-bg);color:var(--red)}
+#cat-section{border-bottom:1px solid var(--border);background:var(--bg)}
+#cat-section-header{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;cursor:pointer;user-select:none}
+#cat-section-header:hover{background:var(--bg2)}
+.cat-list-wrap{padding:0 5px 5px}
+.cat-item{display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:var(--radius-sm);font-size:11px;color:var(--text2);cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+.cat-item:hover{background:var(--bg2);border-color:var(--border2);color:var(--text)}
+.cat-item .cat-nome{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-item .cat-act{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text3);padding:1px 4px;border-radius:3px}
+.cat-item .cat-act:hover{color:var(--text);background:var(--bg)}
+.cat-form{padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);margin:4px;display:flex;flex-direction:column;gap:6px}
+.cat-form>input{padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;font-family:var(--font);outline:none;background:var(--bg)}
+.cat-form>input:focus{border-color:var(--blue)}
+.cat-form .cat-grupos-list{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);padding:4px}
+.cat-form .cat-grupos-list label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);padding:2px 5px;cursor:pointer}
+.cat-form .cat-grupos-list label:hover{background:var(--bg2)}
+.cat-form-btns{display:flex;gap:5px;justify-content:flex-end}
+.cat-add-btn{margin-left:auto;font-size:14px;font-weight:700;background:var(--blue-bg);color:var(--blue);border:none;border-radius:var(--radius-sm);width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.cat-add-btn:hover{background:var(--blue);color:#fff}
+.export-modal-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:5px 0}
+.export-modal-list label{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;background:var(--bg2);font-family:var(--font)}
+.export-modal-list label:hover{background:var(--bg);border-color:var(--blue)}
+.export-modal-list input{cursor:pointer}
 #empty-ped{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:8px;color:var(--text3);font-size:13px;padding:40px}
 #empty-ped i{font-size:40px;color:var(--border)}
 #ped-footer{padding:9px 14px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
@@ -290,6 +323,16 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
             <input id="ped-search" placeholder="Buscar grupo..." oninput="filtrarGrupos(this.value)">
             <button id="ped-search-clear" onclick="limparBuscaGrupos()" title="Limpar">×</button>
           </div>
+          <div id="cat-section">
+            <div id="cat-section-header">
+              <span class="dados-toggle-arrow open" id="cat-arrow" style="font-size:9px">▼</span>
+              <span style="flex:1">Categorias</span>
+              <button class="cat-add-btn" onclick="event.stopPropagation();abrirFormCategoria()" title="Nova categoria">+</button>
+            </div>
+            <div class="cat-list-wrap" id="cat-list-pedido"></div>
+            <div id="cat-form-wrap"></div>
+          </div>
+          <div id="sb-title" style="padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Grupos</div>
           <div id="ped-grupos-list"><span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span></div>
         </div>
         <div id="ped-main">
@@ -317,6 +360,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
               <button class="btn" onclick="proximoUrgente()"><i class="ti ti-alert-triangle"></i> Próximo urgente</button>
             </div>
           </div>
+          <div id="forn-bar">
+            <label>Fornecedores:</label>
+            <div id="forn-list" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center"></div>
+            <button class="forn-add-btn" id="forn-add-btn" onclick="addFornecedor()"><i class="ti ti-plus"></i> Fornecedor</button>
+            <span id="forn-info" style="font-size:11px;color:var(--text3);margin-left:auto"></span>
+          </div>
           <div id="ped-body">
             <div id="empty-ped" style="display:flex"><i class="ti ti-shopping-cart-off"></i><span>Selecione grupos para montar o pedido</span></div>
             <div id="ped-stats" style="display:none"></div>
@@ -327,8 +376,8 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
               <span id="ped-info"></span>
               <button class="btn" onclick="toggleDadosPedido()" id="btn-dados-pedido">📋 Dados do Pedido <span class="dados-toggle-arrow" id="dados-arrow">▼</span></button>
               <button class="btn" onclick="clearPedido()"><i class="ti ti-trash"></i> Limpar</button>
-              <button class="btn" onclick="exportERP()" title="Exportar no formato de importação do ERP"><i class="ti ti-database-import"></i> Exportar p/ ERP</button>
-              <button class="btn success" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+              <button class="btn" onclick="iniciarExportERP()" title="Exportar no formato de importação do ERP"><i class="ti ti-database-import"></i> Exportar p/ ERP</button>
+              <button class="btn success" onclick="iniciarExportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
             </div>
             <div id="dados-pedido-wrap">
               <div id="form-grid">
@@ -438,6 +487,32 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
   </div>
 </div>
 
+<!-- MODAL EXPORTAR EXCEL -->
+<div id="export-excel-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-file-spreadsheet" style="color:var(--green)"></i> Exportar Excel</h3>
+    <div style="font-size:12px;color:var(--text2)">Exportar preço de qual fornecedor?</div>
+    <div class="export-modal-list" id="export-excel-list"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharExportExcelModal()">Cancelar</button>
+      <button class="btn success" onclick="confirmarExportExcel()"><i class="ti ti-download"></i> Exportar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXPORTAR ERP -->
+<div id="export-erp-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-database-import" style="color:var(--blue)"></i> Exportar p/ ERP</h3>
+    <div style="font-size:12px;color:var(--text2)">Selecione o fornecedor para exportar:</div>
+    <div class="export-modal-list" id="export-erp-list"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharExportERPModal()">Cancelar</button>
+      <button class="btn primary" onclick="confirmarExportERP()"><i class="ti ti-download"></i> Exportar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL COTAÇÃO -->
 <div id="cotacao-overlay" style="display:none" class="modal-overlay">
   <div id="cotacao-box">
@@ -464,6 +539,10 @@ var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
 var buscaGrupos='';
+var fornecedoresCols=[]; // [{id:'f1',nome:'Fornecedor 1'}] máx 4
+var categoriasCache=[]; // [{id,nome,grupos:[]}]
+var fornSeq=0;
+var catEditandoId=null; // null = nova; id = editando
 
 // ── UTILS ──
 function norm(s){return(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -536,14 +615,31 @@ function carregarItensGrupo(grupo,cb){
   .then(function(r){return r.json()})
   .then(function(data){
     if(!itensCache[grupo])itensCache[grupo]={};
+    var nomesForn=null;
     data.forEach(function(it){
+      var pf={};
+      if(it.precos_fornecedores){
+        try{pf=typeof it.precos_fornecedores==='string'?JSON.parse(it.precos_fornecedores):it.precos_fornecedores}catch(e){pf={}}
+      }
+      if(it.nomes_fornecedores&&!nomesForn){
+        try{nomesForn=typeof it.nomes_fornecedores==='string'?JSON.parse(it.nomes_fornecedores):it.nomes_fornecedores}catch(e){}
+      }
       itensCache[grupo][it.codigo]={
         preco:parseFloat(it.preco)||0,
         qtd_manual:parseFloat(it.qtd_manual)||0,
+        precos_fornecedores:pf,
         editado_por:it.editado_por,
         ultima_edicao:it.ultima_edicao
       };
     });
+    // Se ainda não temos fornecedoresCols na UI mas o grupo tinha, restaura
+    if(nomesForn&&fornecedoresCols.length===0){
+      Object.keys(nomesForn).slice(0,4).forEach(function(fid){
+        var n=parseInt(fid.replace(/[^0-9]/g,''))||0;
+        if(n>fornSeq)fornSeq=n;
+        fornecedoresCols.push({id:fid,nome:nomesForn[fid]||'Fornecedor'});
+      });
+    }
     if(cb)cb();
   }).catch(function(e){console.error('Load itens error',e);if(cb)cb()});
 }
@@ -590,16 +686,32 @@ function triggerSave(grupo){
 }
 
 function doSave(grupo){
-  var itens=[];
-  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
-    if(pi.getAttribute('data-grupo-key')!==grupo)return;
-    var cod=pi.dataset.cod; if(!cod)return;
-    var row=pi.closest('.ptr');
-    var qi=row?row.querySelector('.qtd-input'):null;
-    var preco=pNum(pi.value);
+  var hasForn=fornecedoresCols.length>0;
+  var nomesForn={};fornecedoresCols.forEach(function(f){nomesForn[f.id]=f.nome});
+  var rowsByCod={};
+  // Linhas (cada produto) deste grupo
+  document.querySelectorAll('#ped-tbl-wrap .ptr[data-grupo="'+grupo+'"]').forEach(function(row){
+    var cod=row.dataset.cod;if(!cod)return;
+    var qi=row.querySelector('.qtd-input');
     var qtd=qi?pNum(qi.value):0;
-    if(preco>0||qtd>0)itens.push({codigo:cod,preco:preco,qtd_manual:qtd});
+    var preco=0,pf={};
+    if(hasForn){
+      row.querySelectorAll('.forn-preco').forEach(function(fi){
+        var v=pNum(fi.value);
+        if(v>0)pf[fi.dataset.fornId]=v;
+      });
+      // melhor preço = menor entre os preenchidos
+      var menor=0;Object.keys(pf).forEach(function(k){if(menor===0||pf[k]<menor)menor=pf[k]});
+      preco=menor;
+    }else{
+      var pi=row.querySelector('.preco-input');
+      preco=pi?pNum(pi.value):0;
+    }
+    if(preco>0||qtd>0||Object.keys(pf).length>0){
+      rowsByCod[cod]={codigo:cod,preco:preco,qtd_manual:qtd,precos_fornecedores:pf,nomes_fornecedores:nomesForn};
+    }
   });
+  var itens=Object.keys(rowsByCod).map(function(k){return rowsByCod[k]});
   fetch(BACKEND+'/cotacao-itens',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({grupo:grupo,itens:itens,username:currentUser.username,nome:currentUser.nome,agora:fmtDate()})})
   .then(function(r){return r.json()})
@@ -648,8 +760,8 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};categoriasCache=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -823,6 +935,82 @@ function limparBuscaGrupos(){
   filtrarGrupos('');
 }
 function updateSelBadge(){var sb=document.getElementById('sel-badge'),n=selectedGroups.size;sb.textContent=n;sb.style.display=n>0?'inline-flex':'none'}
+
+// ── CATEGORIAS DE GRUPOS ──
+function carregarCategorias(){
+  fetch(BACKEND+'/categorias').then(function(r){return r.json()}).then(function(data){
+    categoriasCache=Array.isArray(data)?data:[];renderCategoriasSidebar();
+  }).catch(function(){categoriasCache=[];renderCategoriasSidebar()});
+}
+function renderCategoriasSidebar(){
+  var el=document.getElementById('cat-list-pedido');
+  if(!el)return;
+  el.innerHTML='';
+  if(!categoriasCache.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 8px">Nenhuma categoria.</div>';
+    return;
+  }
+  categoriasCache.forEach(function(cat){
+    var div=document.createElement('div');div.className='cat-item';
+    var grupos=Array.isArray(cat.grupos)?cat.grupos:(typeof cat.grupos==='string'?(function(){try{return JSON.parse(cat.grupos)}catch(e){return[]}})():[]);
+    div.innerHTML='<span class="cat-nome" title="'+grupos.length+' grupos">'+cat.nome+' <span style="color:var(--text3);font-size:10px">('+grupos.length+')</span></span>'
+      +'<button class="cat-act" title="Editar" onclick="event.stopPropagation();abrirFormCategoria('+cat.id+')">✏️</button>'
+      +'<button class="cat-act" title="Remover" onclick="event.stopPropagation();removerCategoria('+cat.id+')">×</button>';
+    div.onclick=(function(gs){return function(){
+      gs.forEach(function(g){selectedGroups.add(g)});
+      updateChips();updateSelBadge();renderPedido();
+    }})(grupos);
+    el.appendChild(div);
+  });
+}
+function abrirFormCategoria(catId){
+  catEditandoId=catId||null;
+  var wrap=document.getElementById('cat-form-wrap');
+  var atual=catId?categoriasCache.find(function(c){return c.id===catId}):null;
+  var nome=atual?atual.nome:'';
+  var grupos=atual?(Array.isArray(atual.grupos)?atual.grupos:(typeof atual.grupos==='string'?(function(){try{return JSON.parse(atual.grupos)}catch(e){return[]}})():[])):[];
+  var gs=getGroups();
+  if(!gs.length){alert('Importe produtos antes de criar categorias.');return}
+  var lis=gs.map(function(g){
+    var chk=grupos.indexOf(g)>=0?' checked':'';
+    return'<label><input type="checkbox" value="'+g.replace(/"/g,'&quot;')+'"'+chk+'> '+g+'</label>';
+  }).join('');
+  wrap.innerHTML='<div class="cat-form">'
+    +'<input type="text" id="cat-form-nome" placeholder="Nome da categoria" value="'+nome.replace(/"/g,'&quot;')+'">'
+    +'<div class="cat-grupos-list">'+lis+'</div>'
+    +'<div class="cat-form-btns">'
+      +'<button class="btn" onclick="fecharFormCategoria()">Cancelar</button>'
+      +'<button class="btn primary" onclick="salvarCategoria()"><i class="ti ti-check"></i> Salvar</button>'
+    +'</div></div>';
+  document.getElementById('cat-form-nome').focus();
+}
+function fecharFormCategoria(){
+  var wrap=document.getElementById('cat-form-wrap');if(wrap)wrap.innerHTML='';
+  catEditandoId=null;
+}
+function salvarCategoria(){
+  var nomeEl=document.getElementById('cat-form-nome');
+  var nome=(nomeEl?nomeEl.value:'').trim();
+  if(!nome){alert('Informe um nome.');return}
+  var grupos=[].slice.call(document.querySelectorAll('#cat-form-wrap input[type="checkbox"]:checked')).map(function(c){return c.value});
+  var body={nome:nome,grupos:grupos};
+  if(catEditandoId){
+    fetch(BACKEND+'/categorias/'+catEditandoId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(){fecharFormCategoria();carregarCategorias()})
+    .catch(function(){alert('Erro ao salvar.')});
+  }else{
+    fetch(BACKEND+'/categorias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(){fecharFormCategoria();carregarCategorias()})
+    .catch(function(){alert('Erro ao salvar.')});
+  }
+}
+function removerCategoria(catId){
+  var cat=categoriasCache.find(function(c){return c.id===catId});
+  if(!cat)return;
+  if(!confirm('Remover categoria "'+cat.nome+'"?'))return;
+  fetch(BACKEND+'/categorias/'+catId,{method:'DELETE'})
+  .then(function(){carregarCategorias()}).catch(function(){alert('Erro ao remover.')});
+}
 
 // ── COTAÇÕES ──
 function carregarCotacoes(){
@@ -1091,6 +1279,17 @@ function _renderPedidoInterno(meses){
       var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
       if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;}
     });
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(fi){
+      var g=fi.getAttribute('data-grupo-key'),cod=fi.dataset.cod,fid=fi.dataset.fornId;
+      if(g&&cod&&fid){
+        if(!itensCache[g])itensCache[g]={};
+        if(!itensCache[g][cod])itensCache[g][cod]={};
+        if(!itensCache[g][cod].precos_fornecedores)itensCache[g][cod].precos_fornecedores={};
+        var v=pNum(fi.value);
+        if(v>0)itensCache[g][cod].precos_fornecedores[fid]=v;
+        else delete itensCache[g][cod].precos_fornecedores[fid];
+      }
+    });
   }
   captureInputs();
   var selP=products.filter(function(p){
@@ -1116,10 +1315,22 @@ function _renderPedidoInterno(meses){
   var allSorted=sortGroupsByPriority(allByG);
   var sortedGroups=sortGroupsByPriority(byG);
 
-  // COLS: Cód | Nome | Preço | Qtd | Auto | Comprar Mín | Sugerido | Urgência | Valor Total | Status
-  var COLS='46px 1fr 76px 70px 64px 66px 58px 82px 54px';
+  // Atualiza barra de fornecedores
+  renderFornecedoresBar();
+
+  var hasForn=fornecedoresCols.length>0;
+  var precoLabel=hasForn?'Melhor Preço':'Preço';
+  // Colunas: Cód | Produto | Estoque | [forn1..N] | Preço | Qtd | Comprar Mín | Sugerido | Urgência | Valor Total | Status
+  var fornColsTpl=fornecedoresCols.map(function(){return'76px'}).join(' ');
+  var COLS='46px 1fr 60px '+(fornColsTpl?fornColsTpl+' ':'')+'76px 70px 64px 66px 58px 82px 54px';
+  var fornHdr=fornecedoresCols.map(function(f){
+    return'<span class="forn-col-h" data-forn-id="'+f.id+'" style="text-align:right;overflow:hidden;text-overflow:ellipsis">'+f.nome+'</span>';
+  }).join('');
   var html='<div class="pth" style="grid-template-columns:'+COLS+'">'
-    +'<span>Cód</span><span>Produto</span><span style="text-align:right">Preço</span>'
+    +'<span>Cód</span><span>Produto</span>'
+    +'<span style="text-align:right">Estoque</span>'
+    +fornHdr
+    +'<span style="text-align:right">'+precoLabel+'</span>'
     +'<span style="text-align:right">Qtd</span>'
     +'<span style="text-align:right">Comprar Mín</span>'
     +'<span style="text-align:right">Sugerido ('+meses+'m)</span>'
@@ -1160,28 +1371,64 @@ function _renderPedidoInterno(meses){
       var savedItem=(itensCache[g]&&itensCache[g][p.codigo])||{};
       var savedPreco=savedItem.preco||0;
       var savedQtd=savedItem.qtd_manual||0;
-      var initQtd=savedQtd>0?savedQtd:0; // só calcula se qtd manual preenchida
-      var initVt=savedPreco>0&&initQtd>0?'R$ '+fmtN(savedPreco*initQtd):'—';
+      var savedFornPrecos=savedItem.precos_fornecedores||{};
+      // Quando há fornecedores, "melhor preço" = menor entre os preenchidos; senão usa savedPreco
+      var melhorPreco=savedPreco;
+      if(hasForn){
+        var menor=0;
+        fornecedoresCols.forEach(function(f){
+          var v=parseFloat(savedFornPrecos[f.id])||0;
+          if(v>0&&(menor===0||v<menor))menor=v;
+        });
+        melhorPreco=menor;
+      }
+      var initQtd=savedQtd>0?savedQtd:0;
+      var initVt=melhorPreco>0&&initQtd>0?'R$ '+fmtN(melhorPreco*initQtd):'—';
       var gEsc=g.replace(/'/g,"\\'");
+
+      // Colunas de fornecedor
+      var fornCells='';
+      fornecedoresCols.forEach(function(f){
+        var v=parseFloat(savedFornPrecos[f.id])||0;
+        fornCells+='<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
+          +'<span style="font-size:10px;color:var(--text3)">R$</span>'
+          +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,00"'
+          +' value="'+(v>0?v.toFixed(2).replace('.',','):'')+'"'
+          +' data-forn-id="'+f.id+'" data-cod="'+p.codigo+'" data-grupo-key="'+g+'"'
+          +' onchange="onFornPrecoChange(this,\''+gEsc+'\')"'
+          +' onkeydown="navInput(event,this)"></span>';
+      });
+
+      // Coluna preço/melhor preço
+      var precoCell;
+      if(hasForn){
+        precoCell='<span class="pcol hi" id="mp_'+safeCod+'" style="font-size:11px;color:'+(melhorPreco>0?'var(--green)':'')+'">'+(melhorPreco>0?'R$ '+fmtN(melhorPreco):'—')+'</span>';
+      }else{
+        precoCell='<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
+          +'<span style="font-size:10px;color:var(--text3)">R$</span>'
+          +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
+          +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
+          +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
+          +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
+          +' onkeydown="navInput(event,this)"></span>';
+      }
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
         +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
-        // Preço (col 3)
-        +'<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
-            +'<span style="font-size:10px;color:var(--text3)">R$</span>'
-            +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
-            +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
-            +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
-            +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
-            +' onkeydown="navInput(event,this)"></span>'
-        // Qtd (col 4)
+        // Estoque atual
+        +'<span class="pcol">'+fmtN(p.estoque_atual)+'</span>'
+        // Colunas fornecedor (0..N)
+        +fornCells
+        // Preço / Melhor preço
+        +precoCell
+        // Qtd
         +'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
             +' value="'+(savedQtd?fmtN(savedQtd):'')+'"'
             +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
             +' onchange="onQtdChange(this,'+qtdSug+',\''+gEsc+'\');"'
             +' onkeydown="navInput(event,this)"></span>'
-                // Comprar mín
+        // Comprar mín
         +'<span class="pcol">'+(!isOk?fmtN(p.comprar_min):'—')+'</span>'
         // Sugerido
         +'<span class="pcol '+(isOk?'':'hi')+'">'+(isOk?'—':fmtN(Math.ceil(qtdSug)))+'</span>'
@@ -1195,22 +1442,153 @@ function _renderPedidoInterno(meses){
     });
   });
   tbl.innerHTML=html;
+  // Após render, aplica destaque verde/vermelho em cada linha que tem preços de forn
+  if(hasForn){
+    var codsVistos={};
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(inp){
+      var c=inp.dataset.cod;if(c&&!codsVistos[c]){codsVistos[c]=1;atualizarMelhorPreco(c);}
+    });
+  }
 }
 
 function clearPedido(){selectedGroups.clear();updateChips();updateSelBadge();renderPedido()}
 
-// ── EXPORT ERP ──
-function exportERP(){
-  if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde.');return}
-
-  // Collect items with price and qty
-  var precos={},qtds={};
-  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
-    var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+// ── FORNECEDORES ──
+function nextFornId(){fornSeq++;return'f'+fornSeq}
+function renderFornecedoresBar(){
+  var list=document.getElementById('forn-list');
+  if(!list)return;
+  list.innerHTML='';
+  fornecedoresCols.forEach(function(f){
+    var chip=document.createElement('div');chip.className='forn-chip';
+    chip.innerHTML='<input type="text" value="'+(f.nome||'').replace(/"/g,'&quot;')+'" data-forn-id="'+f.id+'" onchange="onFornNomeChange(this)" placeholder="Fornecedor">'
+      +'<button class="forn-rm" title="Remover" onclick="removerFornecedor(\''+f.id+'\')">×</button>';
+    list.appendChild(chip);
   });
+  var btn=document.getElementById('forn-add-btn');
+  if(btn)btn.disabled=fornecedoresCols.length>=4;
+  var info=document.getElementById('forn-info');
+  if(info)info.textContent=fornecedoresCols.length?fornecedoresCols.length+' / 4':'';
+}
+function addFornecedor(){
+  if(fornecedoresCols.length>=4)return;
+  fornecedoresCols.push({id:nextFornId(),nome:'Fornecedor '+(fornecedoresCols.length+1)});
+  // re-render bar e tabela; salva nos grupos selecionados
+  renderPedido();
+  selectedGroups.forEach(function(g){triggerSave(g)});
+}
+function removerFornecedor(fid){
+  if(!confirm('Remover este fornecedor? Os preços serão apagados.'))return;
+  fornecedoresCols=fornecedoresCols.filter(function(f){return f.id!==fid});
+  // limpa preços salvos desse fornecedor em todos os caches
+  Object.keys(itensCache).forEach(function(g){
+    Object.keys(itensCache[g]).forEach(function(cod){
+      var it=itensCache[g][cod];
+      if(it&&it.precos_fornecedores){delete it.precos_fornecedores[fid]}
+    });
+  });
+  renderPedido();
+  selectedGroups.forEach(function(g){triggerSave(g)});
+}
+function onFornNomeChange(input){
+  var fid=input.dataset.fornId,nome=input.value.trim()||'Fornecedor';
+  var f=fornecedoresCols.find(function(x){return x.id===fid});
+  if(!f)return;
+  f.nome=nome;
+  // atualiza cabeçalho na tabela sem re-render
+  document.querySelectorAll('#ped-tbl-wrap .pth .forn-col-h[data-forn-id="'+fid+'"]').forEach(function(el){el.textContent=nome});
+  selectedGroups.forEach(function(g){triggerSave(g)});
+}
+function onFornPrecoChange(input,grupo){
+  var fid=input.dataset.fornId,cod=input.dataset.cod;
+  var v=pNum(input.value);
+  if(!itensCache[grupo])itensCache[grupo]={};
+  if(!itensCache[grupo][cod])itensCache[grupo][cod]={};
+  if(!itensCache[grupo][cod].precos_fornecedores)itensCache[grupo][cod].precos_fornecedores={};
+  if(v>0)itensCache[grupo][cod].precos_fornecedores[fid]=v;
+  else delete itensCache[grupo][cod].precos_fornecedores[fid];
+  atualizarMelhorPreco(cod);
+  triggerSave(grupo);
+}
+function atualizarMelhorPreco(codigo){
+  var inputs=document.querySelectorAll('#ped-tbl-wrap .forn-preco[data-cod="'+codigo+'"]');
+  if(!inputs.length)return;
+  var menor=0,vals=[];
+  inputs.forEach(function(inp){var v=pNum(inp.value);vals.push({inp:inp,v:v});if(v>0&&(menor===0||v<menor))menor=v;});
+  vals.forEach(function(x){
+    x.inp.classList.remove('best','notbest');
+    if(x.v>0){
+      if(Math.abs(x.v-menor)<0.0001)x.inp.classList.add('best');
+      else x.inp.classList.add('notbest');
+    }
+  });
+  // Atualiza célula "melhor preço" (id mp_<safeCod>) e valor total (vt_<safeCod>)
+  var safeCod=codigo.replace(/[^a-zA-Z0-9]/g,'_');
+  var mp=document.getElementById('mp_'+safeCod);
+  if(mp){
+    if(menor>0){mp.textContent='R$ '+fmtN(menor);mp.style.color='var(--green)'}
+    else{mp.textContent='—';mp.style.color=''}
+  }
+  // recomputa valor total
+  var row=inputs[0].closest('.ptr');
+  if(row){
+    var qi=row.querySelector('.qtd-input');
+    var qtd=qi?pNum(qi.value):0;
+    calcVt(codigo,menor,qtd,0);
+  }
+}
+
+// ── EXPORT ERP ──
+function _coletarPrecosQtds(fornId){
+  // fornId: null/undefined = preço único; 'best' = melhor preço; <id> = preço daquele fornecedor
+  var precos={},qtds={};
   document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
     var cod=qi.dataset.cod;if(cod&&qi.value){var v=pNum(qi.value);if(v>0)qtds[cod]=v;}
   });
+  if(fornId&&fornId!=='best'){
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco[data-forn-id="'+fornId+'"]').forEach(function(pi){
+      var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+    });
+  }else if(fornId==='best'){
+    // Para cada cod, calcula melhor preço a partir dos forn-preco
+    var codAll={};
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(pi){
+      var cod=pi.dataset.cod;var v=pNum(pi.value);
+      if(!cod||!(v>0))return;
+      if(!codAll[cod]||v<codAll[cod])codAll[cod]=v;
+    });
+    precos=codAll;
+  }else{
+    document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+      var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+    });
+  }
+  return{precos:precos,qtds:qtds};
+}
+
+function iniciarExportERP(){
+  if(!fornecedoresCols.length){exportERP(null);return}
+  if(fornecedoresCols.length===1){exportERP(fornecedoresCols[0].id);return}
+  var list=document.getElementById('export-erp-list');list.innerHTML='';
+  fornecedoresCols.forEach(function(f,i){
+    var lb=document.createElement('label');
+    lb.innerHTML='<input type="radio" name="erp-forn" value="'+f.id+'"'+(i===0?' checked':'')+'><span>'+f.nome+'</span>';
+    list.appendChild(lb);
+  });
+  document.getElementById('export-erp-overlay').style.display='flex';
+}
+function fecharExportERPModal(){document.getElementById('export-erp-overlay').style.display='none'}
+function confirmarExportERP(){
+  var sel=document.querySelector('#export-erp-list input[name="erp-forn"]:checked');
+  if(!sel){alert('Selecione um fornecedor.');return}
+  fecharExportERPModal();
+  exportERP(sel.value);
+}
+
+function exportERP(fornId){
+  if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde.');return}
+  var pq=_coletarPrecosQtds(fornId);
+  var precos=pq.precos,qtds=pq.qtds;
 
   // Get selected products that have MANUAL qty filled
   var selP=products.filter(function(p){
@@ -1281,14 +1659,40 @@ function exportERP(){
 
   XLSX.utils.book_append_sheet(wb, ws, 'Importacao ERP');
 
-  var forn = document.getElementById('f-forn').value || 'pedido';
+  var forn = _nomeFornecedor(fornId);
   var data = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, 'ERP_Importacao_'+forn.replace(/\s+/g,'_')+'_'+data+'.xlsx');
 }
 
 // ── EXPORT EXCEL ──
-function exportExcel(){
+function iniciarExportExcel(){
+  if(!fornecedoresCols.length){exportExcel([null]);return}
+  if(fornecedoresCols.length===1){exportExcel([fornecedoresCols[0].id]);return}
+  var list=document.getElementById('export-excel-list');list.innerHTML='';
+  fornecedoresCols.forEach(function(f){
+    var lb=document.createElement('label');
+    lb.innerHTML='<input type="checkbox" value="'+f.id+'"><span>'+f.nome+'</span>';
+    list.appendChild(lb);
+  });
+  var lbAll=document.createElement('label');
+  lbAll.style.background='var(--blue-bg)';lbAll.style.borderColor='var(--blue-light)';
+  lbAll.innerHTML='<input type="checkbox" value="__ALL__"><strong>Todos (uma aba por fornecedor)</strong>';
+  list.appendChild(lbAll);
+  document.getElementById('export-excel-overlay').style.display='flex';
+}
+function fecharExportExcelModal(){document.getElementById('export-excel-overlay').style.display='none'}
+function confirmarExportExcel(){
+  var checks=[].slice.call(document.querySelectorAll('#export-excel-list input[type="checkbox"]:checked'));
+  if(!checks.length){alert('Selecione pelo menos um fornecedor.');return}
+  var vals=checks.map(function(c){return c.value});
+  fecharExportExcelModal();
+  var ids=vals.indexOf('__ALL__')>=0?fornecedoresCols.map(function(f){return f.id}):vals;
+  exportExcel(ids);
+}
+
+function exportExcel(fornIds){
   if(typeof XLSX==='undefined'){alert('Biblioteca carregando. Aguarde.');return}
+  if(!fornIds||!fornIds.length)fornIds=[null];
   var meses=getMeses();
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
@@ -1297,24 +1701,32 @@ function exportExcel(){
   });
   if(!selP.length){alert('Nenhum item para exportar. Selecione grupos na aba Montar Pedido.');return}
 
-  // Collect preços e qtds from inputs
-  var precos={},qtds={};
-  document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
-    var cod=pi.dataset.cod;if(cod&&pi.value){var v=pNum(pi.value);if(v>0)precos[cod]=v;}
+  var wb=XLSX.utils.book_new();
+  fornIds.forEach(function(fid){
+    var pq=_coletarPrecosQtds(fid);
+    _adicionarAbaExcel(wb,selP,pq.precos,pq.qtds,meses,fid);
   });
-  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
-    var cod=qi.dataset.cod;if(cod&&qi.value){var v=pNum(qi.value);if(v>0)qtds[cod]=v;}
-  });
+  var fornTag=fornIds.length===1?_nomeFornecedor(fornIds[0]):'multi';
+  XLSX.writeFile(wb,'CasaSaoJose_Pedido_'+fornTag.replace(/\s+/g,'_')+'_'+meses+'m_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
 
+function _nomeFornecedor(fid){
+  if(!fid)return(document.getElementById('f-forn').value||'pedido');
+  var f=fornecedoresCols.find(function(x){return x.id===fid});
+  return f?f.nome:fid;
+}
+
+function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
   var byG={};selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var allByG={};products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!allByG[p.grupo])allByG[p.grupo]=[];allByG[p.grupo].push(p)});
   var sortedGroups=sortGroupsByPriority(byG);
   var allSorted=sortGroupsByPriority(allByG);
+  var nomeForn=_nomeFornecedor(fid);
 
-  var wb=XLSX.utils.book_new(),wsData=[];
-  // COLS: Código | Nome | Preço Unit. | Qtd | Comprar Mín | Sugerido(Nm) | Urgência% | Valor Total | Status | Prioridade
+  var wsData=[];
   var modo=showAllItems?'Todos os itens':'Itens para compra';
-  wsData.push(['Casa São José — '+modo+' — Cobertura: '+meses+' meses','','','','','','','','','','','','','','','']);
+  var titulo='Casa São José — '+modo+' — Cobertura: '+meses+' meses'+(fid?' — Fornecedor: '+nomeForn:'');
+  wsData.push([titulo,'','','','','','','','','','','','','','','','']);
   wsData.push([
     'Código','Nome do Produto','UN',
     'Preço Unit.','Qtd','Total',
@@ -1347,7 +1759,7 @@ function exportExcel(){
         isOk?'':preco||'',
         isOk?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
         isOk?'':total,
-        '',  // Fornecedor (preenchido no rodapé)
+        fid?nomeForn:'',
         p.estoque_atual, p.est_min, p.est_max,
         p.grupo, p.abc,
         isOk?'':p.comprar_min,
@@ -1360,7 +1772,7 @@ function exportExcel(){
   });
   wsData.push(['','','','','','','','','','','','','','','','','']);
   wsData.push(['INFORMAÇÕES DO PEDIDO','','','','','','','','','','','','','','','','']);
-  [['Fornecedor',document.getElementById('f-forn').value],
+  [['Fornecedor',fid?nomeForn:document.getElementById('f-forn').value],
    ['Empresa a faturar',document.getElementById('f-emp').value],
    ['Condição de pagamento',document.getElementById('f-pag').value],
    ['Valor total do pedido',totalGeral>0?'R$ '+fmtN(totalGeral):''],
@@ -1372,9 +1784,11 @@ function exportExcel(){
   var ws=XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols']=[{wch:8},{wch:40},{wch:5},{wch:12},{wch:8},{wch:14},{wch:20},{wch:12},{wch:12},{wch:12},{wch:22},{wch:5},{wch:14},{wch:14},{wch:10},{wch:10},{wch:14}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:16}}];
-  XLSX.utils.book_append_sheet(wb,ws,'Pedido de Compra');
-  var forn=document.getElementById('f-forn').value||'pedido';
-  XLSX.writeFile(wb,'CasaSaoJose_Pedido_'+forn.replace(/\s+/g,'_')+'_'+meses+'m_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  var sheetName=fid?nomeForn.substring(0,28).replace(/[\\\/\?\*\[\]:]/g,'_'):'Pedido de Compra';
+  // Sheet name must be unique
+  var sn=sheetName,i=1;
+  while(wb.SheetNames.indexOf(sn)>=0){i++;sn=sheetName.substring(0,28-String(i).length-1)+'_'+i}
+  XLSX.utils.book_append_sheet(wb,ws,sn);
 }
 
 // ── ADMIN ──
