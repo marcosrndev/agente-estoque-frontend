@@ -274,7 +274,10 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .manual-header i{color:var(--blue);font-size:15px}
 .manual-body{padding:0 14px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;font-size:13px;line-height:1.7;color:var(--text2)}
 .manual-body p{margin-bottom:5px}
-.manual-card.open .manual-body{max-height:600px;padding:11px 14px}
+.manual-card.open .manual-body{max-height:1800px;padding:11px 14px}
+.manual-body ul{margin:4px 0 4px 18px;padding:0}
+.manual-body li{margin-bottom:3px}
+.manual-body code{font-family:var(--font-mono);font-size:11px;background:var(--bg2);padding:1px 5px;border-radius:3px;color:var(--text)}
 .manual-card.open .manual-header{background:var(--blue-bg);color:var(--blue)}
 .manual-tip{background:var(--yellow-bg);border-left:3px solid var(--yellow);padding:7px 11px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--yellow);margin-top:7px}
 .hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:11px;color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-light,#cfe0f1);border-radius:4px;cursor:pointer;margin-right:5px;vertical-align:middle;transition:all .15s ease}
@@ -555,30 +558,327 @@ input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-
         <h1 style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px">Manual — Agente de Estoque</h1>
         <p style="font-size:12px;color:var(--text3);margin-bottom:18px">Casa São José · Materiais para capotaria, estofamento e decoração</p>
         <div id="manual-sections">
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-login"></i> Como entrar no sistema</div>
-            <div class="manual-body"><p>Digite seu <strong>usuário</strong> e <strong>senha</strong> fornecidos pelo administrador (Marcos) e clique em <strong>Entrar</strong>.</p><p>Cada pessoa tem login próprio — suas cotações e ações ficam registradas com seu nome automaticamente.</p><div class="manual-tip">Esqueceu a senha? Peça ao administrador Marcos para redefini-la na aba Admin.</div></div>
+            <div class="manual-header"><i class="ti ti-login"></i> 1. Como entrar no sistema</div>
+            <div class="manual-body">
+              <p>Digite seu <strong>usuário</strong> e <strong>senha</strong> fornecidos pelo administrador (Marcos) e clique em <strong>Entrar</strong>.</p>
+              <p>Cada pessoa tem login próprio — todas as cotações e cadastros que você fizer ficam registrados com o seu nome automaticamente.</p>
+              <div class="manual-tip">Esqueceu a senha? Peça ao administrador Marcos para redefinir na aba Admin.</div>
+            </div>
           </div>
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-upload"></i> Como importar dados do ERP</div>
-            <div class="manual-body"><p>1. Exporte a aba <strong>"Sugestão de compra"</strong> do ERP como CSV</p><p>2. Clique em <strong>Importar CSV</strong> no canto superior direito</p><p>3. Cole os dados e clique em <strong>Importar</strong></p><p>4. Os dados vão automaticamente para o servidor — todos os usuários veem imediatamente.</p><p><strong>Ao importar:</strong> cotações concluídas são apagadas. Cotações em andamento são mantidas com aviso de "dados atualizados".</p><div class="manual-tip">Faça a importação uma vez por semana, preferencialmente na segunda-feira.</div></div>
+            <div class="manual-header"><i class="ti ti-table-import"></i> 2. Importar dados do ERP (CSV)</div>
+            <div class="manual-body">
+              <p>É o ponto de partida da semana — toda análise depende dos dados estarem atualizados.</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>No ERP, exporte a aba <strong>"Sugestão de compra"</strong> como CSV</li>
+                <li>No sistema, clique em <strong>Importar CSV</strong> no canto superior direito</li>
+                <li>Cole o conteúdo no campo e clique <strong>Importar</strong></li>
+              </ol>
+              <p>Os dados vão para o servidor e <strong>todos os usuários veem imediatamente</strong>.</p>
+              <p><strong>O que acontece com as cotações ao importar:</strong></p>
+              <ul>
+                <li>Cotações <strong>concluídas</strong> são apagadas (limpeza)</li>
+                <li>Cotações <strong>em andamento</strong> são mantidas, mas recebem aviso laranja <em>"Dados atualizados"</em> pra você revisar</li>
+                <li>Cotações <strong>pedido enviado</strong> são mantidas</li>
+              </ul>
+              <div class="manual-tip">Faça a importação 1× por semana, idealmente na segunda-feira.</div>
+            </div>
           </div>
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-message-circle"></i> Como usar o Chat com Agente</div>
-            <div class="manual-body"><p>Pergunte em português normal:</p><p>• <em>"Quais produtos estão críticos agora?"</em><br>• <em>"O que falta no grupo Ziper 06 Colorido?"</em><br>• <em>"Quais grupos têm mais itens classe A críticos?"</em></p><p>Use os <strong>atalhos rápidos</strong> abaixo do chat. Clique em qualquer <strong>grupo no painel esquerdo</strong> para análise instantânea.</p><div class="manual-tip">🔥 O botão <strong>Próximo urgente</strong> indica qual grupo cotar agora com base na prioridade automática.</div></div>
+            <div class="manual-header"><i class="ti ti-alert-triangle"></i> 3. Urgências, Classes ABC e prioridades</div>
+            <div class="manual-body">
+              <p><strong>Tipos de urgência (cor por item):</strong></p>
+              <p><span class="urg c">Crítico</span> — estoque zerado ou abaixo de 50% do mínimo</p>
+              <p><span class="urg a">Atenção</span> — abaixo do estoque mínimo (precisa comprar)</p>
+              <p><span class="urg o">OK</span> — estoque adequado</p>
+              <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo. 100% = zerado.</p>
+              <p><strong>Classe ABC do item:</strong> vem do ERP — A é o que mais gera receita, C o que menos. Em conflito, priorize A.</p>
+              <p><strong>Prioridade dos grupos (#1, #2, #3...):</strong> calculada automaticamente por:</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Quantidade de itens classe A em situação crítica</li>
+                <li>Quantidade de itens classe B</li>
+                <li>Quantidade de itens classe C</li>
+                <li>Valor total de compra do grupo</li>
+              </ol>
+              <div class="manual-tip">🔥 Clique em <strong>"Próximo urgente"</strong> no topo da tela Montar Pedido pra ir direto pro grupo #1.</div>
+            </div>
           </div>
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-shopping-cart"></i> Como montar um pedido</div>
-            <div class="manual-body"><p>1. Vá na aba <strong>Montar Pedido</strong></p><p>2. Clique nos <strong>chips de grupos</strong> para selecionar (pode combinar vários)</p><p>3. Escolha a <strong>cobertura em meses</strong> — de 3 a 12. A quantidade é calculada proporcionalmente</p><p>4. Preencha o <strong>Preço</strong> dos produtos (após o nome) — o Valor Total calcula automaticamente</p><p>5. Na coluna <strong>Qtd</strong>, digite manualmente ou use o botão <strong>Auto</strong> para preencher com base na cobertura</p><p>6. Preencha Fornecedor, Condição de pagamento, etc. no rodapé</p><p>7. Clique em <strong>Exportar Excel</strong></p><div class="manual-tip">Os dados de preço e quantidade são salvos automaticamente — você pode continuar de onde parou.</div></div>
+            <div class="manual-header"><i class="ti ti-shopping-cart"></i> 4. Montar um pedido — passo a passo</div>
+            <div class="manual-body">
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Vá na aba <strong>Montar Pedido</strong></li>
+                <li>Clique nos <strong>chips de grupos</strong> à esquerda — pode combinar vários grupos na mesma cotação</li>
+                <li>Escolha a <strong>cobertura em meses</strong> (3 a 12) no topo — a quantidade sugerida é calculada proporcionalmente ao histórico</li>
+                <li>Na coluna <strong>Preço</strong>, digite o valor cotado. Valor Total calcula sozinho</li>
+                <li>Na coluna <strong>Qtd</strong>, digite manualmente ou clique no botão <strong>Auto</strong> (preenche com a sugestão da cobertura)</li>
+                <li>Em <strong>Dados do Pedido</strong> (rodapé) preencha condição de pagamento, transportadora, etc.</li>
+                <li>Clique <strong>Exportar Excel</strong> ou <strong>Exportar p/ ERP</strong></li>
+              </ol>
+              <div class="manual-tip">Tudo é salvo automaticamente conforme você digita — fechar o navegador não perde nada. Pra continuar, basta reabrir os mesmos grupos.</div>
+            </div>
           </div>
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-clipboard-list"></i> Como usar as Cotações</div>
-            <div class="manual-body"><p><strong>Marcar:</strong> no Montar Pedido, clique no cabeçalho do grupo e em "Marcar cotação". Seu nome aparece automaticamente.</p><p><strong>Grupos concatenados:</strong> ao marcar, se você tiver vários grupos selecionados, o sistema pergunta se quer marcar todos juntos como uma sessão.</p><p><strong>Abrir no Pedido:</strong> na aba Cotações, clique em "Abrir no Pedido" para carregar os grupos diretamente com os dados salvos.</p><p><strong>Concluir:</strong> quando terminar, clique em "Concluir" — fica registrado com data e hora para avaliar produtividade.</p><div class="manual-tip">⚠️ Se os dados forem atualizados enquanto você cota, um alerta laranja avisa "Dados atualizados".</div></div>
+            <div class="manual-header"><i class="ti ti-arrows-shuffle"></i> 5. Cotar com vários fornecedores (comparativo)</div>
+            <div class="manual-body">
+              <p>Você pode cotar o mesmo grupo com <strong>até 4 fornecedores</strong> em paralelo e comparar lado a lado.</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Em Montar Pedido, clique em <strong>+ Fornecedor</strong> (barra acima da tabela)</li>
+                <li>O dropdown abre. Escolha um fornecedor cadastrado ou clique <strong>+ Cadastrar novo...</strong></li>
+                <li>Repita pra adicionar até 4 colunas de fornecedor</li>
+                <li>Para cada item, digite o preço nas colunas dos fornecedores</li>
+              </ol>
+              <p><strong>O sistema destaca automaticamente:</strong></p>
+              <ul>
+                <li><span style="color:var(--green);font-weight:600">Verde</span> — o menor preço entre os fornecedores daquele item</li>
+                <li><span style="color:var(--red)">Vermelho claro</span> — preços acima do menor</li>
+                <li>A coluna <strong>Melhor Preço</strong> mostra o menor escolhido automaticamente</li>
+              </ul>
+              <p>Abaixo de cada input aparece <strong>"últ: R$ X (+Y%)"</strong> — última cotação registrada daquele fornecedor pro item, com variação percentual.</p>
+              <div class="manual-tip">Pra remover um fornecedor, clique no <strong>×</strong> ao lado do nome — os preços daquele fornecedor são apagados.</div>
+            </div>
           </div>
+
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-alert-triangle"></i> Urgências e prioridades</div>
-            <div class="manual-body"><p><span class="urg c">Crítico</span> — estoque zerado ou abaixo de 50% do mínimo</p><p><span class="urg a">Atenção</span> — abaixo do estoque mínimo</p><p><span class="urg o">OK</span> — estoque adequado</p><p style="margin-top:8px"><strong>Urgência %</strong> = quanto falta para atingir o mínimo. 100% = zerado.</p><p><strong>Prioridade dos grupos (#1, #2...):</strong> automática por Classe A > B > C > valor de compra.</p></div>
+            <div class="manual-header"><i class="ti ti-building-store"></i> 6. Cadastrar fornecedor (Nome + CNPJ)</div>
+            <div class="manual-body">
+              <p>Qualquer usuário pode cadastrar novos fornecedores. O cadastro fica salvo no banco e aparece pra todos.</p>
+              <p><strong>Pelo Montar Pedido (recomendado):</strong></p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Clique <strong>+ Fornecedor</strong> → dropdown abre</li>
+                <li>Clique <strong>+ Cadastrar novo...</strong> no rodapé do dropdown</li>
+                <li>Preencha <strong>Nome</strong> (obrigatório) e <strong>CNPJ</strong> (opcional, mas recomendado)</li>
+                <li>Clique <strong>Cadastrar</strong> — o fornecedor já entra como coluna automaticamente</li>
+              </ol>
+              <p><strong>Sobre o campo CNPJ:</strong></p>
+              <ul>
+                <li>Tem <strong>máscara automática</strong> — só digite os números, o sistema formata pra <code>00.000.000/0000-00</code></li>
+                <li>Tem <strong>validação dos dígitos verificadores</strong>: aparece <span style="color:var(--green)">✓ CNPJ válido</span> ou <span style="color:var(--red)">❌ CNPJ inválido</span> em tempo real</li>
+                <li>É <strong>opcional</strong>, mas se deixar vazio aparece o alerta amarelo: pode duplicar fornecedores com mesmo nome</li>
+                <li>Se preenchido, é <strong>único</strong> no sistema — bloqueia cadastrar dois com o mesmo CNPJ</li>
+              </ul>
+              <p>Você também pode cadastrar pela aba <strong>Admin → Cadastro de Fornecedores</strong> (mesmos campos).</p>
+              <div class="manual-tip">Filiais com o mesmo nome (ex: "Karsten SP" e "Karsten RS") devem ter CNPJs diferentes — assim o sistema não confunde.</div>
+            </div>
           </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-currency-dollar"></i> 7. Preços, decimais e cálculos automáticos</div>
+            <div class="manual-body">
+              <p><strong>Inputs de preço aceitam até 4 casas decimais</strong> — ex: <code>9,5803</code>. Útil pra produtos com preço unitário pequeno (metro de fita, etc.) onde a 3ª e 4ª casa afetam o total.</p>
+              <p><strong>O que mostra com 4 casas:</strong></p>
+              <ul>
+                <li>O preço digitado no input do fornecedor</li>
+                <li>O preço único quando não há comparativo</li>
+              </ul>
+              <p><strong>O que mostra com 2 casas:</strong></p>
+              <ul>
+                <li><strong>Melhor Preço</strong> — sempre arredondado em 2 casas</li>
+                <li><strong>Valor Total</strong> (preço × qtd) — sempre 2 casas</li>
+                <li>Valores totais de fechamento</li>
+              </ul>
+              <p><strong>Formato brasileiro:</strong> use vírgula como separador decimal (<code>9,58</code>) — o sistema também aceita ponto e converte.</p>
+              <div class="manual-tip">Cole valores direto da planilha do fornecedor que o sistema entende. Espaços e símbolos como "R$" são ignorados.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-history"></i> 8. Histórico de Preços (modal e aba)</div>
+            <div class="manual-body">
+              <p>Toda cotação concluída alimenta automaticamente o histórico de preços. Você pode consultar de duas formas:</p>
+              <p><strong>A) Modal rápido — durante a cotação</strong></p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Em Montar Pedido, ao lado do nome de cada produto há um <strong>ícone azul de relógio</strong> 🕐</li>
+                <li>Clique nele — abre uma tabela com Data, Fornecedor, Preço e Quantidade</li>
+                <li>O menor preço já registrado fica em <span style="color:var(--green);font-weight:600">verde</span></li>
+              </ol>
+              <p><strong>B) Aba "Histórico" — análise completa</strong></p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Vá na aba <strong>Histórico</strong> no menu superior</li>
+                <li>Sem buscar nada, ela já mostra os <strong>8 produtos mais recentes</strong> com gráfico</li>
+                <li>Digite código ou nome do produto pra filtrar</li>
+                <li>Filtre por <strong>fornecedor</strong> ou <strong>período</strong> (30/90/180/365 dias ou tudo)</li>
+                <li>O gráfico tem uma linha por fornecedor — passe o mouse pra ver detalhes</li>
+              </ol>
+              <p>Dentro do modal rápido, o botão <strong>"Ver na aba Histórico (com gráfico)"</strong> leva direto pra aba com o produto já filtrado.</p>
+              <div class="manual-tip">O histórico é o que destrava as validações de <em>"preço suspeito"</em> antes da exportação. Quanto mais cotações concluídas, melhor a inteligência do sistema.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-clipboard-list"></i> 9. Cotações: marcar, sessões e concluir</div>
+            <div class="manual-body">
+              <p>Cotação é o <strong>workflow</strong> que indica que alguém já está cuidando daquele grupo — evita duas pessoas cotando o mesmo ao mesmo tempo.</p>
+              <p><strong>Marcar em cotação:</strong></p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Em Montar Pedido, clique no <strong>cabeçalho do grupo</strong> (caixinha cinza)</li>
+                <li>Clique <strong>Marcar cotação</strong> — seu nome fica registrado e os outros usuários veem o cadeado</li>
+                <li>Se houver vários grupos selecionados, o sistema pergunta se quer marcar <strong>todos juntos como uma sessão</strong> (recomendado pra fornecedor único)</li>
+              </ol>
+              <p><strong>Status das cotações</strong> (aba Cotações):</p>
+              <ul>
+                <li><span style="color:var(--yellow)">●</span> <strong>Em Cotação</strong> — alguém está cuidando, pode haver mais de uma pessoa em grupos diferentes</li>
+                <li><span style="color:var(--blue)">●</span> <strong>Pedido Enviado</strong> — você marcou que enviou pro fornecedor</li>
+                <li><span style="color:var(--green)">●</span> <strong>Concluído</strong> — finalizado (apagado na próxima importação)</li>
+              </ul>
+              <p><strong>Abrir no Pedido:</strong> na aba Cotações, clique <em>"Abrir no Pedido"</em> num card pra voltar pra Montar Pedido com tudo carregado.</p>
+              <p><strong>Concluir:</strong> ao clicar Concluído, o sistema <strong>salva todos os preços no histórico</strong> e marca a cotação como finalizada.</p>
+              <div class="manual-tip">⚠️ Se a planilha do ERP for reimportada no meio da sua cotação, aparece um alerta laranja <em>"Dados atualizados"</em> — confira se as quantidades mudaram antes de exportar.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-folders"></i> 10. Organizar grupos em categorias</div>
+            <div class="manual-body">
+              <p>Quando você tem dezenas de grupos no sidebar, organizar em categorias acelera a navegação.</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>No sidebar esquerdo, clique no <strong>+</strong> ao lado de "Categorias"</li>
+                <li>Dê um nome (ex: "Tecidos", "Aviamentos", "Espumas") e escolha os grupos que pertencem</li>
+                <li>Salve — a categoria vira um agrupador colapsável no sidebar</li>
+              </ol>
+              <p>Categorias são compartilhadas — qualquer usuário enxerga e pode editar.</p>
+              <div class="manual-tip">Grupos sem categoria continuam aparecendo soltos. Categorias servem apenas pra organizar visualmente, não afetam cotações.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-file-spreadsheet"></i> 11. Exportar para Excel</div>
+            <div class="manual-body">
+              <p>Pra mandar a cotação por e-mail ao fornecedor ou imprimir.</p>
+              <p>Em Montar Pedido, clique <strong>Exportar Excel</strong>. O comportamento depende do número de fornecedores:</p>
+              <ul>
+                <li><strong>0 ou 1 fornecedor:</strong> gera direto uma planilha com o preço único cotado</li>
+                <li><strong>2 a 4 fornecedores:</strong> abre modal pra você escolher:
+                  <ul>
+                    <li>Um fornecedor específico (planilha só com aquele)</li>
+                    <li>Vários fornecedores (planilha comparativa, uma aba só com todas as colunas)</li>
+                    <li><strong>Todos</strong> (mesma coisa, atalho)</li>
+                  </ul>
+                </li>
+              </ul>
+              <p>A planilha inclui: cabeçalho da Casa São José, dados do pedido (condição, transportadora, etc.), tabela de itens com Código, Nome, UN, Estoque, Preço, Qtd, Valor Total, e totalização.</p>
+              <div class="manual-tip">O nome do arquivo já vem pronto: <code>cotacao_[fornecedor]_[data].xlsx</code></div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-database-import"></i> 12. Exportar para o ERP</div>
+            <div class="manual-body">
+              <p>Diferente do Excel — esse export gera um arquivo no <strong>formato exato</strong> que o ERP aceita re-importar como pedido de compra.</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Em Montar Pedido, clique <strong>Exportar p/ ERP</strong></li>
+                <li>Se houver mais de um fornecedor, o sistema pede qual escolher (o ERP aceita um por vez)</li>
+                <li>Baixe o arquivo gerado e importe no seu ERP</li>
+              </ol>
+              <div class="manual-tip">Use esse formato só pra <strong>fornecedor já decidido</strong>. Pra comparar preços ainda, prefira o Exportar Excel comparativo.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-truck"></i> 13. Marcar pedido como enviado</div>
+            <div class="manual-body">
+              <p>Depois que você exportou e mandou o pedido pro fornecedor, marque que foi enviado pra ter rastreabilidade.</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li>Vá na aba <strong>Cotações</strong></li>
+                <li>No card do grupo (seção <em>Em Cotação</em>), clique em <strong>Pedido Enviado</strong></li>
+                <li>O card pula pra seção <span style="color:var(--blue)">●</span> <strong>Pedido Enviado</strong> com a data/hora</li>
+              </ol>
+              <p>Diferente de "Concluído", o pedido enviado <strong>não é apagado</strong> na próxima importação — você consegue acompanhar até a entrega.</p>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-chart-bar"></i> 14. Indicadores</div>
+            <div class="manual-body">
+              <p>A aba <strong>Indicadores</strong> traz uma visão consolidada do que está acontecendo:</p>
+              <ul>
+                <li><strong>Produtos</strong> — total no catálogo</li>
+                <li><strong>Em cotação / Concluídas / Pedido enviado</strong> — quantidade de grupos em cada status + valor estimado</li>
+                <li><strong>Registros no histórico</strong> — número de cotações já salvas (alimenta as comparações)</li>
+                <li><strong>Fornecedores cadastrados</strong> — total no banco</li>
+                <li><strong>Top fornecedores</strong> — quem mais venceu com melhor preço nas cotações</li>
+              </ul>
+              <div class="manual-tip">Atualizado em tempo real. Clique <strong>Atualizar</strong> se quiser forçar uma nova consulta ao servidor.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-robot"></i> 15. Chat com Agente IA</div>
+            <div class="manual-body">
+              <p>Pergunte em português normal sobre o estoque:</p>
+              <ul>
+                <li><em>"Quais produtos estão críticos agora?"</em></li>
+                <li><em>"O que falta no grupo Ziper 06 Colorido?"</em></li>
+                <li><em>"Quais grupos têm mais itens classe A críticos?"</em></li>
+                <li><em>"Qual fornecedor venceu mais cotações no último mês?"</em></li>
+              </ul>
+              <p>Use os <strong>atalhos rápidos</strong> abaixo do campo de mensagem pra perguntas comuns.</p>
+              <p>Clique em qualquer <strong>grupo no painel esquerdo</strong> pra fazer o agente analisar aquele grupo instantaneamente.</p>
+              <div class="manual-tip">O agente vê os dados em tempo real — sempre que você importa CSV novo, as respostas refletem o estoque atualizado.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-shield-check"></i> 16. Validações automáticas antes de exportar</div>
+            <div class="manual-body">
+              <p>Antes de exportar, o sistema verifica e mostra um alerta amarelo se detectar problemas:</p>
+              <ul>
+                <li><strong>Itens críticos sem preço</strong> — produto zerado/abaixo do mínimo sem cotação preenchida. Bloqueia exportação até resolver</li>
+                <li><strong>Itens a comprar sem qtd</strong> — produto que precisa de reposição mas você esqueceu de preencher a quantidade</li>
+                <li><strong>Preços suspeitos</strong> — preço acima de <strong>30%</strong> do menor histórico do mesmo produto. Aparece o código + percentual de variação (ex: <em>5820 (+45%)</em>) pra você revisar antes de confirmar</li>
+              </ul>
+              <p>Os alertas são informativos — você pode ignorar e exportar mesmo assim (exceto críticos sem preço).</p>
+              <div class="manual-tip">Pra que essa inteligência funcione bem, é importante <strong>concluir as cotações</strong> mesmo quando o ciclo termina — assim o histórico fica rico.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-settings"></i> 17. Admin (somente administradores)</div>
+            <div class="manual-body">
+              <p>A aba <strong>Admin</strong> só aparece para usuários com perfil de administrador.</p>
+              <p><strong>Gerenciar Usuários:</strong></p>
+              <ul>
+                <li>Criar novo usuário (login + nome + senha)</li>
+                <li>Resetar senha de qualquer usuário</li>
+                <li>Marcar usuário como inativo</li>
+              </ul>
+              <p><strong>Cadastro de Fornecedores:</strong></p>
+              <ul>
+                <li>Ver lista completa de fornecedores cadastrados, com CNPJ</li>
+                <li>Cadastrar (Nome + CNPJ) — mesmo formulário do dropdown, com a mesma validação</li>
+                <li>Remover (soft delete — não some do histórico antigo, só não aparece mais no dropdown)</li>
+              </ul>
+              <div class="manual-tip">Quer dar permissão de admin pra alguém? É manual no banco — fale com o desenvolvedor.</div>
+            </div>
+          </div>
+
+          <div class="manual-card" onclick="toggleManual(this)">
+            <div class="manual-header"><i class="ti ti-bulb"></i> 18. Atalhos e fluxos recomendados</div>
+            <div class="manual-body">
+              <p><strong>🔥 Próximo Urgente</strong> — botão no topo do Montar Pedido. Pula direto pro grupo mais crítico ainda não cotado.</p>
+              <p><strong>📅 Rotina semanal sugerida:</strong></p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li><strong>Segunda</strong> — importar CSV do ERP</li>
+                <li><strong>Segunda/Terça</strong> — clicar em <em>Próximo Urgente</em> e marcar grupos em cotação</li>
+                <li><strong>Quarta/Quinta</strong> — preencher preços comparativos com 2-4 fornecedores</li>
+                <li><strong>Sexta</strong> — exportar pro ERP, marcar como Pedido Enviado, concluir o que foi resolvido</li>
+              </ol>
+              <p><strong>Atalhos de teclado nos inputs:</strong></p>
+              <ul>
+                <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — navegar entre campos</li>
+                <li><kbd>↑</kbd> / <kbd>↓</kbd> — pular pra mesma coluna, linha de cima/baixo</li>
+                <li><kbd>Enter</kbd> nos preços — confirma e pula pro próximo</li>
+              </ul>
+              <div class="manual-tip">Tudo é multiusuário em tempo real — se outra pessoa concluir uma cotação, você vê em até 30 segundos sem recarregar a página.</div>
+            </div>
+          </div>
+
         </div>
         <div style="margin-top:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
           <div style="padding:9px 13px;background:var(--blue);color:#fff;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px"><i class="ti ti-robot"></i> Ainda tem dúvida? Pergunte ao agente</div>
