@@ -309,6 +309,15 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cnpj-fb.warn{color:var(--yellow);background:var(--yellow-bg);border:1px solid var(--yellow-light)}
 input.cnpj-ok{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-bg)}
 input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-bg)}
+input.senha-ok{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-bg)}
+input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-bg)}
+.form-msg{font-size:12px;margin-top:6px;padding:5px 9px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:5px}
+.form-msg.ok{color:var(--green);background:var(--green-bg);border:1px solid var(--green-light)}
+.form-msg.bad{color:var(--red);background:var(--red-bg);border:1px solid var(--red-light)}
+#user-info{cursor:pointer;user-select:none}
+#user-info:hover{background:var(--blue-bg);border-color:var(--blue-light);color:var(--blue)}
+.user-card .btn-key{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-light);font-size:11px}
+.user-card .btn-key:hover{background:var(--blue);color:#fff}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
@@ -336,7 +345,7 @@ input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-
     <div id="spacer"></div>
     <span id="save-indicator" style="font-size:11px;display:none"></span>
     <span id="sbadge" class="badge">sem dados</span>
-    <div id="user-info" style="display:none"><i class="ti ti-user" style="font-size:12px"></i> <strong id="user-nome"></strong></div>
+    <div id="user-info" style="display:none" onclick="abrirMeuPerfil()" title="Meu Perfil"><i class="ti ti-user" style="font-size:12px"></i> <strong id="user-nome"></strong> <i class="ti ti-chevron-down" style="font-size:9px;color:var(--text3)"></i></div>
     <button class="btn" onclick="openModal()"><i class="ti ti-upload"></i> Importar CSV</button>
     <button class="btn danger" onclick="doLogout()" title="Sair"><i class="ti ti-logout"></i></button>
   </div>
@@ -505,12 +514,16 @@ input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-
           <div id="user-list"><div style="color:var(--text3)">Carregando...</div></div>
           <div class="novo-user-form">
             <h3>Novo usuário</h3>
-            <div class="form-row">
+            <div class="form-row" style="grid-template-columns:1fr 1fr">
               <div class="fld"><label>Usuário</label><input id="new-user" placeholder="login"></div>
               <div class="fld"><label>Nome</label><input id="new-nome" placeholder="Nome completo"></div>
-              <div class="fld"><label>Senha</label><input id="new-senha" type="password" placeholder="Senha"></div>
+            </div>
+            <div class="form-row" style="grid-template-columns:1fr 1fr auto;margin-top:7px">
+              <div class="fld"><label>Senha</label><input id="new-senha" type="password" placeholder="Mín. 6 caracteres" oninput="_checkSenhaPair('new-senha','new-senha2','new-user-msg')"></div>
+              <div class="fld"><label>Confirmar Senha</label><input id="new-senha2" type="password" placeholder="Repita a senha" oninput="_checkSenhaPair('new-senha','new-senha2','new-user-msg')"></div>
               <button class="btn primary" onclick="criarUsuario()" style="align-self:end"><i class="ti ti-plus"></i> Criar</button>
             </div>
+            <div id="new-user-msg" class="form-msg" style="display:none"></div>
           </div>
         </div>
         <div class="admin-section" style="margin-top:24px">
@@ -958,6 +971,41 @@ input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-
     <div class="modal-btns">
       <button class="btn" onclick="fecharNovoForn()">Cancelar</button>
       <button class="btn primary" id="nf-save-btn" onclick="salvarNovoForn()"><i class="ti ti-check"></i> Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MEU PERFIL -->
+<div id="perfil-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-user-circle" style="color:var(--blue)"></i> Meu Perfil</h3>
+    <div style="font-size:13px;color:var(--text2);padding:8px 11px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div><strong>Nome:</strong> <span id="perfil-nome">—</span></div>
+      <div style="margin-top:3px"><strong>Usuário:</strong> @<span id="perfil-username">—</span></div>
+    </div>
+    <h4 style="font-size:12px;font-weight:600;color:var(--text2);margin-top:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-key" style="color:var(--blue)"></i> Alterar Senha</h4>
+    <div class="fld"><label>Senha atual</label><input id="perfil-atual" type="password" placeholder="Sua senha de hoje"></div>
+    <div class="fld"><label>Nova senha</label><input id="perfil-nova" type="password" placeholder="Mín. 6 caracteres" oninput="_checkSenhaPair('perfil-nova','perfil-nova2','perfil-msg')"></div>
+    <div class="fld"><label>Confirmar nova senha</label><input id="perfil-nova2" type="password" placeholder="Repita a nova senha" oninput="_checkSenhaPair('perfil-nova','perfil-nova2','perfil-msg')"></div>
+    <div id="perfil-msg" class="form-msg" style="display:none"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharMeuPerfil()">Cancelar</button>
+      <button class="btn primary" id="perfil-save-btn" onclick="salvarMinhaSenha()"><i class="ti ti-check"></i> Salvar senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REDEFINIR SENHA (ADMIN) -->
+<div id="reset-senha-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-key" style="color:var(--blue)"></i> Redefinir senha</h3>
+    <div style="font-size:12px;color:var(--text2)">Redefinindo senha de <strong id="reset-target-nome">—</strong> (@<span id="reset-target-user">—</span>).</div>
+    <div class="fld"><label>Nova senha</label><input id="reset-nova" type="password" placeholder="Mín. 6 caracteres" oninput="_checkSenhaPair('reset-nova','reset-nova2','reset-msg')"></div>
+    <div class="fld"><label>Confirmar nova senha</label><input id="reset-nova2" type="password" placeholder="Repita a nova senha" oninput="_checkSenhaPair('reset-nova','reset-nova2','reset-msg')"></div>
+    <div id="reset-msg" class="form-msg" style="display:none"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharResetSenha()">Cancelar</button>
+      <button class="btn primary" id="reset-save-btn" onclick="salvarResetSenha()"><i class="ti ti-check"></i> Redefinir</button>
     </div>
   </div>
 </div>
@@ -2999,26 +3047,153 @@ function carregarUsuarios(){
     var el=document.getElementById('user-list');el.innerHTML='';
     data.filter(function(u){return u.ativo}).forEach(function(u){
       var div=document.createElement('div');div.className='user-card';
-      div.innerHTML='<div class="u-name">'+u.nome+' <span style="font-size:11px;color:var(--text3)">@'+u.username+'</span>'+(u.is_admin?'  <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:10px">Admin</span>':'')+'</div>'
-        +(u.username!=='marcos'?'<button class="btn danger" style="font-size:11px" onclick="removerUsuario(\''+u.username+'\')"><i class="ti ti-trash"></i></button>':'');
+      var uEsc=u.username.replace(/'/g,"\\'");
+      var nEsc=u.nome.replace(/'/g,"\\'");
+      var acoes='<button class="btn btn-key" title="Redefinir senha" onclick="abrirResetSenha(\''+uEsc+'\',\''+nEsc+'\')"><i class="ti ti-key"></i></button>';
+      if(u.username!=='marcos')acoes+='<button class="btn danger" style="font-size:11px" title="Remover" onclick="removerUsuario(\''+uEsc+'\')"><i class="ti ti-trash"></i></button>';
+      div.innerHTML='<div class="u-name">'+u.nome+' <span style="font-size:11px;color:var(--text3)">@'+u.username+'</span>'+(u.is_admin?'  <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:10px">Admin</span>':'')+'</div>'+acoes;
       el.appendChild(div);
     });
     if(!data.filter(function(u){return u.ativo}).length)el.innerHTML='<div style="color:var(--text3)">Nenhum usuário.</div>';
   }).catch(function(){});
 }
+
+// Helper compartilhado: valida par senha + confirmação. Aplica classes e mostra msg.
+function _checkSenhaPair(idA,idB,idMsg){
+  var a=document.getElementById(idA),b=document.getElementById(idB),m=document.getElementById(idMsg);
+  if(!a||!b)return null;
+  a.classList.remove('senha-ok','senha-bad');b.classList.remove('senha-ok','senha-bad');
+  if(m){m.style.display='none';m.innerHTML=''}
+  if(!a.value&&!b.value)return null;
+  // se um vazio, sem feedback ainda
+  if(!a.value||!b.value){return null}
+  if(a.value===b.value){
+    a.classList.add('senha-ok');b.classList.add('senha-ok');
+    if(m){m.className='form-msg ok';m.innerHTML='✓ Senhas coincidem';m.style.display='flex'}
+    return true;
+  }else{
+    a.classList.add('senha-bad');b.classList.add('senha-bad');
+    if(m){m.className='form-msg bad';m.innerHTML='❌ As senhas não coincidem';m.style.display='flex'}
+    return false;
+  }
+}
+
 function criarUsuario(){
   var u=document.getElementById('new-user').value.trim().toLowerCase();
   var n=document.getElementById('new-nome').value.trim();
   var s=document.getElementById('new-senha').value;
-  if(!u||!n||!s){alert('Preencha todos os campos.');return}
+  var s2=document.getElementById('new-senha2').value;
+  var m=document.getElementById('new-user-msg');
+  m.style.display='none';
+  if(!u||!n||!s||!s2){m.className='form-msg bad';m.innerHTML='❌ Preencha todos os campos.';m.style.display='flex';return}
+  if(s.length<6){m.className='form-msg bad';m.innerHTML='❌ Senha deve ter ao menos 6 caracteres';m.style.display='flex';return}
+  if(s!==s2){_checkSenhaPair('new-senha','new-senha2','new-user-msg');return}
   fetch(BACKEND+'/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,nome:n,senha:s})})
   .then(function(r){return r.json()})
-  .then(function(d){if(d.ok){document.getElementById('new-user').value='';document.getElementById('new-nome').value='';document.getElementById('new-senha').value='';carregarUsuarios();alert('Usuário criado!')}else{alert('Erro: '+(d.error||'Tente novamente'))}})
-  .catch(function(){alert('Erro de conexão')});
+  .then(function(d){
+    if(d.ok){
+      document.getElementById('new-user').value='';
+      document.getElementById('new-nome').value='';
+      document.getElementById('new-senha').value='';
+      document.getElementById('new-senha2').value='';
+      document.getElementById('new-senha').classList.remove('senha-ok','senha-bad');
+      document.getElementById('new-senha2').classList.remove('senha-ok','senha-bad');
+      m.className='form-msg ok';m.innerHTML='✓ Usuário criado!';m.style.display='flex';
+      setTimeout(function(){m.style.display='none'},2500);
+      carregarUsuarios();
+    }else{
+      m.className='form-msg bad';m.innerHTML='❌ '+(d.error||'Erro ao criar usuário');m.style.display='flex';
+    }
+  })
+  .catch(function(){m.className='form-msg bad';m.innerHTML='❌ Erro de conexão';m.style.display='flex'});
 }
+
 function removerUsuario(username){
   if(!confirm('Remover @'+username+'?'))return;
   fetch(BACKEND+'/usuarios/'+username,{method:'DELETE'}).then(function(){carregarUsuarios()});
+}
+
+// ── MEU PERFIL ──
+function abrirMeuPerfil(){
+  if(!currentUser)return;
+  document.getElementById('perfil-nome').textContent=currentUser.nome||'—';
+  document.getElementById('perfil-username').textContent=currentUser.username||'—';
+  ['perfil-atual','perfil-nova','perfil-nova2'].forEach(function(id){
+    var el=document.getElementById(id);el.value='';el.classList.remove('senha-ok','senha-bad');
+  });
+  var msg=document.getElementById('perfil-msg');msg.style.display='none';msg.innerHTML='';
+  document.getElementById('perfil-overlay').style.display='flex';
+  setTimeout(function(){document.getElementById('perfil-atual').focus()},50);
+}
+function fecharMeuPerfil(){document.getElementById('perfil-overlay').style.display='none'}
+function salvarMinhaSenha(){
+  var atual=document.getElementById('perfil-atual').value;
+  var nova=document.getElementById('perfil-nova').value;
+  var nova2=document.getElementById('perfil-nova2').value;
+  var msg=document.getElementById('perfil-msg');
+  msg.style.display='none';
+  if(!atual||!nova||!nova2){msg.className='form-msg bad';msg.innerHTML='❌ Preencha todos os campos.';msg.style.display='flex';return}
+  if(nova.length<6){msg.className='form-msg bad';msg.innerHTML='❌ Senha deve ter ao menos 6 caracteres';msg.style.display='flex';return}
+  if(nova!==nova2){_checkSenhaPair('perfil-nova','perfil-nova2','perfil-msg');return}
+  var btn=document.getElementById('perfil-save-btn');btn.disabled=true;btn.innerHTML='Salvando...';
+  fetch(BACKEND+'/usuarios/'+currentUser.username+'/senha',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({senha_atual:atual,nova_senha:nova})})
+  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}})})
+  .then(function(res){
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Salvar senha';
+    if(res.status>=200&&res.status<300&&res.d.ok){
+      msg.className='form-msg ok';msg.innerHTML='✓ Senha alterada com sucesso!';msg.style.display='flex';
+      setTimeout(fecharMeuPerfil,2000);
+    }else{
+      msg.className='form-msg bad';msg.innerHTML='❌ '+(res.d.error||'Erro ao alterar senha');msg.style.display='flex';
+    }
+  })
+  .catch(function(){
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Salvar senha';
+    msg.className='form-msg bad';msg.innerHTML='❌ Erro de conexão';msg.style.display='flex';
+  });
+}
+
+// ── RESET DE SENHA (ADMIN) ──
+var _resetTargetUser=null;
+function abrirResetSenha(username,nome){
+  _resetTargetUser=username;
+  document.getElementById('reset-target-nome').textContent=nome||username;
+  document.getElementById('reset-target-user').textContent=username;
+  ['reset-nova','reset-nova2'].forEach(function(id){
+    var el=document.getElementById(id);el.value='';el.classList.remove('senha-ok','senha-bad');
+  });
+  var msg=document.getElementById('reset-msg');msg.style.display='none';msg.innerHTML='';
+  document.getElementById('reset-senha-overlay').style.display='flex';
+  setTimeout(function(){document.getElementById('reset-nova').focus()},50);
+}
+function fecharResetSenha(){document.getElementById('reset-senha-overlay').style.display='none';_resetTargetUser=null}
+function salvarResetSenha(){
+  if(!_resetTargetUser)return;
+  var nova=document.getElementById('reset-nova').value;
+  var nova2=document.getElementById('reset-nova2').value;
+  var msg=document.getElementById('reset-msg');
+  msg.style.display='none';
+  if(!nova||!nova2){msg.className='form-msg bad';msg.innerHTML='❌ Preencha os dois campos.';msg.style.display='flex';return}
+  if(nova.length<6){msg.className='form-msg bad';msg.innerHTML='❌ Senha deve ter ao menos 6 caracteres';msg.style.display='flex';return}
+  if(nova!==nova2){_checkSenhaPair('reset-nova','reset-nova2','reset-msg');return}
+  var btn=document.getElementById('reset-save-btn');btn.disabled=true;btn.innerHTML='Salvando...';
+  fetch(BACKEND+'/usuarios/'+_resetTargetUser+'/senha',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({nova_senha:nova})})
+  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}})})
+  .then(function(res){
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Redefinir';
+    if(res.status>=200&&res.status<300&&res.d.ok){
+      msg.className='form-msg ok';msg.innerHTML='✓ Senha redefinida com sucesso!';msg.style.display='flex';
+      setTimeout(fecharResetSenha,2000);
+    }else{
+      msg.className='form-msg bad';msg.innerHTML='❌ '+(res.d.error||'Erro ao redefinir senha');msg.style.display='flex';
+    }
+  })
+  .catch(function(){
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Redefinir';
+    msg.className='form-msg bad';msg.innerHTML='❌ Erro de conexão';msg.style.display='flex';
+  });
 }
 
 // ── CHAT ──
