@@ -300,6 +300,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .hist-legend span{display:inline-flex;align-items:center;gap:4px;color:var(--text2)}
 .hist-legend span::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--c,#888);display:inline-block}
 .hist-result-tbl{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cnpj-fb{font-size:11px;margin-top:5px;padding:5px 9px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:5px;line-height:1.4}
+.cnpj-fb.ok{color:var(--green);background:var(--green-bg);border:1px solid var(--green-light)}
+.cnpj-fb.bad{color:var(--red);background:var(--red-bg);border:1px solid var(--red-light)}
+.cnpj-fb.warn{color:var(--yellow);background:var(--yellow-bg);border:1px solid var(--yellow-light)}
+input.cnpj-ok{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-bg)}
+input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-bg)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
@@ -511,7 +517,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
             <h3>Novo fornecedor</h3>
             <div class="form-row" style="grid-template-columns:1fr 1fr auto">
               <div class="fld"><label>Nome</label><input id="new-forn-nome" placeholder="Ex: Karsten"></div>
-              <div class="fld"><label>CNPJ</label><input id="new-forn-cnpj" placeholder="00.000.000/0000-00" inputmode="numeric"></div>
+              <div class="fld"><label>CNPJ</label><input id="new-forn-cnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" oninput="mascaraCNPJ(this)"></div>
               <button class="btn primary" onclick="criarFornecedorCad()" style="align-self:end"><i class="ti ti-plus"></i> Criar</button>
             </div>
             <div style="font-size:11px;color:var(--text3);margin-top:6px">O CNPJ é usado para evitar duplicidade. Qualquer usuário também pode cadastrar pelo dropdown em <strong>Montar Pedido</strong>.</div>
@@ -643,9 +649,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
   <div class="modal-box">
     <h3><i class="ti ti-building-store" style="color:var(--blue)"></i> Cadastrar novo fornecedor</h3>
     <div class="fld"><label>Nome <span style="color:var(--red)">*</span></label><input id="nf-nome" type="text" placeholder="Ex: Karsten Indústria"></div>
-    <div class="fld"><label>CNPJ</label><input id="nf-cnpj" type="text" placeholder="00.000.000/0000-00" inputmode="numeric"></div>
+    <div class="fld">
+      <label>CNPJ</label>
+      <input id="nf-cnpj" type="text" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" oninput="mascaraCNPJ(this)">
+      <div id="nf-cnpj-feedback" class="cnpj-fb warn" style="display:none"></div>
+    </div>
     <div id="nf-err" style="display:none;color:var(--red);font-size:12px"></div>
-    <div style="font-size:11px;color:var(--text3)">O CNPJ é opcional, mas evita duplicidade entre filiais com o mesmo nome.</div>
     <div class="modal-btns">
       <button class="btn" onclick="fecharNovoForn()">Cancelar</button>
       <button class="btn primary" id="nf-save-btn" onclick="salvarNovoForn()"><i class="ti ti-check"></i> Cadastrar</button>
@@ -715,7 +724,9 @@ function navInput(e,el){
     if(next){next.focus();next.select()}
   }
 }
-function fmtN(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2})}
+function fmtN(n,maxDec){maxDec=maxDec||2;var num=Number(n);var minDec=Number.isInteger(num)?0:2;return num.toLocaleString('pt-BR',{minimumFractionDigits:minDec,maximumFractionDigits:maxDec})}
+// Formata número pra input de preço: mantém até 4 decimais, sem zeros à direita além das 2 obrigatórias
+function fmtNInput(n){if(n===null||n===undefined||n==='')return'';var s=Number(n).toFixed(4);s=s.replace(/(\.\d{2})0+$/,'$1');return s.replace('.',',')}
 function fmtDate(){return new Date().toLocaleString('pt-BR')}
 function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
 function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':'OK'}
@@ -1621,8 +1632,8 @@ function _renderPedidoInterno(meses){
         fornCells+='<span class="pcol forn-cell-wrap">'
           +'<span style="display:flex;align-items:center;gap:1px">'
             +'<span style="font-size:10px;color:var(--text3)">R$</span>'
-            +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,00"'
-            +' value="'+(v>0?v.toFixed(2).replace('.',','):'')+'"'
+            +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,0000"'
+            +' value="'+(v>0?fmtNInput(v):'')+'"'
             +' data-forn-id="'+f.id+'" data-cod="'+p.codigo+'" data-grupo-key="'+g+'"'
             +' onchange="onFornPrecoChange(this,\''+gEsc+'\')"'
             +' onkeydown="navInput(event,this)">'
@@ -1638,8 +1649,8 @@ function _renderPedidoInterno(meses){
       }else{
         precoCell='<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
           +'<span style="font-size:10px;color:var(--text3)">R$</span>'
-          +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
-          +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
+          +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,0000"'
+          +' value="'+(savedPreco?fmtNInput(savedPreco):'')+'"'
           +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
           +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
           +' onkeydown="navInput(event,this)"></span>';
@@ -2167,6 +2178,7 @@ function criarFornecedorCad(){
   var cnpj=cnpjRaw.replace(/\D/g,'');
   if(!nome){alert('Informe o nome do fornecedor.');return}
   if(cnpj&&cnpj.length!==14){alert('CNPJ deve ter 14 dígitos (ou deixe em branco).');return}
+  if(cnpj&&!validarCNPJ(cnpj)){alert('CNPJ inválido — corrija antes de cadastrar.');return}
   fetch(BACKEND+'/fornecedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,cnpj:cnpj||null})})
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert('Erro: '+d.error);return}
@@ -2228,6 +2240,51 @@ function _onClickForaPicker(e){
   fecharFornPicker();
 }
 function _fmtCnpj(c){if(!c)return'';var s=String(c).replace(/\D/g,'');if(s.length!==14)return c;return s.slice(0,2)+'.'+s.slice(2,5)+'.'+s.slice(5,8)+'/'+s.slice(8,12)+'-'+s.slice(12)}
+function mascaraCNPJ(input){
+  var v=input.value.replace(/\D/g,'').substring(0,14);
+  v=v.replace(/^(\d{2})(\d)/,'$1.$2');
+  v=v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+  v=v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+  v=v.replace(/(\d{4})(\d)/,'$1-$2');
+  input.value=v;
+  _atualizaFeedbackCnpj(input);
+}
+function validarCNPJ(cnpj){
+  cnpj=String(cnpj||'').replace(/\D/g,'');
+  if(cnpj.length!==14)return false;
+  if(/^(\d)\1+$/.test(cnpj))return false;
+  var soma=0,pos=5;
+  for(var i=0;i<12;i++){soma+=parseInt(cnpj[i])*pos--;if(pos<2)pos=9}
+  var r=soma%11<2?0:11-(soma%11);
+  if(r!==parseInt(cnpj[12]))return false;
+  soma=0;pos=6;
+  for(var j=0;j<13;j++){soma+=parseInt(cnpj[j])*pos--;if(pos<2)pos=9}
+  r=soma%11<2?0:11-(soma%11);
+  return r===parseInt(cnpj[13]);
+}
+function _atualizaFeedbackCnpj(input){
+  var fb=document.getElementById(input.id+'-feedback');
+  if(!fb)return;
+  var digits=input.value.replace(/\D/g,'');
+  input.classList.remove('cnpj-ok','cnpj-bad');
+  if(!digits.length){
+    fb.className='cnpj-fb warn';
+    fb.innerHTML='⚠️ Sem CNPJ, fornecedores com o mesmo nome podem ser duplicados.';
+    fb.style.display='flex';
+  }else if(digits.length<14){
+    fb.style.display='none';fb.innerHTML='';
+  }else if(validarCNPJ(digits)){
+    input.classList.add('cnpj-ok');
+    fb.className='cnpj-fb ok';
+    fb.innerHTML='✓ CNPJ válido';
+    fb.style.display='flex';
+  }else{
+    input.classList.add('cnpj-bad');
+    fb.className='cnpj-fb bad';
+    fb.innerHTML='❌ CNPJ inválido';
+    fb.style.display='flex';
+  }
+}
 function adicionarFornecedorCadastrado(forn){
   if(fornecedoresCols.length>=4)return;
   var norm_=norm(forn.nome);
@@ -2241,20 +2298,23 @@ function adicionarFornecedorCadastrado(forn){
 // ── MODAL: novo fornecedor (acessível a qualquer usuário) ──
 function abrirNovoForn(){
   document.getElementById('nf-nome').value='';
-  document.getElementById('nf-cnpj').value='';
+  var cnpjInp=document.getElementById('nf-cnpj');cnpjInp.value='';cnpjInp.classList.remove('cnpj-ok','cnpj-bad');
   var err=document.getElementById('nf-err');err.style.display='none';err.textContent='';
+  _atualizaFeedbackCnpj(cnpjInp); // já mostra o alerta amarelo "sem CNPJ pode duplicar"
   document.getElementById('novo-forn-overlay').style.display='flex';
   setTimeout(function(){document.getElementById('nf-nome').focus()},50);
 }
 function fecharNovoForn(){document.getElementById('novo-forn-overlay').style.display='none'}
 function salvarNovoForn(){
   var nome=document.getElementById('nf-nome').value.trim();
-  var cnpjRaw=document.getElementById('nf-cnpj').value.trim();
+  var cnpjInp=document.getElementById('nf-cnpj');
+  var cnpjRaw=cnpjInp.value.trim();
   var cnpj=cnpjRaw.replace(/\D/g,'');
   var err=document.getElementById('nf-err');
   err.style.display='none';
   if(!nome){err.textContent='Informe o nome.';err.style.display='block';return}
   if(cnpj&&cnpj.length!==14){err.textContent='CNPJ deve ter 14 dígitos (ou deixe em branco).';err.style.display='block';return}
+  if(cnpj&&!validarCNPJ(cnpj)){err.textContent='❌ CNPJ inválido — corrija antes de cadastrar.';err.style.display='block';return}
   var btn=document.getElementById('nf-save-btn');btn.disabled=true;btn.textContent='Salvando...';
   fetch(BACKEND+'/fornecedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,cnpj:cnpj||null})})
     .then(function(r){return r.json()}).then(function(d){
