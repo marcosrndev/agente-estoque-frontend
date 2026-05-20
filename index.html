@@ -164,6 +164,44 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .export-modal-list label{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;background:var(--bg2);font-family:var(--font)}
 .export-modal-list label:hover{background:var(--bg);border-color:var(--blue)}
 .export-modal-list input{cursor:pointer}
+.export-warn{background:var(--yellow-bg);border:1px solid var(--yellow-light);border-radius:var(--radius-sm);padding:8px 11px;font-size:11px;color:var(--text2);line-height:1.5;display:flex;flex-direction:column;gap:2px}
+.export-warn strong{color:var(--yellow)}
+.export-warn.danger{background:var(--red-bg);border-color:var(--red-light)}
+.export-warn.danger strong{color:var(--red)}
+#forn-picker{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:3px;z-index:200;min-width:220px;max-height:300px;overflow-y:auto}
+#forn-picker .forn-picker-item{font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg2);border:1px solid transparent;font-family:var(--font);text-align:left}
+#forn-picker .forn-picker-item:hover{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-light)}
+#forn-picker .forn-picker-novo{background:var(--green-bg);color:var(--green);font-weight:500}
+#forn-picker .forn-picker-novo:hover{background:var(--green);color:#fff}
+#forn-picker input{padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none}
+#forn-picker input:focus{border-color:var(--blue)}
+.forn-hist{font-size:9px;color:var(--text3);padding:1px 3px;line-height:1.1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.forn-hist.up{color:var(--red)}
+.forn-hist.down{color:var(--green)}
+.forn-cell-wrap{display:flex;flex-direction:column;gap:1px;padding:1px}
+#panel-indicadores{flex-direction:column;overflow:hidden}
+#ind-body{flex:1;overflow-y:auto;padding:14px}
+.ind-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:9px;margin-bottom:18px}
+.ind-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;box-shadow:var(--shadow)}
+.ind-card .ind-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.ind-card .ind-n{font-size:22px;font-weight:600;color:var(--text);line-height:1}
+.ind-card .ind-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.ind-card.r .ind-n{color:var(--red)}
+.ind-card.w .ind-n{color:var(--yellow)}
+.ind-card.g .ind-n{color:var(--green)}
+.ind-card.b .ind-n{color:var(--blue)}
+.ind-section{margin-bottom:20px}
+.ind-section h3{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ind-table{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:12px;border-collapse:collapse}
+.ind-table th,.ind-table td{padding:7px 11px;text-align:left;border-bottom:1px solid var(--border2)}
+.ind-table th{background:var(--bg3);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase}
+.ind-table tr:last-child td{border-bottom:none}
+.ind-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
+.grph-lock.env{background:var(--blue-bg);color:var(--blue)}
+.forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:13px}
+.forn-cad-card .fc-nome{flex:1;font-weight:500}
+.forn-cad-card .fc-meta{font-size:11px;color:var(--text3)}
 #empty-ped{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:8px;color:var(--text3);font-size:13px;padding:40px}
 #empty-ped i{font-size:40px;color:var(--border)}
 #ped-footer{padding:9px 14px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
@@ -239,6 +277,35 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .manual-card.open .manual-body{max-height:600px;padding:11px 14px}
 .manual-card.open .manual-header{background:var(--blue-bg);color:var(--blue)}
 .manual-tip{background:var(--yellow-bg);border-left:3px solid var(--yellow);padding:7px 11px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--yellow);margin-top:7px}
+.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:11px;color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-light,#cfe0f1);border-radius:4px;cursor:pointer;margin-right:5px;vertical-align:middle;transition:all .15s ease}
+.hp-ico:hover{background:var(--blue);color:#fff}
+.modal-box.wide{width:640px;max-width:92vw}
+.modal-box.xwide{width:880px;max-width:96vw}
+.hist-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.hist-tbl th,.hist-tbl td{padding:6px 9px;border-bottom:1px solid var(--border2);text-align:left}
+.hist-tbl th{background:var(--bg2);font-weight:600;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+.hist-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.hist-tbl .best{color:var(--green);font-weight:600}
+.hist-empty{padding:18px;text-align:center;color:var(--text3);font-size:12px}
+#panel-historico{flex-direction:column;overflow:hidden}
+#hist-body{flex:1;overflow-y:auto;padding:18px}
+.hist-search{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.hist-search input,.hist-search select{padding:7px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg)}
+.hist-search input:focus,.hist-search select:focus{border-color:var(--blue)}
+.hist-search input{flex:1;min-width:220px}
+.hist-chart-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px}
+.hist-chart-wrap h4{font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text2)}
+.hist-chart{width:100%;height:240px;display:block}
+.hist-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px}
+.hist-legend span{display:inline-flex;align-items:center;gap:4px;color:var(--text2)}
+.hist-legend span::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--c,#888);display:inline-block}
+.hist-result-tbl{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cnpj-fb{font-size:11px;margin-top:5px;padding:5px 9px;border-radius:var(--radius-sm);display:flex;align-items:center;gap:5px;line-height:1.4}
+.cnpj-fb.ok{color:var(--green);background:var(--green-bg);border:1px solid var(--green-light)}
+.cnpj-fb.bad{color:var(--red);background:var(--red-bg);border:1px solid var(--red-light)}
+.cnpj-fb.warn{color:var(--yellow);background:var(--yellow-bg);border:1px solid var(--yellow-light)}
+input.cnpj-ok{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-bg)}
+input.cnpj-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red-bg)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
@@ -282,6 +349,8 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <button class="tab active" onclick="switchTab('chat',this)"><i class="ti ti-message-circle"></i> Chat</button>
     <button class="tab" onclick="switchTab('pedido',this)"><i class="ti ti-shopping-cart"></i> Montar Pedido <span class="tbdg" id="sel-badge" style="display:none">0</span></button>
     <button class="tab" onclick="switchTab('cotacoes',this)"><i class="ti ti-clipboard-list"></i> Cotações <span class="tbdg" id="cot-badge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('indicadores',this)"><i class="ti ti-chart-bar"></i> Indicadores</button>
+    <button class="tab" onclick="switchTab('historico',this)"><i class="ti ti-history"></i> Histórico</button>
     <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)"><i class="ti ti-settings"></i> Admin</button>
     <button class="tab" onclick="switchTab('ajuda',this)"><i class="ti ti-help-circle"></i> Ajuda</button>
   </div>
@@ -404,9 +473,24 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
           <div id="cot-em-cotacao"><div style="color:var(--text3);font-size:13px">Nenhum grupo em cotação.</div></div>
         </div>
         <div class="cot-section">
+          <h3><span style="width:7px;height:7px;border-radius:50%;background:var(--blue);display:inline-block"></span> Pedido Enviado</h3>
+          <div id="cot-enviados"><div style="color:var(--text3);font-size:13px">Nenhum pedido enviado.</div></div>
+        </div>
+        <div class="cot-section">
           <h3><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span> Concluídos <span style="font-weight:400;font-size:10px">(apagados na próxima importação)</span></h3>
           <div id="cot-concluidos"><div style="color:var(--text3);font-size:13px">Nenhum concluído ainda.</div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- INDICADORES -->
+    <div class="panel" id="panel-indicadores">
+      <div id="ind-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <h2 style="font-size:14px;font-weight:600;flex:1">Indicadores</h2>
+          <button class="btn" onclick="carregarIndicadores()"><i class="ti ti-refresh"></i> Atualizar</button>
+        </div>
+        <div id="ind-content"><div style="color:var(--text3);font-size:12px">Carregando...</div></div>
       </div>
     </div>
 
@@ -426,6 +510,42 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
             </div>
           </div>
         </div>
+        <div class="admin-section" style="margin-top:24px">
+          <h2>Cadastro de Fornecedores</h2>
+          <div id="forn-cad-list"><div style="color:var(--text3)">Carregando...</div></div>
+          <div class="novo-user-form">
+            <h3>Novo fornecedor</h3>
+            <div class="form-row" style="grid-template-columns:1fr 1fr auto">
+              <div class="fld"><label>Nome</label><input id="new-forn-nome" placeholder="Ex: Karsten"></div>
+              <div class="fld"><label>CNPJ</label><input id="new-forn-cnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" oninput="mascaraCNPJ(this)"></div>
+              <button class="btn primary" onclick="criarFornecedorCad()" style="align-self:end"><i class="ti ti-plus"></i> Criar</button>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">O CNPJ é usado para evitar duplicidade. Qualquer usuário também pode cadastrar pelo dropdown em <strong>Montar Pedido</strong>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO DE PREÇOS -->
+    <div class="panel" id="panel-historico">
+      <div id="hist-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <h2 style="font-size:14px;font-weight:600;flex:1">Histórico de Preços</h2>
+          <span id="hist-info" style="font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div class="hist-search">
+          <input id="hist-q" type="text" placeholder="Buscar por código ou nome do produto..." oninput="renderHistoricoBusca()">
+          <select id="hist-forn-filter" onchange="renderHistoricoBusca()"><option value="">Todos fornecedores</option></select>
+          <select id="hist-periodo" onchange="renderHistoricoBusca()">
+            <option value="0">Todo período</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="90" selected>Últimos 90 dias</option>
+            <option value="180">Últimos 180 dias</option>
+            <option value="365">Último ano</option>
+          </select>
+          <button class="btn" onclick="recarregarHistoricoGlobal()"><i class="ti ti-refresh"></i> Atualizar</button>
+        </div>
+        <div id="hist-resultado"><div class="hist-empty">Digite um código ou nome do produto para ver a evolução de preços.</div></div>
       </div>
     </div>
 
@@ -491,6 +611,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 <div id="export-excel-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box">
     <h3><i class="ti ti-file-spreadsheet" style="color:var(--green)"></i> Exportar Excel</h3>
+    <div id="export-excel-warn"></div>
     <div style="font-size:12px;color:var(--text2)">Exportar preço de qual fornecedor?</div>
     <div class="export-modal-list" id="export-excel-list"></div>
     <div class="modal-btns">
@@ -504,6 +625,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 <div id="export-erp-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box">
     <h3><i class="ti ti-database-import" style="color:var(--blue)"></i> Exportar p/ ERP</h3>
+    <div id="export-erp-warn"></div>
     <div style="font-size:12px;color:var(--text2)">Selecione o fornecedor para exportar:</div>
     <div class="export-modal-list" id="export-erp-list"></div>
     <div class="modal-btns">
@@ -519,6 +641,37 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
     <h3 id="cot-title">Marcar em cotação</h3>
     <p id="cot-desc" style="font-size:12px;color:var(--text2)"></p>
     <div class="modal-btns" id="cot-btns"></div>
+  </div>
+</div>
+
+<!-- MODAL NOVO FORNECEDOR -->
+<div id="novo-forn-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-building-store" style="color:var(--blue)"></i> Cadastrar novo fornecedor</h3>
+    <div class="fld"><label>Nome <span style="color:var(--red)">*</span></label><input id="nf-nome" type="text" placeholder="Ex: Karsten Indústria"></div>
+    <div class="fld">
+      <label>CNPJ</label>
+      <input id="nf-cnpj" type="text" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" oninput="mascaraCNPJ(this)">
+      <div id="nf-cnpj-feedback" class="cnpj-fb warn" style="display:none"></div>
+    </div>
+    <div id="nf-err" style="display:none;color:var(--red);font-size:12px"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharNovoForn()">Cancelar</button>
+      <button class="btn primary" id="nf-save-btn" onclick="salvarNovoForn()"><i class="ti ti-check"></i> Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO DO PRODUTO -->
+<div id="hist-prod-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box wide">
+    <h3><i class="ti ti-history" style="color:var(--blue)"></i> Histórico de Preços — <span id="hp-prod-title">—</span></h3>
+    <div id="hp-prod-meta" style="font-size:11px;color:var(--text3)"></div>
+    <div id="hp-prod-body" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharHistoricoProduto()">Fechar</button>
+      <button class="btn primary" id="hp-ver-aba-btn" onclick="verHistoricoNaAba()"><i class="ti ti-chart-line"></i> Ver na aba Histórico (com gráfico)</button>
+    </div>
   </div>
 </div>
 
@@ -542,6 +695,8 @@ var buscaGrupos='';
 var fornecedoresCols=[]; // [{id:'f1',nome:'Fornecedor 1'}] máx 4 — derivado da seleção atual
 var nomesFornCache={};   // {grupo: {f1: 'Karsten', f2: 'Corttex'}} — última versão salva por grupo
 var categoriasCache=[]; // [{id,nome,grupos:[]}]
+var fornecedoresCadastrados=[]; // [{id,nome,contato,prazo_padrao,observacao,ativo}]
+var historicoCache={}; // {grupo: {codigo: [{fornecedor_nome, preco, data, qtd}, ...]}}
 var fornSeq=0;
 var catEditandoId=null; // null = nova; id = editando
 
@@ -569,7 +724,9 @@ function navInput(e,el){
     if(next){next.focus();next.select()}
   }
 }
-function fmtN(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2})}
+function fmtN(n,maxDec){maxDec=maxDec||2;var num=Number(n);var minDec=Number.isInteger(num)?0:2;return num.toLocaleString('pt-BR',{minimumFractionDigits:minDec,maximumFractionDigits:maxDec})}
+// Formata número pra input de preço: mantém até 4 decimais, sem zeros à direita além das 2 obrigatórias
+function fmtNInput(n){if(n===null||n===undefined||n==='')return'';var s=Number(n).toFixed(4);s=s.replace(/(\.\d{2})0+$/,'$1');return s.replace('.',',')}
 function fmtDate(){return new Date().toLocaleString('pt-BR')}
 function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
 function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':'OK'}
@@ -635,6 +792,14 @@ function carregarItensGrupo(grupo,cb){
     });
     // Armazena os nomes de fornecedores deste grupo para reconstrução posterior
     nomesFornCache[grupo]=nomesForn||{};
+    // Também carrega o histórico de preços do grupo (em paralelo, não bloqueia)
+    if(!(grupo in historicoCache)){
+      historicoCache[grupo]={};
+      carregarHistoricoGrupo(grupo,function(){
+        // re-render se este grupo ainda estiver selecionado
+        if(selectedGroups.has(grupo))renderPedido();
+      });
+    }
     if(cb)cb();
   }).catch(function(e){console.error('Load itens error',e);if(cb)cb()});
 }
@@ -822,8 +987,8 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};nomesFornCache={};categoriasCache=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();carregarFornecedoresCadastrados();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -832,7 +997,9 @@ function switchTab(id,el){
   el.classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if(id==='cotacoes')renderCotacoes();
-  if(id==='admin')carregarUsuarios();
+  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();}
+  if(id==='indicadores')carregarIndicadores();
+  if(id==='historico'){abrirAbaHistorico();}
 }
 
 // ── CSV ──
@@ -1157,18 +1324,27 @@ function marcarCotacao(){
 
 function concluirSessao(grupos){
   var agora=fmtDate();
-  Promise.all(grupos.map(function(g){
-    var enc=g.replace(/\//g,'__SLASH__');
-    return fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:agora})});
-  })).then(function(){carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
+  // Snapshot histórico antes de concluir
+  Promise.all(grupos.map(function(g){return snapshotHistoricoGrupo(g)})).then(function(){
+    Promise.all(grupos.map(function(g){
+      var enc=g.replace(/\//g,'__SLASH__');
+      return fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:agora})});
+    })).then(function(){
+      // limpa cache de historico desses grupos para recarregar na próxima
+      grupos.forEach(function(g){delete historicoCache[g]});
+      carregarCotacoes();fecharCotacao();renderCotacoes();
+    }).catch(function(){});
+  });
 }
 
 function concluirCotacao(){
   var g=grupoAtualCotacao,enc=g.replace(/\//g,'__SLASH__');
-  fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:fmtDate()})})
-  .then(function(){carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
+  snapshotHistoricoGrupo(g).then(function(){
+    fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:fmtDate()})})
+    .then(function(){delete historicoCache[g];carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
+  });
 }
 
 function liberarCotacao(){
@@ -1218,11 +1394,13 @@ function renderCotacoes(){
 
   function renderCard(cot,prio){
     var div=document.createElement('div');
-    div.className='cot-card'+(cot.status==='concluido'?' concluido':'')+(cot.dados_atualizados&&cot.status==='em_cotacao'?' atualizado':'');
+    var cardCls=cot.status==='concluido'?' concluido':(cot.status==='pedido_enviado'?' enviado':'');
+    div.className='cot-card'+cardCls+(cot.dados_atualizados&&cot.status==='em_cotacao'?' atualizado':'');
     var prioHtml=prio?'<div class="cot-prio '+(prio<=3?'c':'')+'">#'+prio+'</div>':'<div class="cot-prio nd">—</div>';
-    var statusTag=cot.status==='concluido'
-      ?'<span class="grph-lock ok">Concluído em '+cot.concluido_em+'</span>'
-      :(cot.dados_atualizados?'<span class="grph-lock upd">⚠️ Dados atualizados</span>':'<span class="grph-lock em">🟡 Em cotação</span>');
+    var statusTag;
+    if(cot.status==='concluido')statusTag='<span class="grph-lock ok">Concluído em '+cot.concluido_em+'</span>';
+    else if(cot.status==='pedido_enviado')statusTag='<span class="grph-lock env">📦 Pedido enviado em '+(cot.pedido_enviado_em||'?')+'</span>';
+    else statusTag=cot.dados_atualizados?'<span class="grph-lock upd">⚠️ Dados atualizados</span>':'<span class="grph-lock em">🟡 Em cotação</span>';
     var grupos=cot.grupos||[cot.grupo];
     var rotulo=cot.status==='concluido'?'concluídos':'em cotação';
     var gruposHtml=grupos.length>1
@@ -1264,10 +1442,17 @@ function renderCotacoes(){
   function passaFiltro(c){return filtroUsuarioCot==='todos'||c.username===filtroUsuarioCot}
 
   var emCot=agruparPorSessao(cotacoesCache.filter(function(c){return c.status==='em_cotacao'&&passaFiltro(c)}));
+  var enviados=agruparPorSessao(cotacoesCache.filter(function(c){return c.status==='pedido_enviado'&&passaFiltro(c)}));
   var concl=agruparPorSessao(cotacoesCache.filter(function(c){return c.status==='concluido'&&passaFiltro(c)}));
   var elEm=document.getElementById('cot-em-cotacao');elEm.innerHTML='';
   if(!emCot.length)elEm.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum em cotação.</div>';
   else emCot.forEach(function(c){elEm.appendChild(renderCard(c,bestPrio(c.grupos||[c.grupo])))});
+  var elEnv=document.getElementById('cot-enviados');
+  if(elEnv){
+    elEnv.innerHTML='';
+    if(!enviados.length)elEnv.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum pedido enviado.</div>';
+    else enviados.forEach(function(c){elEnv.appendChild(renderCard(c,null))});
+  }
   var elCon=document.getElementById('cot-concluidos');elCon.innerHTML='';
   if(!concl.length)elCon.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum concluído.</div>';
   else concl.forEach(function(c){elCon.appendChild(renderCard(c,null))});
@@ -1341,7 +1526,7 @@ function _renderPedidoInterno(meses){
   });
   var empty=document.getElementById('empty-ped'),stats=document.getElementById('ped-stats'),
       tbl=document.getElementById('ped-tbl-wrap'),info=document.getElementById('ped-info');
-  if(selectedGroups.size===0){empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';return}
+  if(selectedGroups.size===0){empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';renderFornecedoresBar();return}
   empty.style.display='none';stats.style.display='flex';tbl.style.display='block';
   var crit=selP.filter(function(p){return urg(p)==='c'}).length;
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
@@ -1386,10 +1571,11 @@ function _renderPedidoInterno(meses){
     var aC=itens.filter(function(p){return p.abc==='A'}).length;
     var bC=itens.filter(function(p){return p.abc==='B'}).length;
     var cC=itens.filter(function(p){return p.abc==='C'}).length;
-    var cot=cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'});
-    var cotTag=cot
-      ?(cot.dados_atualizados?'<span class="grph-lock upd">⚠️ Dados atualizados — '+cot.nome+'</span>':'<span class="grph-lock em">🔒 '+cot.nome+'</span>')
-      :'<button class="btn primary" style="font-size:9px;padding:2px 8px" onclick="abrirCotacao(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">Marcar cotação</button>';
+    var cot=cotacoesCache.find(function(c){return c.grupo===g&&(c.status==='em_cotacao'||c.status==='pedido_enviado')});
+    var cotTag;
+    if(cot&&cot.status==='pedido_enviado')cotTag='<span class="grph-lock env">📦 Pedido enviado em '+(cot.pedido_enviado_em||'?')+'</span>';
+    else if(cot)cotTag=cot.dados_atualizados?'<span class="grph-lock upd">⚠️ Dados atualizados — '+cot.nome+'</span>':'<span class="grph-lock em">🔒 '+cot.nome+'</span>';
+    else cotTag='<button class="btn primary" style="font-size:9px;padding:2px 8px" onclick="abrirCotacao(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">Marcar cotação</button>';
 
     html+='<div class="grph" onclick="abrirCotacao(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+
       '<span style="font-size:10px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">#'+prio+'</span>'+
@@ -1428,17 +1614,32 @@ function _renderPedidoInterno(meses){
       var initVt=melhorPreco>0&&initQtd>0?'R$ '+fmtN(melhorPreco*initQtd):'—';
       var gEsc=g.replace(/'/g,"\\'");
 
-      // Colunas de fornecedor
+      // Colunas de fornecedor (com pista do histórico abaixo do input)
       var fornCells='';
       fornecedoresCols.forEach(function(f){
         var v=parseFloat(savedFornPrecos[f.id])||0;
-        fornCells+='<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
-          +'<span style="font-size:10px;color:var(--text3)">R$</span>'
-          +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,00"'
-          +' value="'+(v>0?v.toFixed(2).replace('.',','):'')+'"'
-          +' data-forn-id="'+f.id+'" data-cod="'+p.codigo+'" data-grupo-key="'+g+'"'
-          +' onchange="onFornPrecoChange(this,\''+gEsc+'\')"'
-          +' onkeydown="navInput(event,this)"></span>';
+        var ult=ultimaCotacaoDoForn(g,p.codigo,f.nome);
+        var hint='';
+        if(ult){
+          var pUlt=parseFloat(ult.preco)||0;
+          var pctClass='',pctTxt='';
+          if(v>0&&pUlt>0){
+            var diff=Math.round((v/pUlt-1)*100);
+            if(diff!==0){pctClass=diff>0?'up':'down';pctTxt=' ('+(diff>0?'+':'')+diff+'%)'}
+          }
+          hint='<span class="forn-hist '+pctClass+'" title="Última cotação de '+f.nome+': R$ '+pUlt.toFixed(2).replace('.',',')+(ult.data?' em '+fmtDateShort(ult.data):'')+'">últ: R$ '+pUlt.toFixed(2).replace('.',',')+pctTxt+'</span>';
+        }
+        fornCells+='<span class="pcol forn-cell-wrap">'
+          +'<span style="display:flex;align-items:center;gap:1px">'
+            +'<span style="font-size:10px;color:var(--text3)">R$</span>'
+            +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,0000"'
+            +' value="'+(v>0?fmtNInput(v):'')+'"'
+            +' data-forn-id="'+f.id+'" data-cod="'+p.codigo+'" data-grupo-key="'+g+'"'
+            +' onchange="onFornPrecoChange(this,\''+gEsc+'\')"'
+            +' onkeydown="navInput(event,this)">'
+          +'</span>'
+          +hint
+        +'</span>';
       });
 
       // Coluna preço/melhor preço
@@ -1448,8 +1649,8 @@ function _renderPedidoInterno(meses){
       }else{
         precoCell='<span class="pcol" style="padding:1px;display:flex;align-items:center;gap:1px">'
           +'<span style="font-size:10px;color:var(--text3)">R$</span>'
-          +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,00"'
-          +' value="'+(savedPreco?savedPreco.toFixed(2).replace('.',','):'')+'"'
+          +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,0000"'
+          +' value="'+(savedPreco?fmtNInput(savedPreco):'')+'"'
           +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
           +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
           +' onkeydown="navInput(event,this)"></span>';
@@ -1457,7 +1658,7 @@ function _renderPedidoInterno(meses){
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
         +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
-        +'<span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
+        +'<span class="pn" title="'+p.nome+'"><i class="ti ti-history hp-ico" title="Ver histórico de preços" onclick="abrirHistoricoProduto(this)"></i>'+p.nome+'</span>'
         // Estoque atual
         +'<span class="pcol">'+fmtN(p.estoque_atual)+'</span>'
         // Colunas fornecedor (0..N)
@@ -1514,10 +1715,7 @@ function renderFornecedoresBar(){
 }
 function addFornecedor(){
   if(fornecedoresCols.length>=4)return;
-  fornecedoresCols.push({id:nextFornId(),nome:'Fornecedor '+(fornecedoresCols.length+1)});
-  // re-render bar e tabela; salva nos grupos selecionados
-  renderPedido();
-  selectedGroups.forEach(function(g){triggerSave(g)});
+  abrirFornPicker();
 }
 function removerFornecedor(fid){
   if(!confirm('Remover este fornecedor? Os preços serão apagados.'))return;
@@ -1609,14 +1807,24 @@ function _coletarPrecosQtds(fornId){
 }
 
 function iniciarExportERP(){
-  if(!fornecedoresCols.length){exportERP(null);return}
-  if(fornecedoresCols.length===1){exportERP(fornecedoresCols[0].id);return}
+  if(!fornecedoresCols.length){
+    // Sem fornecedores: ainda assim mostra modal de aviso se houver problema
+    var v=validarExportacao(null);
+    if(v.alerts.length&&!confirm('Atenção:\n\n'+v.alerts.map(function(a){return'• '+a.replace(/<[^>]+>/g,'')}).join('\n')+'\n\nExportar mesmo assim?'))return;
+    exportERP(null);return;
+  }
+  if(fornecedoresCols.length===1){
+    var v1=validarExportacao(fornecedoresCols[0].id);
+    if(v1.alerts.length&&!confirm('Atenção:\n\n'+v1.alerts.map(function(a){return'• '+a.replace(/<[^>]+>/g,'')}).join('\n')+'\n\nExportar mesmo assim?'))return;
+    exportERP(fornecedoresCols[0].id);return;
+  }
   var list=document.getElementById('export-erp-list');list.innerHTML='';
   fornecedoresCols.forEach(function(f,i){
     var lb=document.createElement('label');
-    lb.innerHTML='<input type="radio" name="erp-forn" value="'+f.id+'"'+(i===0?' checked':'')+'><span>'+f.nome+'</span>';
+    lb.innerHTML='<input type="radio" name="erp-forn" value="'+f.id+'"'+(i===0?' checked':'')+' onchange="renderExportWarn(\'export-erp-warn\',this.value)"><span>'+f.nome+'</span>';
     list.appendChild(lb);
   });
+  renderExportWarn('export-erp-warn',fornecedoresCols[0].id);
   document.getElementById('export-erp-overlay').style.display='flex';
 }
 function fecharExportERPModal(){document.getElementById('export-erp-overlay').style.display='none'}
@@ -1704,22 +1912,50 @@ function exportERP(fornId){
   var forn = _nomeFornecedor(fornId);
   var data = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, 'ERP_Importacao_'+forn.replace(/\s+/g,'_')+'_'+data+'.xlsx');
+
+  // Após exportar, oferece marcar como pedido enviado
+  var gruposEnviar=[];
+  selectedGroups.forEach(function(g){
+    var cot=cotacoesCache.find(function(c){return c.grupo===g&&c.status!=='pedido_enviado'});
+    if(cot)gruposEnviar.push(g);
+  });
+  if(gruposEnviar.length>0){
+    setTimeout(function(){
+      var msg=gruposEnviar.length===1
+        ? 'Marcar grupo "'+gruposEnviar[0]+'" como Pedido Enviado?'
+        : 'Marcar '+gruposEnviar.length+' grupos selecionados como Pedido Enviado?';
+      if(confirm(msg+'\n\nFornecedor: '+forn)){
+        marcarPedidoEnviado(gruposEnviar).then(function(){
+          alert('Pedido marcado como enviado.');
+        });
+      }
+    },300);
+  }
 }
 
 // ── EXPORT EXCEL ──
 function iniciarExportExcel(){
-  if(!fornecedoresCols.length){exportExcel([null]);return}
-  if(fornecedoresCols.length===1){exportExcel([fornecedoresCols[0].id]);return}
+  if(!fornecedoresCols.length){
+    var v=validarExportacao(null);
+    if(v.alerts.length&&!confirm('Atenção:\n\n'+v.alerts.map(function(a){return'• '+a.replace(/<[^>]+>/g,'')}).join('\n')+'\n\nExportar mesmo assim?'))return;
+    exportExcel([null]);return;
+  }
+  if(fornecedoresCols.length===1){
+    var v1=validarExportacao(fornecedoresCols[0].id);
+    if(v1.alerts.length&&!confirm('Atenção:\n\n'+v1.alerts.map(function(a){return'• '+a.replace(/<[^>]+>/g,'')}).join('\n')+'\n\nExportar mesmo assim?'))return;
+    exportExcel([fornecedoresCols[0].id]);return;
+  }
   var list=document.getElementById('export-excel-list');list.innerHTML='';
   fornecedoresCols.forEach(function(f){
     var lb=document.createElement('label');
-    lb.innerHTML='<input type="checkbox" value="'+f.id+'"><span>'+f.nome+'</span>';
+    lb.innerHTML='<input type="checkbox" value="'+f.id+'" onchange="renderExportWarn(\'export-excel-warn\',\'best\')"><span>'+f.nome+'</span>';
     list.appendChild(lb);
   });
   var lbAll=document.createElement('label');
   lbAll.style.background='var(--blue-bg)';lbAll.style.borderColor='var(--blue-light)';
-  lbAll.innerHTML='<input type="checkbox" value="__ALL__"><strong>Todos (única aba com todos os fornecedores)</strong>';
+  lbAll.innerHTML='<input type="checkbox" value="__ALL__" onchange="renderExportWarn(\'export-excel-warn\',\'best\')"><strong>Todos (única aba com todos os fornecedores)</strong>';
   list.appendChild(lbAll);
+  renderExportWarn('export-excel-warn','best');
   document.getElementById('export-excel-overlay').style.display='flex';
 }
 function fecharExportExcelModal(){document.getElementById('export-excel-overlay').style.display='none'}
@@ -1914,6 +2150,547 @@ function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
   var sn=sheetName,i=1;
   while(wb.SheetNames.indexOf(sn)>=0){i++;sn=sheetName.substring(0,28-String(i).length-1)+'_'+i}
   XLSX.utils.book_append_sheet(wb,ws,sn);
+}
+
+// ── CADASTRO DE FORNECEDORES ──
+function carregarFornecedoresCadastrados(){
+  fetch(BACKEND+'/fornecedores').then(function(r){return r.json()}).then(function(data){
+    fornecedoresCadastrados=Array.isArray(data)?data:[];
+  }).catch(function(){fornecedoresCadastrados=[]});
+}
+function renderFornecedoresCadastrados(){
+  carregarFornecedoresCadastrados();
+  setTimeout(function(){
+    var el=document.getElementById('forn-cad-list');if(!el)return;
+    el.innerHTML='';
+    if(!fornecedoresCadastrados.length){el.innerHTML='<div style="color:var(--text3)">Nenhum fornecedor cadastrado ainda.</div>';return}
+    fornecedoresCadastrados.forEach(function(f){
+      var div=document.createElement('div');div.className='forn-cad-card';
+      div.innerHTML='<div class="fc-nome">'+f.nome+(f.cnpj?' <span class="fc-meta">· CNPJ '+_fmtCnpj(f.cnpj)+'</span>':'')+'</div>'
+        +'<button class="btn danger" style="font-size:11px" onclick="removerFornecedorCad('+f.id+')"><i class="ti ti-trash"></i></button>';
+      el.appendChild(div);
+    });
+  },400);
+}
+function criarFornecedorCad(){
+  var nome=document.getElementById('new-forn-nome').value.trim();
+  var cnpjRaw=document.getElementById('new-forn-cnpj').value.trim();
+  var cnpj=cnpjRaw.replace(/\D/g,'');
+  if(!nome){alert('Informe o nome do fornecedor.');return}
+  if(cnpj&&cnpj.length!==14){alert('CNPJ deve ter 14 dígitos (ou deixe em branco).');return}
+  if(cnpj&&!validarCNPJ(cnpj)){alert('CNPJ inválido — corrija antes de cadastrar.');return}
+  fetch(BACKEND+'/fornecedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,cnpj:cnpj||null})})
+  .then(function(r){return r.json()}).then(function(d){
+    if(d.error){alert('Erro: '+d.error);return}
+    document.getElementById('new-forn-nome').value='';
+    document.getElementById('new-forn-cnpj').value='';
+    renderFornecedoresCadastrados();
+  }).catch(function(){alert('Erro de conexão')});
+}
+function removerFornecedorCad(id){
+  var f=fornecedoresCadastrados.find(function(x){return x.id===id});
+  if(!f)return;
+  if(!confirm('Remover fornecedor "'+f.nome+'" do cadastro?'))return;
+  fetch(BACKEND+'/fornecedores/'+id,{method:'DELETE'}).then(function(){renderFornecedoresCadastrados()});
+}
+
+// ── PICKER de fornecedor ao clicar "+ Fornecedor" ──
+function fecharFornPicker(){var p=document.getElementById('forn-picker');if(p)p.remove();document.removeEventListener('click',_onClickForaPicker,true)}
+function abrirFornPicker(){
+  fecharFornPicker();
+  var btn=document.getElementById('forn-add-btn');
+  if(!btn)return;
+  // Garante lista atualizada antes de abrir
+  if(!fornecedoresCadastrados.length){carregarFornecedoresCadastrados();setTimeout(_renderFornPicker,250);return}
+  _renderFornPicker();
+}
+function _renderFornPicker(){
+  var btn=document.getElementById('forn-add-btn');
+  if(!btn)return;
+  var rect=btn.getBoundingClientRect();
+  var p=document.createElement('div');p.id='forn-picker';
+  p.style.top=(rect.bottom+window.scrollY+4)+'px';
+  p.style.left=(rect.left+window.scrollX)+'px';
+  var usados={};fornecedoresCols.forEach(function(f){usados[norm(f.nome)]=1});
+  var cadastrados=fornecedoresCadastrados.filter(function(f){return !usados[norm(f.nome)]});
+  if(cadastrados.length){
+    var hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;padding:2px 6px';hdr.textContent='Cadastrados';
+    p.appendChild(hdr);
+    cadastrados.forEach(function(f){
+      var b=document.createElement('button');b.className='forn-picker-item';b.textContent=f.nome+(f.cnpj?'  ·  '+_fmtCnpj(f.cnpj):'');
+      b.onclick=(function(forn){return function(){adicionarFornecedorCadastrado(forn);fecharFornPicker()}})(f);
+      p.appendChild(b);
+    });
+  }else{
+    var vazio=document.createElement('div');vazio.style.cssText='font-size:11px;color:var(--text3);padding:6px 10px';vazio.textContent='Nenhum fornecedor cadastrado ainda.';
+    p.appendChild(vazio);
+  }
+  var sep=document.createElement('div');sep.style.cssText='border-top:1px solid var(--border);margin:4px 0';p.appendChild(sep);
+  var btnNovo=document.createElement('button');btnNovo.className='forn-picker-item forn-picker-novo';btnNovo.innerHTML='<i class="ti ti-plus"></i> Cadastrar novo...';
+  btnNovo.onclick=function(){fecharFornPicker();abrirNovoForn()};
+  p.appendChild(btnNovo);
+  document.body.appendChild(p);
+  setTimeout(function(){document.addEventListener('click',_onClickForaPicker,true)},10);
+}
+function _onClickForaPicker(e){
+  var p=document.getElementById('forn-picker');
+  var btn=document.getElementById('forn-add-btn');
+  if(!p)return;
+  if(p.contains(e.target)||(btn&&btn.contains(e.target)))return;
+  fecharFornPicker();
+}
+function _fmtCnpj(c){if(!c)return'';var s=String(c).replace(/\D/g,'');if(s.length!==14)return c;return s.slice(0,2)+'.'+s.slice(2,5)+'.'+s.slice(5,8)+'/'+s.slice(8,12)+'-'+s.slice(12)}
+function mascaraCNPJ(input){
+  var v=input.value.replace(/\D/g,'').substring(0,14);
+  v=v.replace(/^(\d{2})(\d)/,'$1.$2');
+  v=v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+  v=v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+  v=v.replace(/(\d{4})(\d)/,'$1-$2');
+  input.value=v;
+  _atualizaFeedbackCnpj(input);
+}
+function validarCNPJ(cnpj){
+  cnpj=String(cnpj||'').replace(/\D/g,'');
+  if(cnpj.length!==14)return false;
+  if(/^(\d)\1+$/.test(cnpj))return false;
+  var soma=0,pos=5;
+  for(var i=0;i<12;i++){soma+=parseInt(cnpj[i])*pos--;if(pos<2)pos=9}
+  var r=soma%11<2?0:11-(soma%11);
+  if(r!==parseInt(cnpj[12]))return false;
+  soma=0;pos=6;
+  for(var j=0;j<13;j++){soma+=parseInt(cnpj[j])*pos--;if(pos<2)pos=9}
+  r=soma%11<2?0:11-(soma%11);
+  return r===parseInt(cnpj[13]);
+}
+function _atualizaFeedbackCnpj(input){
+  var fb=document.getElementById(input.id+'-feedback');
+  if(!fb)return;
+  var digits=input.value.replace(/\D/g,'');
+  input.classList.remove('cnpj-ok','cnpj-bad');
+  if(!digits.length){
+    fb.className='cnpj-fb warn';
+    fb.innerHTML='⚠️ Sem CNPJ, fornecedores com o mesmo nome podem ser duplicados.';
+    fb.style.display='flex';
+  }else if(digits.length<14){
+    fb.style.display='none';fb.innerHTML='';
+  }else if(validarCNPJ(digits)){
+    input.classList.add('cnpj-ok');
+    fb.className='cnpj-fb ok';
+    fb.innerHTML='✓ CNPJ válido';
+    fb.style.display='flex';
+  }else{
+    input.classList.add('cnpj-bad');
+    fb.className='cnpj-fb bad';
+    fb.innerHTML='❌ CNPJ inválido';
+    fb.style.display='flex';
+  }
+}
+function adicionarFornecedorCadastrado(forn){
+  if(fornecedoresCols.length>=4)return;
+  var norm_=norm(forn.nome);
+  if(fornecedoresCols.some(function(f){return norm(f.nome)===norm_}))return;
+  fornecedoresCols.push({id:nextFornId(),nome:forn.nome,cadastro_id:forn.id,cnpj:forn.cnpj||null});
+  renderFornecedoresBar();
+  renderPedido();
+  selectedGroups.forEach(function(g){triggerSave(g)});
+}
+
+// ── MODAL: novo fornecedor (acessível a qualquer usuário) ──
+function abrirNovoForn(){
+  document.getElementById('nf-nome').value='';
+  var cnpjInp=document.getElementById('nf-cnpj');cnpjInp.value='';cnpjInp.classList.remove('cnpj-ok','cnpj-bad');
+  var err=document.getElementById('nf-err');err.style.display='none';err.textContent='';
+  _atualizaFeedbackCnpj(cnpjInp); // já mostra o alerta amarelo "sem CNPJ pode duplicar"
+  document.getElementById('novo-forn-overlay').style.display='flex';
+  setTimeout(function(){document.getElementById('nf-nome').focus()},50);
+}
+function fecharNovoForn(){document.getElementById('novo-forn-overlay').style.display='none'}
+function salvarNovoForn(){
+  var nome=document.getElementById('nf-nome').value.trim();
+  var cnpjInp=document.getElementById('nf-cnpj');
+  var cnpjRaw=cnpjInp.value.trim();
+  var cnpj=cnpjRaw.replace(/\D/g,'');
+  var err=document.getElementById('nf-err');
+  err.style.display='none';
+  if(!nome){err.textContent='Informe o nome.';err.style.display='block';return}
+  if(cnpj&&cnpj.length!==14){err.textContent='CNPJ deve ter 14 dígitos (ou deixe em branco).';err.style.display='block';return}
+  if(cnpj&&!validarCNPJ(cnpj)){err.textContent='❌ CNPJ inválido — corrija antes de cadastrar.';err.style.display='block';return}
+  var btn=document.getElementById('nf-save-btn');btn.disabled=true;btn.textContent='Salvando...';
+  fetch(BACKEND+'/fornecedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,cnpj:cnpj||null})})
+    .then(function(r){return r.json()}).then(function(d){
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Cadastrar';
+      if(d.error){err.textContent=d.error;err.style.display='block';return}
+      // recarrega lista e, se houver espaço, já adiciona como coluna
+      carregarFornecedoresCadastrados();
+      setTimeout(function(){
+        var novo=fornecedoresCadastrados.find(function(f){return f.id===d.id})||d;
+        if(novo&&fornecedoresCols.length<4){adicionarFornecedorCadastrado(novo)}
+        fecharNovoForn();
+        if(document.getElementById('panel-admin').classList.contains('active'))renderFornecedoresCadastrados();
+      },300);
+    }).catch(function(){
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Cadastrar';
+      err.textContent='Erro de conexão.';err.style.display='block';
+    });
+}
+
+// ── HISTÓRICO DE PREÇOS ──
+function carregarHistoricoGrupo(grupo,cb){
+  var enc=grupo.replace(/\//g,'__SLASH__');
+  fetch(BACKEND+'/historico-precos/grupo/'+encodeURIComponent(enc))
+  .then(function(r){return r.json()}).then(function(data){
+    if(!historicoCache[grupo])historicoCache[grupo]={};
+    (Array.isArray(data)?data:[]).forEach(function(h){
+      var c=h.codigo;if(!c)return;
+      if(!historicoCache[grupo][c])historicoCache[grupo][c]=[];
+      historicoCache[grupo][c].push(h);
+    });
+    if(cb)cb();
+  }).catch(function(){if(cb)cb()});
+}
+function ultimaCotacaoDoForn(grupo,codigo,nomeForn){
+  var hist=(historicoCache[grupo]&&historicoCache[grupo][codigo])||[];
+  var nn=norm(nomeForn);
+  for(var i=0;i<hist.length;i++){
+    if(norm(hist[i].fornecedor_nome||'')===nn)return hist[i];
+  }
+  return null;
+}
+function fmtDateShort(s){
+  if(!s)return'';
+  try{var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}catch(e){return s}
+}
+function snapshotHistoricoGrupo(grupo){
+  var rows=[];
+  var cache=itensCache[grupo]||{};
+  var nf=nomesFornCache[grupo]||{};
+  var fornSingleNome=document.getElementById('f-forn')?document.getElementById('f-forn').value||'':'';
+  Object.keys(cache).forEach(function(cod){
+    var it=cache[cod];if(!it)return;
+    var pf=it.precos_fornecedores||{};
+    var fids=Object.keys(pf);
+    if(fids.length>0){
+      fids.forEach(function(fid){
+        var p=parseFloat(pf[fid])||0;if(!(p>0))return;
+        rows.push({
+          codigo:cod,grupo:grupo,fornecedor_id:fid,
+          fornecedor_nome:nf[fid]||'',preco:p,
+          qtd:parseFloat(it.qtd_manual)||0,
+          username:currentUser?currentUser.username:''
+        });
+      });
+    }else if(it.preco>0){
+      rows.push({
+        codigo:cod,grupo:grupo,fornecedor_id:null,
+        fornecedor_nome:fornSingleNome,preco:parseFloat(it.preco)||0,
+        qtd:parseFloat(it.qtd_manual)||0,
+        username:currentUser?currentUser.username:''
+      });
+    }
+  });
+  if(!rows.length)return Promise.resolve();
+  return fetch(BACKEND+'/historico-precos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:rows})}).catch(function(){});
+}
+
+// ── MODAL: histórico de preços do produto ──
+var _hpProdAtual=null;
+function fecharHistoricoProduto(){document.getElementById('hist-prod-overlay').style.display='none'}
+function verHistoricoNaAba(){
+  var cod=_hpProdAtual;if(!cod)return;
+  fecharHistoricoProduto();
+  // Pula pra aba Histórico
+  var tabs=document.querySelectorAll('.tab');
+  var alvo=null;tabs.forEach(function(t){if(t.textContent.trim().indexOf('Histórico')>=0&&!alvo)alvo=t});
+  if(alvo){switchTab('historico',alvo);}
+  setTimeout(function(){
+    var inp=document.getElementById('hist-q');if(inp){inp.value=cod;renderHistoricoBusca();inp.focus()}
+  },150);
+}
+function abrirHistoricoProduto(elIco){
+  var row=elIco.closest('.ptr');if(!row)return;
+  var cod=row.dataset.cod;var grupo=row.dataset.grupo||'';
+  _hpProdAtual=cod;
+  var prod=products.find(function(p){return p.codigo===cod})||{nome:cod,un:''};
+  document.getElementById('hp-prod-title').textContent=cod+' — '+(prod.nome||'');
+  document.getElementById('hp-prod-meta').textContent='Grupo: '+(grupo||'—')+(prod.un?' · UN '+prod.un:'');
+  var body=document.getElementById('hp-prod-body');
+  body.innerHTML='<div class="hist-empty">Carregando histórico...</div>';
+  document.getElementById('hist-prod-overlay').style.display='flex';
+  fetch(BACKEND+'/historico-precos?codigo='+encodeURIComponent(cod)+'&limit=200')
+    .then(function(r){return r.json()}).then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){body.innerHTML='<div class="hist-empty">Nenhum registro encontrado para este produto ainda.</div>';return}
+      rows.sort(function(a,b){return(b.data||'').localeCompare(a.data||'')});
+      var menor=Math.min.apply(null,rows.map(function(r){return parseFloat(r.preco)||Infinity}));
+      var html='<table class="hist-tbl"><thead><tr><th>Data</th><th>Fornecedor</th><th class="num">Preço</th><th class="num">Qtd</th><th>Por</th></tr></thead><tbody>';
+      rows.forEach(function(h){
+        var preco=parseFloat(h.preco)||0;
+        var ehMenor=Math.abs(preco-menor)<0.0001;
+        html+='<tr>'
+          +'<td>'+fmtDateShort(h.data)+'</td>'
+          +'<td>'+(h.fornecedor_nome||'—')+'</td>'
+          +'<td class="num'+(ehMenor?' best':'')+'">R$ '+fmtN(preco)+'</td>'
+          +'<td class="num">'+(h.qtd?fmtN(h.qtd):'—')+'</td>'
+          +'<td>'+(h.username||'—')+'</td>'
+          +'</tr>';
+      });
+      html+='</tbody></table>';
+      html+='<div style="font-size:11px;color:var(--text3);margin-top:8px">Menor preço já registrado: <strong class="best" style="color:var(--green)">R$ '+fmtN(menor)+'</strong> · '+rows.length+' registros</div>';
+      body.innerHTML=html;
+    }).catch(function(){body.innerHTML='<div class="hist-empty">Erro ao carregar histórico.</div>'});
+}
+
+// ── ABA: histórico de preços (busca + gráfico) ──
+var histGlobalCache=null; // todos os registros recentes
+function abrirAbaHistorico(){
+  // popula filtro de fornecedores
+  var sel=document.getElementById('hist-forn-filter');
+  if(sel){
+    var atual=sel.value;
+    sel.innerHTML='<option value="">Todos fornecedores</option>'
+      +fornecedoresCadastrados.map(function(f){return'<option value="'+f.nome.replace(/"/g,'&quot;')+'">'+f.nome+'</option>'}).join('');
+    if(atual)sel.value=atual;
+  }
+  if(!histGlobalCache){recarregarHistoricoGlobal();return}
+  renderHistoricoBusca();
+}
+function recarregarHistoricoGlobal(){
+  var info=document.getElementById('hist-info');if(info)info.textContent='Carregando...';
+  var res=document.getElementById('hist-resultado');if(res)res.innerHTML='<div class="hist-empty">Carregando histórico...</div>';
+  fetch(BACKEND+'/historico-precos?limit=5000').then(function(r){return r.json()}).then(function(rows){
+    histGlobalCache=Array.isArray(rows)?rows:[];
+    if(info)info.textContent=histGlobalCache.length+' registros carregados';
+    renderHistoricoBusca();
+  }).catch(function(){if(info)info.textContent='Erro ao carregar';if(res)res.innerHTML='<div class="hist-empty">Erro ao carregar histórico.</div>'});
+}
+function renderHistoricoBusca(){
+  var res=document.getElementById('hist-resultado');if(!res)return;
+  if(!histGlobalCache){res.innerHTML='<div class="hist-empty">Carregando...</div>';return}
+  var q=(document.getElementById('hist-q').value||'').trim().toLowerCase();
+  var fornFiltro=document.getElementById('hist-forn-filter').value||'';
+  var dias=parseInt(document.getElementById('hist-periodo').value||'0',10);
+  var corteData=dias>0?Date.now()-dias*86400000:0;
+
+  // filtra
+  var rows=histGlobalCache.filter(function(h){
+    if(!h.codigo)return false;
+    if(fornFiltro&&(h.fornecedor_nome||'')!==fornFiltro)return false;
+    if(corteData>0){var t=Date.parse(h.data||'');if(isNaN(t)||t<corteData)return false}
+    if(!q)return true;
+    var p=products.find(function(x){return x.codigo===h.codigo});
+    var nome=p?(p.nome||'').toLowerCase():'';
+    return h.codigo.toLowerCase().indexOf(q)>=0||nome.indexOf(q)>=0;
+  });
+
+  if(!rows.length){
+    res.innerHTML='<div class="hist-empty">'+(q?'Nenhum registro encontrado para os filtros atuais.':'Nenhum histórico de preço ainda. Conclua uma cotação no Montar Pedido pra começar a alimentar.')+'</div>';
+    return;
+  }
+
+  // agrupa por código; quando sem busca, ordena os códigos pelo registro mais recente
+  var porCod={},maisRecente={};
+  rows.forEach(function(h){
+    if(!porCod[h.codigo])porCod[h.codigo]=[];
+    porCod[h.codigo].push(h);
+    var t=Date.parse(h.data||'')||0;
+    if(!maisRecente[h.codigo]||t>maisRecente[h.codigo])maisRecente[h.codigo]=t;
+  });
+  var codigos=Object.keys(porCod);
+  if(q)codigos.sort();
+  else codigos.sort(function(a,b){return maisRecente[b]-maisRecente[a]});
+
+  var html='';
+  if(!q){
+    html+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 10px;background:var(--blue-bg);border-radius:var(--radius-sm);border-left:3px solid var(--blue)"><i class="ti ti-info-circle"></i> Mostrando os 8 produtos mais recentes do histórico. Use a busca pra filtrar por código ou nome.</div>';
+  }
+  codigos.slice(0,8).forEach(function(cod){
+    var hs=porCod[cod].slice().sort(function(a,b){return(a.data||'').localeCompare(b.data||'')});
+    var prod=products.find(function(x){return x.codigo===cod});
+    var nome=prod?prod.nome:cod;
+    var menor=Math.min.apply(null,hs.map(function(h){return parseFloat(h.preco)||Infinity}));
+    html+='<div class="hist-chart-wrap">';
+    html+='<h4>'+cod+' — '+nome+' <span style="color:var(--text3);font-weight:400;font-size:11px">· '+hs.length+' registros · menor R$ '+fmtN(menor)+'</span></h4>';
+    html+=_buildHistChart(hs);
+    html+='<details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;color:var(--text2)">Ver tabela</summary>';
+    html+='<table class="hist-tbl" style="margin-top:8px"><thead><tr><th>Data</th><th>Fornecedor</th><th class="num">Preço</th><th class="num">Qtd</th></tr></thead><tbody>';
+    hs.slice().reverse().forEach(function(h){
+      var preco=parseFloat(h.preco)||0;
+      var ehMenor=Math.abs(preco-menor)<0.0001;
+      html+='<tr><td>'+fmtDateShort(h.data)+'</td><td>'+(h.fornecedor_nome||'—')+'</td><td class="num'+(ehMenor?' best':'')+'">R$ '+fmtN(preco)+'</td><td class="num">'+(h.qtd?fmtN(h.qtd):'—')+'</td></tr>';
+    });
+    html+='</tbody></table></details>';
+    html+='</div>';
+  });
+  if(codigos.length>8){
+    html+='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">Mostrando 8 de '+codigos.length+' produtos. Refine a busca.</div>';
+  }
+  res.innerHTML=html;
+}
+function _buildHistChart(hist){
+  // Agrupa por fornecedor: cada fornecedor vira uma linha
+  var W=800,H=240,PAD={l:50,r:14,t:14,b:30};
+  var byForn={};hist.forEach(function(h){var f=h.fornecedor_nome||'(sem)';if(!byForn[f])byForn[f]=[];byForn[f].push({t:Date.parse(h.data||''),v:parseFloat(h.preco)||0})});
+  var allPts=[];Object.keys(byForn).forEach(function(f){byForn[f].sort(function(a,b){return a.t-b.t});byForn[f].forEach(function(p){if(p.v>0&&!isNaN(p.t))allPts.push(p)})});
+  if(!allPts.length)return'<div class="hist-empty">Sem dados para gráfico.</div>';
+  var tMin=Math.min.apply(null,allPts.map(function(p){return p.t}));
+  var tMax=Math.max.apply(null,allPts.map(function(p){return p.t}));
+  var vMin=Math.min.apply(null,allPts.map(function(p){return p.v}));
+  var vMax=Math.max.apply(null,allPts.map(function(p){return p.v}));
+  if(tMax===tMin)tMax=tMin+86400000;
+  var vRange=vMax-vMin;if(vRange<=0){vMin=vMin*0.95;vMax=vMax*1.05;vRange=vMax-vMin||1}
+  vMin-=vRange*0.1;vMax+=vRange*0.1;vRange=vMax-vMin;
+  function sx(t){return PAD.l+(t-tMin)/(tMax-tMin)*(W-PAD.l-PAD.r)}
+  function sy(v){return H-PAD.b-(v-vMin)/vRange*(H-PAD.t-PAD.b)}
+  var cores=['#2563a8','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#db2777','#65a30d'];
+  var svg='<svg class="hist-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">';
+  // grid Y (4 linhas)
+  for(var i=0;i<=4;i++){
+    var y=PAD.t+i*(H-PAD.t-PAD.b)/4;
+    var v=vMax-i*vRange/4;
+    svg+='<line x1="'+PAD.l+'" y1="'+y+'" x2="'+(W-PAD.r)+'" y2="'+y+'" stroke="#e5e7eb" stroke-width="1"/>';
+    svg+='<text x="'+(PAD.l-6)+'" y="'+(y+3)+'" font-size="10" fill="#6b7280" text-anchor="end">R$ '+fmtN(v)+'</text>';
+  }
+  // eixo X (datas extremas + meio)
+  [tMin,(tMin+tMax)/2,tMax].forEach(function(t){
+    var x=sx(t);
+    svg+='<text x="'+x+'" y="'+(H-PAD.b+15)+'" font-size="10" fill="#6b7280" text-anchor="middle">'+fmtDateShort(new Date(t).toISOString())+'</text>';
+  });
+  // linhas por fornecedor
+  var fornNames=Object.keys(byForn);
+  fornNames.forEach(function(f,idx){
+    var pts=byForn[f].filter(function(p){return p.v>0&&!isNaN(p.t)});
+    if(!pts.length)return;
+    var c=cores[idx%cores.length];
+    if(pts.length>1){
+      var d='M '+pts.map(function(p){return sx(p.t)+' '+sy(p.v)}).join(' L ');
+      svg+='<path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="2" stroke-linejoin="round"/>';
+    }
+    pts.forEach(function(p){svg+='<circle cx="'+sx(p.t)+'" cy="'+sy(p.v)+'" r="3.5" fill="'+c+'"><title>'+f+' — '+fmtDateShort(new Date(p.t).toISOString())+' — R$ '+fmtN(p.v)+'</title></circle>'});
+  });
+  svg+='</svg>';
+  var leg='<div class="hist-legend">'+fornNames.map(function(f,idx){return'<span style="--c:'+cores[idx%cores.length]+'">'+f+'</span>'}).join('')+'</div>';
+  return svg+leg;
+}
+
+// ── VALIDAÇÃO PRÉ-EXPORTAÇÃO ──
+function validarExportacao(fornId){
+  // fornId: id de fornecedor escolhido (ou null/'best')
+  var alerts=[],danger=false;
+  var precosForn={};var qtds={};
+  var hasForn=fornecedoresCols.length>0;
+  if(hasForn&&fornId&&fornId!=='best'){
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco[data-forn-id="'+fornId+'"]').forEach(function(pi){
+      var cod=pi.dataset.cod;var v=pNum(pi.value);if(cod&&v>0)precosForn[cod]=v;
+    });
+  }else if(hasForn){
+    document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(pi){
+      var cod=pi.dataset.cod;var v=pNum(pi.value);if(!cod||!(v>0))return;
+      if(!precosForn[cod]||v<precosForn[cod])precosForn[cod]=v;
+    });
+  }else{
+    document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
+      var cod=pi.dataset.cod;var v=pNum(pi.value);if(cod&&v>0)precosForn[cod]=v;
+    });
+  }
+  document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    var cod=qi.dataset.cod;var v=pNum(qi.value);if(cod&&v>0)qtds[cod]=v;
+  });
+  var critSemPreco=0,semQtd=0,suspeitos=[];
+  products.forEach(function(p){
+    if(!selectedGroups.has(p.grupo))return;
+    var u=urg(p);
+    if(u==='c'&&!precosForn[p.codigo])critSemPreco++;
+    if(p.comprar_min>0&&!qtds[p.codigo])semQtd++;
+    // suspeitos: preço > 30% acima da menor cotação histórica
+    var preco=precosForn[p.codigo];
+    if(preco){
+      var hist=(historicoCache[p.grupo]&&historicoCache[p.grupo][p.codigo])||[];
+      if(hist.length){
+        var menorHist=Math.min.apply(null,hist.map(function(h){return parseFloat(h.preco)||Infinity}));
+        if(isFinite(menorHist)&&menorHist>0&&preco>menorHist*1.30){
+          var pct=Math.round((preco/menorHist-1)*100);
+          suspeitos.push({codigo:p.codigo,nome:p.nome,preco:preco,menor:menorHist,pct:pct});
+        }
+      }
+    }
+  });
+  if(critSemPreco){alerts.push('<strong>'+critSemPreco+'</strong> itens críticos sem preço');danger=true}
+  if(semQtd){alerts.push('<strong>'+semQtd+'</strong> itens a comprar sem qtd preenchida')}
+  if(suspeitos.length){
+    var top=suspeitos.slice(0,3).map(function(s){return s.codigo+' (+'+s.pct+'%)'}).join(', ');
+    alerts.push('<strong>'+suspeitos.length+'</strong> preços suspeitos (>30% acima do histórico): '+top+(suspeitos.length>3?' …':''));
+  }
+  return{alerts:alerts,danger:danger,suspeitos:suspeitos,critSemPreco:critSemPreco,semQtd:semQtd};
+}
+function renderExportWarn(elId,fornId){
+  var v=validarExportacao(fornId);
+  var el=document.getElementById(elId);if(!el)return;
+  if(!v.alerts.length){el.innerHTML='';return}
+  el.innerHTML='<div class="export-warn'+(v.danger?' danger':'')+'"><strong><i class="ti ti-alert-triangle"></i> Atenção</strong>'+v.alerts.map(function(a){return'<div>• '+a+'</div>'}).join('')+'</div>';
+}
+
+// ── PEDIDO ENVIADO ──
+function marcarPedidoEnviado(grupos){
+  if(!grupos||!grupos.length)return Promise.resolve();
+  var agora=fmtDate();
+  return Promise.all(grupos.map(function(g){
+    var enc=g.replace(/\//g,'__SLASH__');
+    return fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/pedido-enviado',{method:'PATCH',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({enviado_em:agora})});
+  })).then(function(){carregarCotacoes()});
+}
+
+// ── INDICADORES ──
+function carregarIndicadores(){
+  var el=document.getElementById('ind-content');if(!el)return;
+  el.innerHTML='<div style="color:var(--text3);font-size:12px">Carregando...</div>';
+  fetch(BACKEND+'/indicadores').then(function(r){return r.json()}).then(function(d){
+    renderIndicadores(d);
+  }).catch(function(){el.innerHTML='<div style="color:var(--red);font-size:12px">Erro ao carregar indicadores.</div>'});
+}
+function renderIndicadores(d){
+  var el=document.getElementById('ind-content');if(!el)return;
+  var status=d.cotacoes_por_status||{};
+  var valStatus=d.valor_estimado_por_status||{};
+  var emCot=status.em_cotacao||0;
+  var concl=status.concluido||0;
+  var env=status.pedido_enviado||0;
+  var valEm=valStatus.em_cotacao||0;
+  var valConcl=valStatus.concluido||0;
+  var valEnv=valStatus.pedido_enviado||0;
+  var totalProds=products.length;
+  var critic=products.filter(function(p){return urg(p)==='c'}).length;
+  var aComprar=products.filter(function(p){return p.comprar_min>0}).length;
+  var topForn=d.top_fornecedores||[];
+
+  var html='<div class="ind-section"><h3>Estoque</h3><div class="ind-grid">'
+    +'<div class="ind-card"><div class="ind-l">Produtos</div><div class="ind-n">'+fmtN(totalProds)+'</div></div>'
+    +'<div class="ind-card r"><div class="ind-l">Críticos</div><div class="ind-n">'+critic+'</div></div>'
+    +'<div class="ind-card w"><div class="ind-l">A comprar</div><div class="ind-n">'+aComprar+'</div></div>'
+    +'<div class="ind-card"><div class="ind-l">Grupos</div><div class="ind-n">'+getGroups().length+'</div></div>'
+    +'</div></div>';
+
+  html+='<div class="ind-section"><h3>Cotações</h3><div class="ind-grid">'
+    +'<div class="ind-card w"><div class="ind-l">Em cotação</div><div class="ind-n">'+emCot+'</div><div class="ind-sub">'+(valEm>0?'R$ '+fmtN(valEm):'sem valor')+'</div></div>'
+    +'<div class="ind-card g"><div class="ind-l">Concluídas</div><div class="ind-n">'+concl+'</div><div class="ind-sub">'+(valConcl>0?'R$ '+fmtN(valConcl):'sem valor')+'</div></div>'
+    +'<div class="ind-card b"><div class="ind-l">Pedido enviado</div><div class="ind-n">'+env+'</div><div class="ind-sub">'+(valEnv>0?'R$ '+fmtN(valEnv):'sem valor')+'</div></div>'
+    +'<div class="ind-card"><div class="ind-l">Cotações registradas</div><div class="ind-n">'+(d.total_cotacoes||0)+'</div></div>'
+    +'</div></div>';
+
+  html+='<div class="ind-section"><h3>Histórico</h3><div class="ind-grid">'
+    +'<div class="ind-card"><div class="ind-l">Registros no histórico</div><div class="ind-n">'+fmtN(d.total_historico||0)+'</div><div class="ind-sub">cotações salvas</div></div>'
+    +'<div class="ind-card"><div class="ind-l">Fornecedores cadastrados</div><div class="ind-n">'+fornecedoresCadastrados.length+'</div></div>'
+    +'<div class="ind-card"><div class="ind-l">Categorias</div><div class="ind-n">'+categoriasCache.length+'</div></div>'
+    +'</div></div>';
+
+  if(topForn.length){
+    html+='<div class="ind-section"><h3>Top fornecedores (vitórias por melhor preço)</h3>'
+      +'<table class="ind-table"><thead><tr><th>#</th><th>Fornecedor</th><th class="num">Itens em que teve menor preço</th></tr></thead><tbody>';
+    topForn.forEach(function(f,i){
+      html+='<tr><td>'+(i+1)+'</td><td>'+f.nome+'</td><td class="num">'+f.vitorias_melhor_preco+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  el.innerHTML=html;
 }
 
 // ── ADMIN ──
