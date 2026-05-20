@@ -168,8 +168,12 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .export-warn strong{color:var(--yellow)}
 .export-warn.danger{background:var(--red-bg);border-color:var(--red-light)}
 .export-warn.danger strong{color:var(--red)}
-#forn-picker{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:3px;z-index:200;min-width:220px;max-height:300px;overflow-y:auto}
-#forn-picker .forn-picker-item{font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg2);border:1px solid transparent;font-family:var(--font);text-align:left}
+#forn-picker{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:3px;z-index:200;min-width:340px;max-width:500px;width:max-content}
+#forn-picker .forn-picker-scroll{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:2px}
+#forn-picker .forn-picker-item{font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg2);border:1px solid transparent;font-family:var(--font);text-align:left;line-height:1.35;white-space:normal;word-break:break-word}
+#forn-picker .forn-picker-item .fp-nome{display:block;font-weight:500;color:var(--text)}
+#forn-picker .forn-picker-item .fp-cnpj{display:block;font-size:10px;color:var(--text3);margin-top:1px}
+#forn-picker .forn-picker-item:hover .fp-cnpj{color:var(--blue)}
 #forn-picker .forn-picker-item:hover{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-light)}
 #forn-picker .forn-picker-novo{background:var(--green-bg);color:var(--green);font-weight:500}
 #forn-picker .forn-picker-novo:hover{background:var(--green);color:#fff}
@@ -199,9 +203,15 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .ind-table .num{text-align:right;font-variant-numeric:tabular-nums}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
-.forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:13px}
-.forn-cad-card .fc-nome{flex:1;font-weight:500}
-.forn-cad-card .fc-meta{font-size:11px;color:var(--text3)}
+.forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
+.forn-cad-card .fc-nome{flex:1;font-weight:500;word-break:break-word;min-width:0}
+.forn-cad-card .fc-meta{font-size:10px;color:var(--text3);white-space:nowrap}
+.forn-cad-card .btn{padding:3px 6px}
+#forn-cad-wrap{display:flex;flex-direction:column;gap:6px}
+#forn-cad-search{padding:6px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg)}
+#forn-cad-search:focus{border-color:var(--blue)}
+#forn-cad-list{max-height:420px;overflow-y:auto;padding-right:4px;border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg2)}
+#forn-cad-count{font-size:11px;color:var(--text3)}
 #empty-ped{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:8px;color:var(--text3);font-size:13px;padding:40px}
 #empty-ped i{font-size:40px;color:var(--border)}
 #ped-footer{padding:9px 14px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
@@ -528,7 +538,13 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
         </div>
         <div class="admin-section" style="margin-top:24px">
           <h2>Cadastro de Fornecedores</h2>
-          <div id="forn-cad-list"><div style="color:var(--text3)">Carregando...</div></div>
+          <div id="forn-cad-wrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              <input id="forn-cad-search" type="text" placeholder="Buscar por nome ou CNPJ..." oninput="renderFornCadList()" style="flex:1">
+              <span id="forn-cad-count">—</span>
+            </div>
+            <div id="forn-cad-list"><div style="color:var(--text3)">Carregando...</div></div>
+          </div>
           <div class="novo-user-form">
             <h3>Novo fornecedor</h3>
             <div class="form-row" style="grid-template-columns:1fr 1fr auto">
@@ -2508,17 +2524,31 @@ function carregarFornecedoresCadastrados(){
 }
 function renderFornecedoresCadastrados(){
   carregarFornecedoresCadastrados();
-  setTimeout(function(){
-    var el=document.getElementById('forn-cad-list');if(!el)return;
-    el.innerHTML='';
-    if(!fornecedoresCadastrados.length){el.innerHTML='<div style="color:var(--text3)">Nenhum fornecedor cadastrado ainda.</div>';return}
-    fornecedoresCadastrados.forEach(function(f){
-      var div=document.createElement('div');div.className='forn-cad-card';
-      div.innerHTML='<div class="fc-nome">'+f.nome+(f.cnpj?' <span class="fc-meta">· CNPJ '+_fmtCnpj(f.cnpj)+'</span>':'')+'</div>'
-        +'<button class="btn danger" style="font-size:11px" onclick="removerFornecedorCad('+f.id+')"><i class="ti ti-trash"></i></button>';
-      el.appendChild(div);
+  setTimeout(renderFornCadList,400);
+}
+function renderFornCadList(){
+  var el=document.getElementById('forn-cad-list');if(!el)return;
+  var search=(document.getElementById('forn-cad-search')||{}).value||'';
+  var q=norm(search.trim());
+  var lista=fornecedoresCadastrados;
+  if(q){
+    lista=lista.filter(function(f){
+      var nomeOk=norm(f.nome).indexOf(q)>=0;
+      var cnpjOk=f.cnpj&&String(f.cnpj).replace(/\D/g,'').indexOf(q.replace(/\D/g,''))>=0;
+      return nomeOk||cnpjOk;
     });
-  },400);
+  }
+  var countEl=document.getElementById('forn-cad-count');
+  if(countEl)countEl.textContent=q?(lista.length+' de '+fornecedoresCadastrados.length):(fornecedoresCadastrados.length+' cadastrados');
+  el.innerHTML='';
+  if(!fornecedoresCadastrados.length){el.innerHTML='<div style="color:var(--text3);padding:8px">Nenhum fornecedor cadastrado ainda.</div>';return}
+  if(!lista.length){el.innerHTML='<div style="color:var(--text3);padding:8px">Nenhum resultado para "'+search+'".</div>';return}
+  lista.forEach(function(f){
+    var div=document.createElement('div');div.className='forn-cad-card';
+    div.innerHTML='<div class="fc-nome">'+f.nome+(f.cnpj?' <span class="fc-meta">· '+_fmtCnpj(f.cnpj)+'</span>':'')+'</div>'
+      +'<button class="btn danger" title="Remover" onclick="removerFornecedorCad('+f.id+')"><i class="ti ti-trash"></i></button>';
+    el.appendChild(div);
+  });
 }
 function criarFornecedorCad(){
   var nome=document.getElementById('new-forn-nome').value.trim();
@@ -2559,26 +2589,84 @@ function _renderFornPicker(){
   var p=document.createElement('div');p.id='forn-picker';
   p.style.top=(rect.bottom+window.scrollY+4)+'px';
   p.style.left=(rect.left+window.scrollX)+'px';
+
   var usados={};fornecedoresCols.forEach(function(f){usados[norm(f.nome)]=1});
-  var cadastrados=fornecedoresCadastrados.filter(function(f){return !usados[norm(f.nome)]});
-  if(cadastrados.length){
-    var hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;padding:2px 6px';hdr.textContent='Cadastrados';
-    p.appendChild(hdr);
-    cadastrados.forEach(function(f){
-      var b=document.createElement('button');b.className='forn-picker-item';b.textContent=f.nome+(f.cnpj?'  ·  '+_fmtCnpj(f.cnpj):'');
-      b.onclick=(function(forn){return function(){adicionarFornecedorCadastrado(forn);fecharFornPicker()}})(f);
-      p.appendChild(b);
-    });
-  }else{
-    var vazio=document.createElement('div');vazio.style.cssText='font-size:11px;color:var(--text3);padding:6px 10px';vazio.textContent='Nenhum fornecedor cadastrado ainda.';
-    p.appendChild(vazio);
-  }
+  var disponiveis=fornecedoresCadastrados.filter(function(f){return !usados[norm(f.nome)]});
+
+  // Cabeçalho com busca + contador
+  var topo=document.createElement('div');
+  topo.style.cssText='display:flex;align-items:center;gap:6px;padding:2px 4px 4px';
+  var hdr=document.createElement('span');
+  hdr.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex:1';
+  hdr.textContent='Cadastrados';
+  var cnt=document.createElement('span');
+  cnt.id='forn-picker-count';
+  cnt.style.cssText='font-size:10px;color:var(--text3)';
+  cnt.textContent=disponiveis.length;
+  topo.appendChild(hdr);topo.appendChild(cnt);
+  p.appendChild(topo);
+
+  var inp=document.createElement('input');
+  inp.id='forn-picker-search';
+  inp.type='text';
+  inp.placeholder='Buscar por nome ou CNPJ...';
+  inp.autocomplete='off';
+  inp.oninput=function(){_filtrarFornPickerLista(disponiveis)};
+  inp.onkeydown=function(e){if(e.key==='Escape'){fecharFornPicker()}};
+  p.appendChild(inp);
+
+  var scroll=document.createElement('div');
+  scroll.id='forn-picker-scroll';
+  scroll.className='forn-picker-scroll';
+  p.appendChild(scroll);
+
   var sep=document.createElement('div');sep.style.cssText='border-top:1px solid var(--border);margin:4px 0';p.appendChild(sep);
   var btnNovo=document.createElement('button');btnNovo.className='forn-picker-item forn-picker-novo';btnNovo.innerHTML='<i class="ti ti-plus"></i> Cadastrar novo...';
   btnNovo.onclick=function(){fecharFornPicker();abrirNovoForn()};
   p.appendChild(btnNovo);
+
   document.body.appendChild(p);
-  setTimeout(function(){document.addEventListener('click',_onClickForaPicker,true)},10);
+  _filtrarFornPickerLista(disponiveis);
+  setTimeout(function(){document.addEventListener('click',_onClickForaPicker,true);inp.focus()},10);
+}
+function _filtrarFornPickerLista(disponiveis){
+  var scroll=document.getElementById('forn-picker-scroll');if(!scroll)return;
+  var inp=document.getElementById('forn-picker-search');
+  var q=norm((inp&&inp.value||'').trim());
+  var qDig=q.replace(/\D/g,'');
+  var lista=disponiveis;
+  if(q){
+    lista=disponiveis.filter(function(f){
+      if(norm(f.nome).indexOf(q)>=0)return true;
+      if(qDig&&f.cnpj&&String(f.cnpj).replace(/\D/g,'').indexOf(qDig)>=0)return true;
+      return false;
+    });
+  }
+  var cnt=document.getElementById('forn-picker-count');
+  if(cnt)cnt.textContent=q?(lista.length+'/'+disponiveis.length):disponiveis.length;
+  scroll.innerHTML='';
+  if(!disponiveis.length){
+    var vazio=document.createElement('div');vazio.style.cssText='font-size:11px;color:var(--text3);padding:6px 10px';vazio.textContent='Nenhum fornecedor cadastrado.';
+    scroll.appendChild(vazio);return;
+  }
+  if(!lista.length){
+    var nores=document.createElement('div');nores.style.cssText='font-size:11px;color:var(--text3);padding:6px 10px';nores.textContent='Nenhum resultado. Tente outro termo.';
+    scroll.appendChild(nores);return;
+  }
+  // Limita exibição a 80 itens (scroll cobre os demais via busca)
+  function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  lista.slice(0,80).forEach(function(f){
+    var b=document.createElement('button');b.className='forn-picker-item';
+    b.innerHTML='<span class="fp-nome">'+escHtml(f.nome)+'</span>'
+      +(f.cnpj?'<span class="fp-cnpj">'+escHtml(_fmtCnpj(f.cnpj))+'</span>':'');
+    b.onclick=(function(forn){return function(){adicionarFornecedorCadastrado(forn);fecharFornPicker()}})(f);
+    scroll.appendChild(b);
+  });
+  if(lista.length>80){
+    var more=document.createElement('div');more.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px;text-align:center';
+    more.textContent='Mostrando 80 de '+lista.length+'. Refine a busca.';
+    scroll.appendChild(more);
+  }
 }
 function _onClickForaPicker(e){
   var p=document.getElementById('forn-picker');
