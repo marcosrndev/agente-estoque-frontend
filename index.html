@@ -1676,7 +1676,7 @@ function iniciarExportExcel(){
   });
   var lbAll=document.createElement('label');
   lbAll.style.background='var(--blue-bg)';lbAll.style.borderColor='var(--blue-light)';
-  lbAll.innerHTML='<input type="checkbox" value="__ALL__"><strong>Todos (uma aba por fornecedor)</strong>';
+  lbAll.innerHTML='<input type="checkbox" value="__ALL__"><strong>Todos (única aba com todos os fornecedores)</strong>';
   list.appendChild(lbAll);
   document.getElementById('export-excel-overlay').style.display='flex';
 }
@@ -1702,12 +1702,95 @@ function exportExcel(fornIds){
   if(!selP.length){alert('Nenhum item para exportar. Selecione grupos na aba Montar Pedido.');return}
 
   var wb=XLSX.utils.book_new();
-  fornIds.forEach(function(fid){
+  if(fornIds.length>1){
+    // Múltiplos fornecedores → única aba com todas as colunas (igual à tela)
+    _adicionarAbaMultiForn(wb,selP,fornIds,meses);
+  }else{
+    var fid=fornIds[0];
     var pq=_coletarPrecosQtds(fid);
     _adicionarAbaExcel(wb,selP,pq.precos,pq.qtds,meses,fid);
-  });
-  var fornTag=fornIds.length===1?_nomeFornecedor(fornIds[0]):'multi';
+  }
+  var fornTag=fornIds.length===1?_nomeFornecedor(fornIds[0]):'comparativo';
   XLSX.writeFile(wb,'CasaSaoJose_Pedido_'+fornTag.replace(/\s+/g,'_')+'_'+meses+'m_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
+  var byG={};selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
+  var allByG={};products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!allByG[p.grupo])allByG[p.grupo]=[];allByG[p.grupo].push(p)});
+  var sortedGroups=sortGroupsByPriority(byG);
+  var allSorted=sortGroupsByPriority(allByG);
+
+  // Coleta preços de cada fornecedor + qtds
+  var precosForn={}; // {fid: {cod: preco}}
+  fornIds.forEach(function(fid){precosForn[fid]=_coletarPrecosQtds(fid).precos});
+  var qtds=_coletarPrecosQtds(fornIds[0]).qtds; // qtd é independente do forn
+
+  // Cabeçalho: igual à tela
+  // Código | Nome | UN | Estoque | [Forn1..N] | Melhor Preço | Qtd | Valor Total | Comprar Mín | Sugerido | Urgência | Status | Grupo | ABC | Prioridade
+  var hdr=['Código','Nome do Produto','UN','Estoque Atual'];
+  fornIds.forEach(function(fid){hdr.push(_nomeFornecedor(fid))});
+  hdr=hdr.concat(['Melhor Preço','Qtd','Valor Total','Comprar Mín (3m)','Sugerido ('+meses+'m)','Urgência %','Status','Grupo','ABC','Prioridade Grupo']);
+
+  var wsData=[];
+  var modo=showAllItems?'Todos os itens':'Itens para compra';
+  var pad=hdr.length;
+  var fillRow=function(arr){var r=arr.slice();while(r.length<pad)r.push('');return r};
+  wsData.push(fillRow(['Casa São José — '+modo+' — Cobertura: '+meses+' meses — Comparativo de '+fornIds.length+' fornecedores']));
+  wsData.push(hdr);
+
+  var totalGeral=0;
+  sortedGroups.forEach(function(g){
+    var itens=sortItemsByUrgency(byG[g]);
+    var prio=allSorted.indexOf(g)+1;
+    wsData.push(fillRow(['▸  '+g]));
+    itens.forEach(function(p){
+      var us=urgScore(p);
+      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var qtdSug=calcQtdMeses(p,meses);
+      var isOk=urg(p)==='o'&&p.comprar_min<=0;
+      var precosLinha=fornIds.map(function(fid){return precosForn[fid][p.codigo]||0});
+      var menor=0;precosLinha.forEach(function(v){if(v>0&&(menor===0||v<menor))menor=v});
+      var qtdManual=qtds[p.codigo]||0;
+      var qtdUsar=qtdManual>0?qtdManual:Math.ceil(qtdSug);
+      var vt=menor>0?menor*qtdUsar:0;
+      totalGeral+=vt;
+      var row=[
+        p.codigo,p.nome,p.un,p.estoque_atual
+      ];
+      precosLinha.forEach(function(v){row.push(v>0?v:'')});
+      row.push(menor>0?menor:'');
+      row.push(isOk?'':qtdManual>0?qtdManual:Math.ceil(qtdSug));
+      row.push(menor>0&&qtdUsar>0?menor*qtdUsar:'');
+      row.push(isOk?'':p.comprar_min);
+      row.push(isOk?'':Math.ceil(qtdSug));
+      row.push(isOk?'Em estoque':urgPct);
+      row.push(isOk?'Em estoque':urgL(urg(p)));
+      row.push(p.grupo);
+      row.push(p.abc);
+      row.push('#'+prio);
+      wsData.push(row);
+    });
+  });
+  wsData.push(fillRow(['']));
+  wsData.push(fillRow(['INFORMAÇÕES DO PEDIDO']));
+  [['Fornecedores',fornIds.map(_nomeFornecedor).join(' / ')],
+   ['Empresa a faturar',document.getElementById('f-emp').value],
+   ['Condição de pagamento',document.getElementById('f-pag').value],
+   ['Valor total (melhor preço)',totalGeral>0?'R$ '+fmtN(totalGeral):''],
+   ['Tipo de nota',document.getElementById('f-nota').value],
+   ['Transportadora',document.getElementById('f-transp').value],
+   ['Observações',document.getElementById('f-obs').value],
+   ['Data',document.getElementById('f-data').value]
+  ].forEach(function(f){wsData.push(fillRow([f[0],f[1]||'']))});
+
+  var ws=XLSX.utils.aoa_to_sheet(wsData);
+  // Larguras: básicos + fornecedores + restante
+  var cols=[{wch:8},{wch:40},{wch:5},{wch:10}];
+  fornIds.forEach(function(){cols.push({wch:14})});
+  cols=cols.concat([{wch:14},{wch:8},{wch:14},{wch:14},{wch:14},{wch:10},{wch:11},{wch:22},{wch:5},{wch:14}]);
+  ws['!cols']=cols;
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:pad-1}}];
+  XLSX.utils.book_append_sheet(wb,ws,'Comparativo');
 }
 
 function _nomeFornecedor(fid){
