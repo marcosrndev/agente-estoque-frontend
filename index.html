@@ -1514,7 +1514,7 @@ function _renderPedidoInterno(meses){
   });
   var empty=document.getElementById('empty-ped'),stats=document.getElementById('ped-stats'),
       tbl=document.getElementById('ped-tbl-wrap'),info=document.getElementById('ped-info');
-  if(selectedGroups.size===0){empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';return}
+  if(selectedGroups.size===0){empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';renderFornecedoresBar();return}
   empty.style.display='none';stats.style.display='flex';tbl.style.display='block';
   var crit=selP.filter(function(p){return urg(p)==='c'}).length;
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
@@ -2232,6 +2232,7 @@ function adicionarFornecedorCadastrado(forn){
   var norm_=norm(forn.nome);
   if(fornecedoresCols.some(function(f){return norm(f.nome)===norm_}))return;
   fornecedoresCols.push({id:nextFornId(),nome:forn.nome,cadastro_id:forn.id,cnpj:forn.cnpj||null});
+  renderFornecedoresBar();
   renderPedido();
   selectedGroups.forEach(function(g){triggerSave(g)});
 }
