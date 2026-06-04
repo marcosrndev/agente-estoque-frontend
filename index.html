@@ -646,7 +646,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p><span class="urg c">Crítico</span> — estoque zerado ou abaixo de 50% do mínimo</p>
               <p><span class="urg a">Atenção</span> — abaixo do estoque mínimo (precisa comprar)</p>
               <p><span class="urg o">OK</span> — estoque adequado</p>
-              <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo. 100% = zerado.</p>
+              <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo, já <strong>descontando o que está a chegar</strong> (pedido fornecedor) — fórmula: (mínimo − (estoque atual + pedido fornecedor)) ÷ mínimo. 100% = zerado.</p>
               <p><strong>Classe ABC do item:</strong> vem do ERP — A é o que mais gera receita, C o que menos. Em conflito, priorize A.</p>
               <p><strong>Prioridade dos grupos (#1, #2, #3...):</strong> calculada automaticamente por:</p>
               <ol style="margin:4px 0 4px 18px;padding:0">
@@ -655,16 +655,19 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li>Quantidade de itens classe C</li>
                 <li>Valor total de compra do grupo</li>
               </ol>
-              <div class="manual-tip">🔥 Clique em <strong>"Próximo urgente"</strong> no topo da tela Montar Pedido pra ir direto pro grupo #1.</div>
+              <div class="manual-tip">🔥 O botão <strong>"Próximo urgente"</strong> segue <strong>exatamente o ranking do painel Urgentes</strong> (nº de itens A críticos, desempate por severidade) — não esta numeração de prioridade. Ele leva ao grupo do <strong>topo do ranking</strong> ainda não pedido nesta sessão (e não em cotação).</div>
 
               <p style="margin-top:10px"><strong>🔥 Painel "Urgentes" (ranking de grupos)</strong></p>
-              <p>O botão <strong>Urgentes</strong> (ao lado de "Próximo urgente") abre um ranking de <strong>grupos</strong> ordenado por:</p>
+              <p>O botão <strong>Urgentes</strong> (ao lado de "Próximo urgente") abre um ranking de <strong>grupos</strong>. Em cada grupo conta só os itens <strong>a comprar</strong> (abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo — ou seja, Crítico + Atenção; "Em estoque" não conta). A ordem segue esta cadeia de desempate:</p>
               <ol style="margin:4px 0 4px 18px;padding:0">
-                <li><strong>Quantidade de itens classe A em estado Crítico</strong> no grupo (critério principal — mais A críticos, posição mais alta).</li>
-                <li><strong>Severidade</strong> (desempate): soma do "quanto falta comprar" dos itens A do grupo.</li>
+                <li>Mais itens <strong>Classe A</strong> a comprar (critério principal).</li>
+                <li>Empatou? Mais itens <strong>Classe B</strong> a comprar.</li>
+                <li>Empatou? Mais itens <strong>Classe C</strong> a comprar.</li>
+                <li>Empatou? Maior <strong>quantidade "Comprar para Mínimo"</strong> somada no grupo (quantidade, não R$).</li>
+                <li>Por fim, <strong>ordem alfabética</strong> do nome do grupo.</li>
               </ol>
-              <p>Grupos <strong>sem nenhum item A crítico não aparecem</strong> no painel — eles continuam acessíveis normalmente pela busca de grupos. Grupos <strong>já pedidos nesta sessão também saem do ranking</strong> (igual ao "Próximo urgente"), voltando após um novo import do ERP se a necessidade persistir. Use o filtro <strong>Top 5 / Top 10 / Todos</strong> e a <strong>busca por nome</strong>: ao buscar, o painel mostra a <strong>posição do grupo no ranking</strong> (ex.: "ALKORENDA — 3º lugar, 5 itens A críticos").</p>
-              <div class="manual-tip">O filtro de A críticos serve só para <strong>ordenar</strong>. Ao clicar num grupo, abre o <strong>grupo inteiro</strong> (itens A, B e C) na montagem do pedido — igual a abrir qualquer grupo.</div>
+              <p>Como a Classe A é o 1º critério, <strong>grupos sem item A não saem do painel</strong> — apenas caem para o fim do ranking. Só ficam de fora os grupos <strong>sem nada a comprar</strong>. Grupos <strong>já pedidos nesta sessão também saem do ranking</strong> (igual ao "Próximo urgente"), voltando após um novo import do ERP se a necessidade persistir. Use o filtro <strong>Top 5 / Top 10 / Todos</strong> e a <strong>busca por nome</strong>: ao buscar, o painel mostra a <strong>posição do grupo no ranking</strong> (ex.: "ALKORENDA — 3º lugar · a comprar: A 2 · B 1 · C 0").</p>
+              <div class="manual-tip">Os contadores servem só para <strong>ordenar</strong>. Ao clicar num grupo, abre o <strong>grupo inteiro</strong> (itens A, B e C) na montagem do pedido — igual a abrir qualquer grupo.</div>
 
               <p style="margin-top:10px"><strong>♻️ Comportamento do "Próximo urgente" ao concluir</strong></p>
               <p>Concluir um pedido <strong>não remove</strong> o grupo do sistema — ele continua acessível pela busca de grupos. Dentro da <strong>mesma sessão</strong>, ao concluir/enviar um pedido e clicar em <strong>Próximo urgente</strong> de novo, o grupo recém-pedido é <strong>pulado</strong> e o sistema avança para o próximo urgente ainda não pedido.</p>
@@ -1090,7 +1093,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <div id="urgentes-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box wide">
     <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
-    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Ordenados por nº de itens <strong>A críticos</strong>; desempate pela severidade (soma do que falta comprar dos itens A). Grupos sem item A crítico não entram aqui — use a busca de grupos.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Conta só itens <strong>a comprar</strong> (abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo). Ordem: + itens <strong>A</strong> → + <strong>B</strong> → + <strong>C</strong> → maior <strong>quantidade p/ o mínimo</strong> → nome (A→Z). Grupos sem item A aparecem mais abaixo; só ficam de fora os sem nada a comprar.</div>
     <div class="urg-filtros">
       <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
       <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
@@ -1107,11 +1110,12 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 </div>
 
 <script>
-// BACKEND escolhido dinamicamente: previews da branch dev no Vercel usam o
-// proxy/Supabase de teste; produção e qualquer outro host usam o de produção.
+// BACKEND escolhido dinamicamente: ambientes de dev no Vercel (preview por commit
+// '-git-dev-' OU o alias 'agente-estoque-frontend-dev') usam o proxy/Supabase de
+// teste; produção (agente-estoque-frontend) e qualquer outro host usam o de produção.
 var BACKEND = (function(){
   var h = (typeof location !== 'undefined' && location.hostname) || '';
-  if (h.indexOf('-git-dev-') >= 0) {
+  if (h.indexOf('-git-dev-') >= 0 || h.indexOf('frontend-dev') >= 0) {
     return 'https://agente-estoque-proxy-dev2.onrender.com';
   }
   return 'https://agente-estoque-proxy.onrender.com';
@@ -1165,6 +1169,10 @@ function fmtDate(){return new Date().toLocaleString('pt-BR')}
 function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
 function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':'OK'}
 function urgScore(p){if(p.est_min<=0)return 0;return(p.est_min-(p.estoque_atual+p.pedido_forn))/p.est_min}
+// Necessidade de compra (regra oficial da planilha): item abaixo do mínimo, OU dentro
+// do mínimo porém abaixo do máximo. Equivale aos itens "a comprar" (Crítico + Atenção);
+// itens "Em estoque" ficam de fora. É o filtro usado no ranking de grupos urgentes.
+function precisaComprar(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max)}
 function calcQtdMeses(p,meses){meses=meses||6;var d=6*30;var n=p.comprar_max+p.estoque_atual+p.pedido_forn;var g=n/d;return Math.max(0,g*(meses*30)-p.estoque_atual-p.pedido_forn)}
 function getMeses(){var s=document.getElementById('meses-sel');return s?parseInt(s.value)||6:6}
 function getGroups(){return[...new Set(products.map(function(p){return p.grupo}))].sort()}
@@ -1904,31 +1912,36 @@ function concluirSessaoB64(btn){
 }
 
 // ── PRÓXIMO URGENTE ──
+// Usa EXATAMENTE o mesmo ranking do painel "Urgentes" (rankGruposUrgentes):
+// nº de itens A críticos (desempate por severidade), já sem grupos pedidos nesta
+// sessão e sem grupos não-urgentes. Aqui apenas pulamos também grupos em cotação
+// ativa e selecionamos o 1º do ranking ainda não atendido. A ordenação nunca diverge
+// do painel porque ambos consomem a mesma função.
 function proximoUrgente(){
   if(!products.length){alert('Importe produtos primeiro.');return}
-  var byG={};
-  products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
-  var sorted=sortGroupsByPriority(byG);
-  // Pula grupos em cotação E grupos já pedidos nesta sessão (até novo import do ERP).
-  var candidatos=sorted.filter(function(g){
-    if(gruposPedidosSessao.has(g))return false;
-    return!cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'});
-  });
-  if(!candidatos.length){alert('Todos os grupos urgentes já foram pedidos nesta sessão ou estão em cotação.\n\nUm grupo só volta a aparecer quando, após um novo import do ERP, a necessidade ainda persistir.');return}
-  var proximo=candidatos[0];
-  var pr=byG[proximo];
-  var prio=sorted.indexOf(proximo)+1;
-  var crit=pr.filter(function(p){return urg(p)==='c'}).length;
+  var rank=rankGruposUrgentes();
+  // Pula grupos em cotação ativa (estão sendo atendidos); grupos já pedidos nesta
+  // sessão já saem do ranking dentro de rankGruposUrgentes().
+  var idx=-1;
+  for(var i=0;i<rank.length;i++){
+    if(cotacoesCache.find(function(c){return c.grupo===rank[i].grupo&&c.status==='em_cotacao'}))continue;
+    idx=i;break;
+  }
+  if(idx<0){alert('Todos os grupos urgentes já foram pedidos nesta sessão ou estão em cotação.\n\nUm grupo só volta a aparecer quando, após um novo import do ERP, a necessidade ainda persistir.');return}
+  var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+pr.length+' itens · '+crit+' críticos. Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+topo.compra+' a comprar (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+'). Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
-// Ordena por nº de itens A (curva ABC) em status Crítico; desempate pela severidade
-// (soma do "Comprar para Mínimo" / qtd sugerida de compra dos itens A). Grupos sem
-// nenhum item A crítico ficam FORA do ranking. O filtro é só p/ ORDENAR — ao selecionar,
-// abre o grupo INTEIRO (A, B e C), como qualquer grupo aberto hoje.
+// Critério oficial da planilha. Em cada grupo conta SÓ os itens com necessidade de
+// compra (precisaComprar: abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo).
+// Cadeia de ordenação: + itens A → + itens B → + itens C → maior soma de "Comprar para
+// Mínimo" (QUANTIDADE, não R$) → nome do grupo (alfabético). Grupos sem item A NÃO são
+// excluídos — como A é o 1º critério, caem naturalmente para o fim. Só não entram os
+// grupos sem nada a comprar e os já pedidos na sessão. O filtro é só p/ ORDENAR — ao
+// selecionar, abre o grupo INTEIRO (A, B e C). Mesma função alimenta o "Próximo urgente".
 var urgTopFiltro=10, urgRankCache=[];
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function rankGruposUrgentes(){
@@ -1936,14 +1949,19 @@ function rankGruposUrgentes(){
   products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var arr=Object.keys(byG).map(function(g){
     var items=byG[g];
-    var aCrit=items.filter(function(p){return p.abc==='A'&&urg(p)==='c'}).length;
-    var sev=items.filter(function(p){return p.abc==='A'}).reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
-    return{grupo:g,aCrit:aCrit,sev:sev,total:items.length};
-  }).filter(function(x){return x.aCrit>0&&!gruposPedidosSessao.has(x.grupo)});
+    var compra=items.filter(precisaComprar);                       // só itens a comprar
+    var nA=compra.filter(function(p){return p.abc==='A'}).length;
+    var nB=compra.filter(function(p){return p.abc==='B'}).length;
+    var nC=compra.filter(function(p){return p.abc==='C'}).length;
+    var qtdMin=compra.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
+    return{grupo:g,nA:nA,nB:nB,nC:nC,qtdMin:qtdMin,compra:compra.length,total:items.length};
+  }).filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
   arr.sort(function(a,b){
-    if(b.aCrit!==a.aCrit)return b.aCrit-a.aCrit;          // principal: + A críticos
-    if(Math.abs(b.sev-a.sev)>0.001)return b.sev-a.sev;     // desempate: + severidade
-    return a.grupo<b.grupo?-1:1;                           // estável por nome
+    if(b.nA!==a.nA)return b.nA-a.nA;                               // 1º: + itens A
+    if(b.nB!==a.nB)return b.nB-a.nB;                               // 2º: + itens B
+    if(b.nC!==a.nC)return b.nC-a.nC;                               // 3º: + itens C
+    if(Math.abs(b.qtdMin-a.qtdMin)>0.001)return b.qtdMin-a.qtdMin; // 4º: maior qtd p/ mínimo
+    return a.grupo<b.grupo?-1:1;                                   // 5º: alfabético
   });
   return arr;
 }
@@ -1967,7 +1985,7 @@ function renderUrgentes(){
   var q=(document.getElementById('urg-search').value||'').trim().toLowerCase();
   var cont=document.getElementById('urg-list');
   document.getElementById('urg-count').textContent=rank.length?'('+rank.length+' grupo'+(rank.length>1?'s':'')+')':'';
-  if(!rank.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo com item A crítico no momento. 🎉<br>Os demais grupos seguem acessíveis pela busca de grupos.</div>';return}
+  if(!rank.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo com itens a comprar no momento. 🎉<br>Todos os grupos seguem acessíveis pela busca de grupos.</div>';return}
   var visiveis=[];
   rank.forEach(function(x,i){
     if(q&&x.grupo.toLowerCase().indexOf(q)<0)return;
@@ -1977,11 +1995,11 @@ function renderUrgentes(){
   if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
   cont.innerHTML=visiveis.map(function(v){
     var x=v.x,pos=v.pos;
-    var sevTxt=x.sev>0?'severidade '+fmtN(x.sev):'';
+    var meta=x.compra+' a comprar (A '+x.nA+' · B '+x.nB+' · C '+x.nC+')'+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
     return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
       +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
-      +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+x.total+' itens no grupo'+(sevTxt?' · '+sevTxt:'')+'</div></span>'
-      +'<span class="urg-acrit">'+x.aCrit+' A crítico'+(x.aCrit>1?'s':'')+'</span>'
+      +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+'</div></span>'
+      +'<span class="urg-acrit">'+x.nA+' A</span>'
       +'</button>';
   }).join('');
 }
@@ -1993,14 +2011,14 @@ function onUrgSearch(q){
   for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
   if(idx>=0){
     var x=urgRankCache[idx];
-    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong>, '+x.aCrit+' item'+(x.aCrit>1?'ns':'')+' A crítico'+(x.aCrit>1?'s':'')+(x.sev>0?' · severidade '+fmtN(x.sev):'');
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · a comprar: A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
   }else{
     var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
     info.innerHTML=jaPedido
       ?'Esse grupo já foi <strong>pedido nesta sessão</strong>, por isso saiu do ranking. Ele volta após um novo import do ERP se a necessidade persistir — e segue acessível pela busca de grupos.'
       :existe
-      ?'Esse grupo <strong>não tem item A crítico</strong> agora, então fica fora do ranking de urgentes. Você ainda pode abri-lo pela busca de grupos.'
+      ?'Esse grupo <strong>não tem itens a comprar</strong> agora, então fica fora do ranking de urgentes. Você ainda pode abri-lo pela busca de grupos.'
       :'Nenhum grupo encontrado para a busca.';
   }
   info.style.display='block';
