@@ -130,6 +130,10 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .grph-lock.ok{background:var(--green-bg);color:var(--green)}
 .grph-lock.upd{background:var(--red-bg);color:var(--red)}
 .pcol{font-size:11px;text-align:right;color:var(--text2)}.pcol.hi{color:var(--text);font-weight:600}
+.ptf{display:grid;gap:3px;padding:8px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
+.ptf-num{font-size:11px;text-align:right;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis}
+.ptf-num.empty{color:var(--text3);font-weight:600}
+.ptf-lbl{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ok-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center}
 #forn-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:34px}
 #forn-bar>label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
@@ -650,6 +654,14 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li>Clique <strong>Exportar Excel</strong> ou <strong>Exportar p/ ERP</strong></li>
               </ol>
               <div class="manual-tip">Tudo é salvo automaticamente conforme você digita — fechar o navegador não perde nada. Pra continuar, basta reabrir os mesmos grupos.</div>
+              <p style="margin-top:10px"><strong>📊 Barra de totais (rodapé fixo da tabela)</strong></p>
+              <p>No rodapé da tabela há uma linha de <strong>totais que fica fixa</strong> enquanto você rola, recalculando ao vivo a cada mudança de preço, quantidade ou fornecedor. Ela é <strong>somente informativa</strong> — não escolhe fornecedor nem salva nada. Mostra:</p>
+              <ul>
+                <li><strong>Total por fornecedor</strong> — embaixo de cada coluna de fornecedor, a soma de <em>preço daquele fornecedor × Qtd</em>, contando só os itens que ele cotou (preço &gt; 0). Útil pra comparar o valor de fechamento de cada um lado a lado.</li>
+                <li><strong>Total melhor preço</strong> — embaixo da coluna <strong>Valor Total</strong>, a soma de toda a coluna (sempre o menor preço de cada item × Qtd). É quanto custa o pedido pegando o mais barato item a item.</li>
+                <li><strong>Qtd. geral</strong> — um único número à esquerda da barra, somando a coluna <strong>Qtd</strong> de todos os itens de todos os grupos selecionados.</li>
+              </ul>
+              <div class="manual-tip">Os totais por fornecedor acompanham automaticamente as colunas que estiverem visíveis — adicionar ou remover um fornecedor já reflete na barra.</div>
             </div>
           </div>
 
@@ -1252,6 +1264,7 @@ function onPrecoChange(input,qtdSug,grupo){
   var qtd=qi?pNum(qi.value):0;
   // Só calcula total se QTD manual também estiver preenchida
   calcVt(input.dataset.cod,preco,qtd,0);
+  atualizarTotais();
   triggerSave(grupo);
 }
 
@@ -1262,6 +1275,7 @@ function onQtdChange(input,qtdSug,grupo){
   var preco=pi?pNum(pi.value):0;
   // Só calcula total se PREÇO também estiver preenchido
   calcVt(input.dataset.cod,preco,qtd,0);
+  atualizarTotais();
   triggerSave(grupo);
 }
 
@@ -2048,6 +2062,26 @@ function _renderPedidoInterno(meses){
         +'</div>';
     });
   });
+
+  // Barra de totais (rodapé fixo da tabela) — somente exibição, recalculada ao vivo
+  var fornFooter=fornecedoresCols.map(function(f){
+    var nm=(f.nome||'').replace(/"/g,'&quot;');
+    return'<span class="ptf-num empty" id="tot-forn-'+f.id+'" title="Total de '+nm+' (preço cotado × Qtd dos itens que ele cotou)">—</span>';
+  }).join('');
+  html+='<div class="ptf" id="ped-totais" style="grid-template-columns:'+COLS+'">'
+    +'<span></span>'
+    +'<span class="ptf-lbl">Totais<span style="color:var(--text3);font-weight:500"> · Qtd. geral: </span><strong id="tot-qtd">0</strong></span>'
+    +'<span></span>'
+    +fornFooter
+    +'<span></span>'/*preço/melhor*/
+    +'<span></span>'/*qtd*/
+    +'<span></span>'/*comprar mín*/
+    +'<span></span>'/*sugerido*/
+    +'<span></span>'/*urgência*/
+    +'<span class="ptf-num empty" id="tot-best" title="Soma da coluna Valor Total (melhor preço × Qtd)">—</span>'
+    +'<span></span>'/*status*/
+    +'</div>';
+
   tbl.innerHTML=html;
   // Após render, aplica destaque verde/vermelho em cada linha que tem preços de forn
   if(hasForn){
@@ -2056,6 +2090,7 @@ function _renderPedidoInterno(meses){
       var c=inp.dataset.cod;if(c&&!codsVistos[c]){codsVistos[c]=1;atualizarMelhorPreco(c);}
     });
   }
+  atualizarTotais();
 }
 
 function clearPedido(){capturePedidoInputs();selectedGroups.clear();fornecedoresCols=[];fornSeq=0;updateChips();updateSelBadge();renderPedido()}
@@ -2112,6 +2147,7 @@ function onFornPrecoChange(input,grupo){
   if(v>0)itensCache[grupo][cod].precos_fornecedores[fid]=v;
   else delete itensCache[grupo][cod].precos_fornecedores[fid];
   atualizarMelhorPreco(cod);
+  atualizarTotais();
   triggerSave(grupo);
 }
 function atualizarMelhorPreco(codigo){
@@ -2139,6 +2175,49 @@ function atualizarMelhorPreco(codigo){
     var qi=row.querySelector('.qtd-input');
     var qtd=qi?pNum(qi.value):0;
     calcVt(codigo,menor,qtd,0);
+  }
+}
+
+// Recalcula a barra de totais do rodapé (somente exibição):
+//  - total por fornecedor = Σ(preço do forn × Qtd) dos itens que ele cotou (preço>0)
+//  - total melhor preço   = Σ(coluna Valor Total) = Σ(melhor preço × Qtd)
+//  - qtd geral            = Σ(coluna Qtd) de todos os itens
+function atualizarTotais(){
+  var bar=document.getElementById('ped-totais');
+  if(!bar)return;
+  var hasForn=fornecedoresCols.length>0;
+  var qtdGeral=0,bestTotal=0,fornTot={};
+  fornecedoresCols.forEach(function(f){fornTot[f.id]=0});
+  document.querySelectorAll('#ped-tbl-wrap .ptr').forEach(function(row){
+    var qi=row.querySelector('.qtd-input');
+    var qtd=qi?pNum(qi.value):0;
+    if(qtd>0)qtdGeral+=qtd;
+    var melhor=0;
+    if(hasForn){
+      row.querySelectorAll('.forn-preco').forEach(function(fi){
+        var v=pNum(fi.value);
+        if(v>0){
+          var fid=fi.dataset.fornId;
+          if(fornTot.hasOwnProperty(fid))fornTot[fid]+=v*qtd;
+          if(melhor===0||v<melhor)melhor=v;
+        }
+      });
+    }else{
+      var pi=row.querySelector('.preco-input');
+      melhor=pi?pNum(pi.value):0;
+    }
+    if(melhor>0&&qtd>0)bestTotal+=melhor*qtd;
+  });
+  var tq=document.getElementById('tot-qtd');if(tq)tq.textContent=fmtN(qtdGeral);
+  fornecedoresCols.forEach(function(f){
+    var el=document.getElementById('tot-forn-'+f.id);if(!el)return;
+    if(fornTot[f.id]>0){el.textContent='R$ '+fmtN(fornTot[f.id]);el.classList.remove('empty')}
+    else{el.textContent='—';el.classList.add('empty')}
+  });
+  var tb=document.getElementById('tot-best');
+  if(tb){
+    if(bestTotal>0){tb.textContent='R$ '+fmtN(bestTotal);tb.classList.remove('empty')}
+    else{tb.textContent='—';tb.classList.add('empty')}
   }
 }
 
