@@ -655,7 +655,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li>Quantidade de itens classe C</li>
                 <li>Valor total de compra do grupo</li>
               </ol>
-              <div class="manual-tip">🔥 Clique em <strong>"Próximo urgente"</strong> no topo da tela Montar Pedido pra ir direto pro grupo #1.</div>
+              <div class="manual-tip">🔥 O botão <strong>"Próximo urgente"</strong> segue <strong>exatamente o ranking do painel Urgentes</strong> (nº de itens A críticos, desempate por severidade) — não esta numeração de prioridade. Ele leva ao grupo do <strong>topo do ranking</strong> ainda não pedido nesta sessão (e não em cotação).</div>
 
               <p style="margin-top:10px"><strong>🔥 Painel "Urgentes" (ranking de grupos)</strong></p>
               <p>O botão <strong>Urgentes</strong> (ao lado de "Próximo urgente") abre um ranking de <strong>grupos</strong> ordenado por:</p>
@@ -1905,24 +1905,26 @@ function concluirSessaoB64(btn){
 }
 
 // ── PRÓXIMO URGENTE ──
+// Usa EXATAMENTE o mesmo ranking do painel "Urgentes" (rankGruposUrgentes):
+// nº de itens A críticos (desempate por severidade), já sem grupos pedidos nesta
+// sessão e sem grupos não-urgentes. Aqui apenas pulamos também grupos em cotação
+// ativa e selecionamos o 1º do ranking ainda não atendido. A ordenação nunca diverge
+// do painel porque ambos consomem a mesma função.
 function proximoUrgente(){
   if(!products.length){alert('Importe produtos primeiro.');return}
-  var byG={};
-  products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
-  var sorted=sortGroupsByPriority(byG);
-  // Pula grupos em cotação E grupos já pedidos nesta sessão (até novo import do ERP).
-  var candidatos=sorted.filter(function(g){
-    if(gruposPedidosSessao.has(g))return false;
-    return!cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'});
-  });
-  if(!candidatos.length){alert('Todos os grupos urgentes já foram pedidos nesta sessão ou estão em cotação.\n\nUm grupo só volta a aparecer quando, após um novo import do ERP, a necessidade ainda persistir.');return}
-  var proximo=candidatos[0];
-  var pr=byG[proximo];
-  var prio=sorted.indexOf(proximo)+1;
-  var crit=pr.filter(function(p){return urg(p)==='c'}).length;
+  var rank=rankGruposUrgentes();
+  // Pula grupos em cotação ativa (estão sendo atendidos); grupos já pedidos nesta
+  // sessão já saem do ranking dentro de rankGruposUrgentes().
+  var idx=-1;
+  for(var i=0;i<rank.length;i++){
+    if(cotacoesCache.find(function(c){return c.grupo===rank[i].grupo&&c.status==='em_cotacao'}))continue;
+    idx=i;break;
+  }
+  if(idx<0){alert('Todos os grupos urgentes já foram pedidos nesta sessão ou estão em cotação.\n\nUm grupo só volta a aparecer quando, após um novo import do ERP, a necessidade ainda persistir.');return}
+  var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+pr.length+' itens · '+crit+' críticos. Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+topo.total+' itens · '+topo.aCrit+' A crítico'+(topo.aCrit>1?'s':'')+'. Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
