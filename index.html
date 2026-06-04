@@ -377,6 +377,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
     <span id="save-indicator" style="font-size:11px;display:none"></span>
     <span id="sbadge" class="badge">sem dados</span>
     <div id="user-info" style="display:none" onclick="abrirMeuPerfil()" title="Meu Perfil"><i class="ti ti-user" style="font-size:12px"></i> <strong id="user-nome"></strong> <i class="ti ti-chevron-down" style="font-size:9px;color:var(--text3)"></i></div>
+    <button class="btn" id="sync-btn" onclick="solicitarSync()" title="Pedir sincronização com o ERP (Cronos) na máquina-servidor"><i class="ti ti-refresh"></i> Sincronizar agora</button>
     <button class="btn" onclick="openModal()"><i class="ti ti-upload"></i> Importar CSV</button>
     <button class="btn danger" onclick="doLogout()" title="Sair"><i class="ti ti-logout"></i></button>
   </div>
@@ -620,22 +621,27 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           </div>
 
           <div class="manual-card" onclick="toggleManual(this)">
-            <div class="manual-header"><i class="ti ti-table-import"></i> 2. Importar dados do ERP (CSV)</div>
+            <div class="manual-header"><i class="ti ti-table-import"></i> 2. Atualizar os dados do ERP</div>
             <div class="manual-body">
-              <p>É o ponto de partida da semana — toda análise depende dos dados estarem atualizados.</p>
+              <p>É o ponto de partida — toda análise depende dos dados estarem atualizados. Há três formas:</p>
+              <p style="margin-top:8px"><strong>🔄 Sincronizar agora (recomendado)</strong></p>
+              <p>Clique em <strong>"Sincronizar agora"</strong> (canto superior direito). O sistema pede para a <strong>máquina-servidor</strong> ler o ERP Cronos e atualizar tudo automaticamente — você não precisa exportar nem colar nada. O botão mostra <em>"Sincronizando..."</em> e avisa quando concluir; os produtos recarregam sozinhos. Se já houver uma sincronização em andamento, o sistema apenas acompanha (não duplica).</p>
+              <p style="margin-top:8px"><strong>🕕 Automática (todo dia)</strong></p>
+              <p>A sincronização roda <strong>sozinha 1× por dia, às 06h (segunda a sábado)</strong>, na máquina-servidor. Normalmente, ao começar o dia, os dados já estão atualizados — use o "Sincronizar agora" só quando precisar dos números mais recentes na hora.</p>
+              <p style="margin-top:8px"><strong>📋 Importar CSV (alternativa manual)</strong></p>
               <ol style="margin:4px 0 4px 18px;padding:0">
                 <li>No ERP, exporte a aba <strong>"Sugestão de compra"</strong> como CSV</li>
                 <li>No sistema, clique em <strong>Importar CSV</strong> no canto superior direito</li>
                 <li>Cole o conteúdo no campo e clique <strong>Importar</strong></li>
               </ol>
-              <p>Os dados vão para o servidor e <strong>todos os usuários veem imediatamente</strong>.</p>
-              <p><strong>O que acontece com as cotações ao importar:</strong></p>
+              <p>Em qualquer das formas, os dados vão para o servidor e <strong>todos os usuários veem imediatamente</strong>.</p>
+              <p><strong>O que acontece com as cotações ao atualizar:</strong></p>
               <ul>
                 <li>Cotações <strong>concluídas</strong> são apagadas (limpeza)</li>
                 <li>Cotações <strong>em andamento</strong> são mantidas, mas recebem aviso laranja <em>"Dados atualizados"</em> pra você revisar</li>
                 <li>Cotações <strong>pedido enviado</strong> são mantidas</li>
               </ul>
-              <div class="manual-tip">Faça a importação 1× por semana, idealmente na segunda-feira.</div>
+              <div class="manual-tip">Se a sincronização automática/servidor estiver fora do ar, o <strong>Importar CSV</strong> sempre funciona como alternativa.</div>
             </div>
           </div>
 
@@ -943,7 +949,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p><strong>🔥 Urgentes</strong> — abre o ranking de grupos por itens A críticos, com Top 5/10/Todos e busca por posição.</p>
               <p><strong>📅 Rotina semanal sugerida:</strong></p>
               <ol style="margin:4px 0 4px 18px;padding:0">
-                <li><strong>Segunda</strong> — importar CSV do ERP</li>
+                <li><strong>Todo dia 06h (seg-sáb)</strong> — sincronização automática do ERP (ou clique em <em>Sincronizar agora</em> a qualquer momento)</li>
                 <li><strong>Segunda/Terça</strong> — clicar em <em>Próximo Urgente</em> e marcar grupos em cotação</li>
                 <li><strong>Quarta/Quinta</strong> — preencher preços comparativos com 2-4 fornecedores</li>
                 <li><strong>Sexta</strong> — exportar pro ERP, marcar como Pedido Enviado, concluir o que foi resolvido</li>
@@ -1432,7 +1438,7 @@ function doLogin(){
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
 function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();carregarFornecedoresCadastrados();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -1496,6 +1502,61 @@ function importData(){
     if(d.ok){addBot('Importados e sincronizados por <strong>'+currentUser.nome+'</strong>.<br>Cotações concluídas apagadas. Em andamento mantidas com aviso.');carregarCotacoes()}
     else{addBot('Carregados localmente. Erro ao sincronizar: '+(d.error||''))}
   }).catch(function(){addBot('Carregados localmente. Sem conexão.')});
+}
+
+// ── SINCRONIZAR AGORA (flag no banco + polling na máquina local) ──
+// O backend na nuvem não acessa o ERP Cronos (rede local). Este botão cria um pedido
+// 'pendente'; o poll_sync.py na máquina-servidor executa o sync e atualiza o status,
+// que acompanhamos por GET /sync/status até concluir.
+var syncPollTimer=null;
+function setSyncBtn(emAndamento,texto){
+  var b=document.getElementById('sync-btn');if(!b)return;
+  b.disabled=!!emAndamento;
+  b.innerHTML='<i class="ti ti-refresh"></i> '+(texto||'Sincronizar agora');
+}
+function solicitarSync(){
+  if(!currentUser){alert('Faça login primeiro.');return}
+  setSyncBtn(true,'Solicitando...');
+  fetch(BACKEND+'/sync/request',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({requested_by:currentUser.nome})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.error){addBot('Erro ao solicitar sincronização: '+d.error);setSyncBtn(false);return}
+    addBot(d.duplicate
+      ?'Já havia uma sincronização em andamento — acompanhando o progresso...'
+      :'Sincronização solicitada por <strong>'+currentUser.nome+'</strong>. Aguardando a máquina-servidor processar...');
+    setSyncBtn(true,'Sincronizando...');
+    iniciarPollSync();
+  }).catch(function(){addBot('Sem conexão para solicitar sincronização.');setSyncBtn(false)});
+}
+function iniciarPollSync(){
+  if(syncPollTimer)clearInterval(syncPollTimer);
+  syncPollTimer=setInterval(pollSyncStatus,5000);
+  pollSyncStatus();
+}
+function pollSyncStatus(){
+  fetch(BACKEND+'/sync/status').then(function(r){return r.json()}).then(function(d){
+    var st=d.latest&&d.latest.status;
+    if(d.em_andamento){setSyncBtn(true,st==='processando'?'Sincronizando...':'Na fila...');return}
+    if(syncPollTimer){clearInterval(syncPollTimer);syncPollTimer=null}
+    setSyncBtn(false);
+    if(st==='concluido'){
+      var q=(d.ultima_importacao&&d.ultima_importacao.importado_em)||(d.latest&&d.latest.finished_at)||'';
+      addBot('✅ Sincronização concluída'+(q?' — dados de <strong>'+q+'</strong>':'')+'. Recarregando produtos...');
+      carregarProdutos();
+    }else if(st==='erro'){
+      addBot('❌ Sincronização falhou: '+((d.latest&&d.latest.message)||'erro desconhecido')+'<br>Você ainda pode usar <strong>Importar CSV</strong> como alternativa.');
+    }
+  }).catch(function(){/* falha de rede: tenta de novo no próximo tick */});
+}
+// Ao abrir o app, retoma o acompanhamento se já houver uma sync em andamento.
+function checarSyncInicial(){
+  fetch(BACKEND+'/sync/status').then(function(r){return r.json()}).then(function(d){
+    if(d.em_andamento){
+      setSyncBtn(true,(d.latest&&d.latest.status==='processando')?'Sincronizando...':'Na fila...');
+      iniciarPollSync();
+    }
+  }).catch(function(){});
 }
 
 function aplicarDados(){
