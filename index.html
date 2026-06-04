@@ -663,7 +663,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li><strong>Quantidade de itens classe A em estado Crítico</strong> no grupo (critério principal — mais A críticos, posição mais alta).</li>
                 <li><strong>Severidade</strong> (desempate): soma do "quanto falta comprar" dos itens A do grupo.</li>
               </ol>
-              <p>Grupos <strong>sem nenhum item A crítico não aparecem</strong> no painel — eles continuam acessíveis normalmente pela busca de grupos. Use o filtro <strong>Top 5 / Top 10 / Todos</strong> e a <strong>busca por nome</strong>: ao buscar, o painel mostra a <strong>posição do grupo no ranking</strong> (ex.: "ALKORENDA — 3º lugar, 5 itens A críticos").</p>
+              <p>Grupos <strong>sem nenhum item A crítico não aparecem</strong> no painel — eles continuam acessíveis normalmente pela busca de grupos. Grupos <strong>já pedidos nesta sessão também saem do ranking</strong> (igual ao "Próximo urgente"), voltando após um novo import do ERP se a necessidade persistir. Use o filtro <strong>Top 5 / Top 10 / Todos</strong> e a <strong>busca por nome</strong>: ao buscar, o painel mostra a <strong>posição do grupo no ranking</strong> (ex.: "ALKORENDA — 3º lugar, 5 itens A críticos").</p>
               <div class="manual-tip">O filtro de A críticos serve só para <strong>ordenar</strong>. Ao clicar num grupo, abre o <strong>grupo inteiro</strong> (itens A, B e C) na montagem do pedido — igual a abrir qualquer grupo.</div>
 
               <p style="margin-top:10px"><strong>♻️ Comportamento do "Próximo urgente" ao concluir</strong></p>
@@ -1939,7 +1939,7 @@ function rankGruposUrgentes(){
     var aCrit=items.filter(function(p){return p.abc==='A'&&urg(p)==='c'}).length;
     var sev=items.filter(function(p){return p.abc==='A'}).reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
     return{grupo:g,aCrit:aCrit,sev:sev,total:items.length};
-  }).filter(function(x){return x.aCrit>0});
+  }).filter(function(x){return x.aCrit>0&&!gruposPedidosSessao.has(x.grupo)});
   arr.sort(function(a,b){
     if(b.aCrit!==a.aCrit)return b.aCrit-a.aCrit;          // principal: + A críticos
     if(Math.abs(b.sev-a.sev)>0.001)return b.sev-a.sev;     // desempate: + severidade
@@ -1995,8 +1995,11 @@ function onUrgSearch(q){
     var x=urgRankCache[idx];
     info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong>, '+x.aCrit+' item'+(x.aCrit>1?'ns':'')+' A crítico'+(x.aCrit>1?'s':'')+(x.sev>0?' · severidade '+fmtN(x.sev):'');
   }else{
+    var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
-    info.innerHTML=existe
+    info.innerHTML=jaPedido
+      ?'Esse grupo já foi <strong>pedido nesta sessão</strong>, por isso saiu do ranking. Ele volta após um novo import do ERP se a necessidade persistir — e segue acessível pela busca de grupos.'
+      :existe
       ?'Esse grupo <strong>não tem item A crítico</strong> agora, então fica fora do ranking de urgentes. Você ainda pode abri-lo pela busca de grupos.'
       :'Nenhum grupo encontrado para a busca.';
   }
