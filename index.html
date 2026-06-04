@@ -659,7 +659,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <ul>
                 <li><strong>Total por fornecedor</strong> — embaixo de cada coluna de fornecedor, a soma de <em>preço daquele fornecedor × Qtd</em>, contando só os itens que ele cotou (preço &gt; 0). Útil pra comparar o valor de fechamento de cada um lado a lado.</li>
                 <li><strong>Total melhor preço</strong> — embaixo da coluna <strong>Valor Total</strong>, a soma de toda a coluna (sempre o menor preço de cada item × Qtd). É quanto custa o pedido pegando o mais barato item a item.</li>
-                <li><strong>Qtd. geral</strong> — um único número à esquerda da barra, somando a coluna <strong>Qtd</strong> de todos os itens de todos os grupos selecionados.</li>
+                <li><strong>Qtd. geral</strong> — alinhada embaixo da coluna <strong>Qtd</strong>, soma a quantidade de todos os itens de todos os grupos selecionados (o rótulo "Qtd. geral" aparece à esquerda da barra).</li>
               </ul>
               <div class="manual-tip">Os totais por fornecedor acompanham automaticamente as colunas que estiverem visíveis — adicionar ou remover um fornecedor já reflete na barra.</div>
             </div>
@@ -2070,11 +2070,11 @@ function _renderPedidoInterno(meses){
   }).join('');
   html+='<div class="ptf" id="ped-totais" style="grid-template-columns:'+COLS+'">'
     +'<span></span>'
-    +'<span class="ptf-lbl">Totais<span style="color:var(--text3);font-weight:500"> · Qtd. geral: </span><strong id="tot-qtd">0</strong></span>'
+    +'<span class="ptf-lbl">Totais<span style="color:var(--text3);font-weight:500"> · Qtd. geral</span></span>'
     +'<span></span>'
     +fornFooter
     +'<span></span>'/*preço/melhor*/
-    +'<span></span>'/*qtd*/
+    +'<span class="ptf-num" id="tot-qtd" style="color:var(--text)" title="Qtd. geral (soma da coluna Qtd)">0</span>'/*qtd*/
     +'<span></span>'/*comprar mín*/
     +'<span></span>'/*sugerido*/
     +'<span></span>'/*urgência*/
