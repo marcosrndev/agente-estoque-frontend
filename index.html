@@ -133,6 +133,8 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .ptf{display:grid;gap:3px;padding:8px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
 .ptf-num{font-size:11px;text-align:right;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis}
 .ptf-num.empty{color:var(--text3);font-weight:600}
+.ptf-num.best{color:var(--green)}
+.ptf-num.notbest{color:var(--red)}
 .ptf-lbl{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ok-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center}
 #forn-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:34px}
@@ -657,7 +659,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p style="margin-top:10px"><strong>📊 Barra de totais (rodapé fixo da tabela)</strong></p>
               <p>No rodapé da tabela há uma linha de <strong>totais que fica fixa</strong> enquanto você rola, recalculando ao vivo a cada mudança de preço, quantidade ou fornecedor. Ela é <strong>somente informativa</strong> — não escolhe fornecedor nem salva nada. Mostra:</p>
               <ul>
-                <li><strong>Total por fornecedor</strong> — embaixo de cada coluna de fornecedor, a soma de <em>preço daquele fornecedor × Qtd</em>, contando só os itens que ele cotou (preço &gt; 0). Útil pra comparar o valor de fechamento de cada um lado a lado.</li>
+                <li><strong>Total por fornecedor</strong> — embaixo de cada coluna de fornecedor, a soma de <em>preço daquele fornecedor × Qtd</em>, contando só os itens que ele cotou (preço &gt; 0). O menor total fica em <span style="color:var(--green);font-weight:600">verde</span> (fornecedor mais barato no fechamento) e os demais em <span style="color:var(--red)">vermelho</span>, pra comparar lado a lado.</li>
                 <li><strong>Total melhor preço</strong> — embaixo da coluna <strong>Valor Total</strong>, a soma de toda a coluna (sempre o menor preço de cada item × Qtd). É quanto custa o pedido pegando o mais barato item a item.</li>
                 <li><strong>Qtd. geral</strong> — alinhada embaixo da coluna <strong>Qtd</strong>, soma a quantidade de todos os itens de todos os grupos selecionados (o rótulo "Qtd. geral" aparece à esquerda da barra).</li>
               </ul>
@@ -2209,10 +2211,17 @@ function atualizarTotais(){
     if(melhor>0&&qtd>0)bestTotal+=melhor*qtd;
   });
   var tq=document.getElementById('tot-qtd');if(tq)tq.textContent=fmtN(qtdGeral);
+  // Menor total entre os fornecedores que têm valor (>0) — fica verde; os demais, vermelho
+  var menorTot=0;
+  fornecedoresCols.forEach(function(f){var t=fornTot[f.id];if(t>0&&(menorTot===0||t<menorTot))menorTot=t});
   fornecedoresCols.forEach(function(f){
     var el=document.getElementById('tot-forn-'+f.id);if(!el)return;
-    if(fornTot[f.id]>0){el.textContent='R$ '+fmtN(fornTot[f.id]);el.classList.remove('empty')}
-    else{el.textContent='—';el.classList.add('empty')}
+    el.classList.remove('empty','best','notbest');
+    var t=fornTot[f.id];
+    if(t>0){
+      el.textContent='R$ '+fmtN(t);
+      el.classList.add(menorTot>0&&Math.abs(t-menorTot)<0.005?'best':'notbest');
+    }else{el.textContent='—';el.classList.add('empty')}
   });
   var tb=document.getElementById('tot-best');
   if(tb){
