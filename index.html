@@ -269,6 +269,21 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .modal-box{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:20px;width:420px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:13px}
 .modal-box h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
+/* Painel Urgentes (ranking de grupos) */
+.urg-filtros{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.urg-fbtn{font-size:11px;padding:4px 11px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:var(--font)}
+.urg-fbtn.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+.urg-pos-info{font-size:12px;color:var(--text2);background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius-sm);padding:7px 10px;display:none}
+.urg-list{max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.urg-row{display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);cursor:pointer;text-align:left}
+.urg-row:hover{background:var(--blue-bg);border-color:var(--blue)}
+.urg-row.hit{background:var(--yellow-bg);border-color:var(--yellow)}
+.urg-rank{font-size:14px;font-weight:700;color:var(--text3);text-align:center}
+.urg-rank.top{color:var(--red)}
+.urg-gname{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.urg-gmeta{font-size:10px;color:var(--text3);margin-top:1px}
+.urg-acrit{font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);padding:2px 8px;border-radius:10px;white-space:nowrap}
+.urg-empty{font-size:12px;color:var(--text3);text-align:center;padding:24px 0}
 .cmap{background:var(--bg2);border-radius:var(--radius-sm);padding:8px 11px;font-size:11px;color:var(--text2);line-height:2;border:1px solid var(--border2)}
 .cmap code{font-family:var(--font-mono);font-size:10px;color:var(--blue);background:var(--blue-bg);padding:1px 4px;border-radius:3px}
 #csv-in{width:100%;height:120px;font-size:10px;font-family:var(--font-mono);padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);resize:vertical;outline:none}
@@ -454,6 +469,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             </div>
             <div id="save-bar">
               <span id="save-indicator-ped"></span>
+              <button class="btn" onclick="abrirUrgentes()"><i class="ti ti-flame"></i> Urgentes</button>
               <button class="btn" onclick="proximoUrgente()"><i class="ti ti-alert-triangle"></i> Próximo urgente</button>
             </div>
           </div>
@@ -640,6 +656,19 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li>Valor total de compra do grupo</li>
               </ol>
               <div class="manual-tip">🔥 Clique em <strong>"Próximo urgente"</strong> no topo da tela Montar Pedido pra ir direto pro grupo #1.</div>
+
+              <p style="margin-top:10px"><strong>🔥 Painel "Urgentes" (ranking de grupos)</strong></p>
+              <p>O botão <strong>Urgentes</strong> (ao lado de "Próximo urgente") abre um ranking de <strong>grupos</strong> ordenado por:</p>
+              <ol style="margin:4px 0 4px 18px;padding:0">
+                <li><strong>Quantidade de itens classe A em estado Crítico</strong> no grupo (critério principal — mais A críticos, posição mais alta).</li>
+                <li><strong>Severidade</strong> (desempate): soma do "quanto falta comprar" dos itens A do grupo.</li>
+              </ol>
+              <p>Grupos <strong>sem nenhum item A crítico não aparecem</strong> no painel — eles continuam acessíveis normalmente pela busca de grupos. Use o filtro <strong>Top 5 / Top 10 / Todos</strong> e a <strong>busca por nome</strong>: ao buscar, o painel mostra a <strong>posição do grupo no ranking</strong> (ex.: "ALKORENDA — 3º lugar, 5 itens A críticos").</p>
+              <div class="manual-tip">O filtro de A críticos serve só para <strong>ordenar</strong>. Ao clicar num grupo, abre o <strong>grupo inteiro</strong> (itens A, B e C) na montagem do pedido — igual a abrir qualquer grupo.</div>
+
+              <p style="margin-top:10px"><strong>♻️ Comportamento do "Próximo urgente" ao concluir</strong></p>
+              <p>Concluir um pedido <strong>não remove</strong> o grupo do sistema — ele continua acessível pela busca de grupos. Dentro da <strong>mesma sessão</strong>, ao concluir/enviar um pedido e clicar em <strong>Próximo urgente</strong> de novo, o grupo recém-pedido é <strong>pulado</strong> e o sistema avança para o próximo urgente ainda não pedido.</p>
+              <p>O "Próximo urgente" trabalha sempre sobre os <strong>dados do último import do ERP</strong>. Como a planilha já desconta o que está pedido (coluna "Pedido Fornec."), um grupo só <strong>volta</strong> a ser puxado quando, com os dados novos, a necessidade <strong>ainda persistir</strong>. Um novo import <strong>zera</strong> esse controle de sessão.</p>
             </div>
           </div>
 
@@ -907,7 +936,8 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div class="manual-card" onclick="toggleManual(this)">
             <div class="manual-header"><i class="ti ti-bulb"></i> 18. Atalhos e fluxos recomendados</div>
             <div class="manual-body">
-              <p><strong>🔥 Próximo Urgente</strong> — botão no topo do Montar Pedido. Pula direto pro grupo mais crítico ainda não cotado.</p>
+              <p><strong>🔥 Próximo Urgente</strong> — botão no topo do Montar Pedido. Pula direto pro grupo mais crítico ainda não pedido nesta sessão (nem em cotação).</p>
+              <p><strong>🔥 Urgentes</strong> — abre o ranking de grupos por itens A críticos, com Top 5/10/Todos e busca por posição.</p>
               <p><strong>📅 Rotina semanal sugerida:</strong></p>
               <ol style="margin:4px 0 4px 18px;padding:0">
                 <li><strong>Segunda</strong> — importar CSV do ERP</li>
@@ -1056,6 +1086,26 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
   </div>
 </div>
 
+<!-- PAINEL URGENTES (ranking de grupos) -->
+<div id="urgentes-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box wide">
+    <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Ordenados por nº de itens <strong>A críticos</strong>; desempate pela severidade (soma do que falta comprar dos itens A). Grupos sem item A crítico não entram aqui — use a busca de grupos.</div>
+    <div class="urg-filtros">
+      <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
+      <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
+      <button class="urg-fbtn active" data-top="10" onclick="setUrgTop(10,this)">Top 10</button>
+      <button class="urg-fbtn" data-top="0" onclick="setUrgTop(0,this)">Todos</button>
+      <input id="urg-search" placeholder="Buscar grupo..." oninput="onUrgSearch(this.value)" style="margin-left:auto;flex:1;min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg2);color:var(--text)">
+    </div>
+    <div class="urg-pos-info" id="urg-pos-info"></div>
+    <div class="urg-list" id="urg-list"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharUrgentes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // BACKEND escolhido dinamicamente: previews da branch dev no Vercel usam o
 // proxy/Supabase de teste; produção e qualquer outro host usam o de produção.
@@ -1068,6 +1118,9 @@ var BACKEND = (function(){
 })();
 
 var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
+// Grupos já pedidos NESTA sessão (concluídos/enviados) — em memória, sem status no banco.
+// "Próximo urgente" pula esses até um novo import do ERP (que zera este controle).
+var gruposPedidosSessao=new Set();
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
@@ -1370,7 +1423,7 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
 function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();carregarFornecedoresCadastrados();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
@@ -1423,6 +1476,9 @@ function importData(){
   var parsed=parseCSV(text);
   if(!parsed.length){alert('Nenhum produto encontrado. Verifique o formato.');return}
   closeModal();products=parsed;aplicarDados();itensCache={};
+  // Novo import do ERP: zera o controle de "já pedido nesta sessão" — a necessidade
+  // é reavaliada com os dados novos (que já descontam o que está pedido).
+  gruposPedidosSessao.clear();
   addBot('Sincronizando '+products.length+' produtos...');
   var agora=fmtDate();
   fetch(BACKEND+'/produtos',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1715,7 +1771,7 @@ function concluirSessao(grupos){
         headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:agora})});
     })).then(function(){
       // limpa cache de historico desses grupos para recarregar na próxima
-      grupos.forEach(function(g){delete historicoCache[g]});
+      grupos.forEach(function(g){delete historicoCache[g];gruposPedidosSessao.add(g)});
       carregarCotacoes();fecharCotacao();renderCotacoes();
     }).catch(function(){});
   });
@@ -1726,7 +1782,7 @@ function concluirCotacao(){
   snapshotHistoricoGrupo(g).then(function(){
     fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/concluir',{method:'PATCH',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({concluido_em:fmtDate()})})
-    .then(function(){delete historicoCache[g];carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
+    .then(function(){delete historicoCache[g];gruposPedidosSessao.add(g);carregarCotacoes();fecharCotacao();renderCotacoes()}).catch(function(){});
   });
 }
 
@@ -1853,8 +1909,12 @@ function proximoUrgente(){
   var byG={};
   products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var sorted=sortGroupsByPriority(byG);
-  var candidatos=sorted.filter(function(g){return!cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'})});
-  if(!candidatos.length){alert('Todos os grupos urgentes já estão em cotação!');return}
+  // Pula grupos em cotação E grupos já pedidos nesta sessão (até novo import do ERP).
+  var candidatos=sorted.filter(function(g){
+    if(gruposPedidosSessao.has(g))return false;
+    return!cotacoesCache.find(function(c){return c.grupo===g&&c.status==='em_cotacao'});
+  });
+  if(!candidatos.length){alert('Todos os grupos urgentes já foram pedidos nesta sessão ou estão em cotação.\n\nUm grupo só volta a aparecer quando, após um novo import do ERP, a necessidade ainda persistir.');return}
   var proximo=candidatos[0];
   var pr=byG[proximo];
   var prio=sorted.indexOf(proximo)+1;
@@ -1862,6 +1922,94 @@ function proximoUrgente(){
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
   addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+pr.length+' itens · '+crit+' críticos. Selecionado na aba Montar Pedido.');
+}
+
+// ── PAINEL URGENTES (ranking de grupos) ──
+// Ordena por nº de itens A (curva ABC) em status Crítico; desempate pela severidade
+// (soma do "Comprar para Mínimo" / qtd sugerida de compra dos itens A). Grupos sem
+// nenhum item A crítico ficam FORA do ranking. O filtro é só p/ ORDENAR — ao selecionar,
+// abre o grupo INTEIRO (A, B e C), como qualquer grupo aberto hoje.
+var urgTopFiltro=10, urgRankCache=[];
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function rankGruposUrgentes(){
+  var byG={};
+  products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
+  var arr=Object.keys(byG).map(function(g){
+    var items=byG[g];
+    var aCrit=items.filter(function(p){return p.abc==='A'&&urg(p)==='c'}).length;
+    var sev=items.filter(function(p){return p.abc==='A'}).reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
+    return{grupo:g,aCrit:aCrit,sev:sev,total:items.length};
+  }).filter(function(x){return x.aCrit>0});
+  arr.sort(function(a,b){
+    if(b.aCrit!==a.aCrit)return b.aCrit-a.aCrit;          // principal: + A críticos
+    if(Math.abs(b.sev-a.sev)>0.001)return b.sev-a.sev;     // desempate: + severidade
+    return a.grupo<b.grupo?-1:1;                           // estável por nome
+  });
+  return arr;
+}
+function abrirUrgentes(){
+  if(!products.length){alert('Importe produtos primeiro.');return}
+  urgRankCache=rankGruposUrgentes();
+  var s=document.getElementById('urg-search');if(s)s.value='';
+  document.getElementById('urg-pos-info').style.display='none';
+  renderUrgentes();
+  document.getElementById('urgentes-overlay').style.display='flex';
+}
+function fecharUrgentes(){document.getElementById('urgentes-overlay').style.display='none'}
+function setUrgTop(n,btn){
+  urgTopFiltro=n;
+  document.querySelectorAll('.urg-fbtn').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  renderUrgentes();
+}
+function renderUrgentes(){
+  var rank=urgRankCache;
+  var q=(document.getElementById('urg-search').value||'').trim().toLowerCase();
+  var cont=document.getElementById('urg-list');
+  document.getElementById('urg-count').textContent=rank.length?'('+rank.length+' grupo'+(rank.length>1?'s':'')+')':'';
+  if(!rank.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo com item A crítico no momento. 🎉<br>Os demais grupos seguem acessíveis pela busca de grupos.</div>';return}
+  var visiveis=[];
+  rank.forEach(function(x,i){
+    if(q&&x.grupo.toLowerCase().indexOf(q)<0)return;
+    visiveis.push({x:x,pos:i+1});
+  });
+  if(!q&&urgTopFiltro>0)visiveis=visiveis.slice(0,urgTopFiltro);
+  if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
+  cont.innerHTML=visiveis.map(function(v){
+    var x=v.x,pos=v.pos;
+    var sevTxt=x.sev>0?'severidade '+fmtN(x.sev):'';
+    return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
+      +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
+      +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+x.total+' itens no grupo'+(sevTxt?' · '+sevTxt:'')+'</div></span>'
+      +'<span class="urg-acrit">'+x.aCrit+' A crítico'+(x.aCrit>1?'s':'')+'</span>'
+      +'</button>';
+  }).join('');
+}
+function onUrgSearch(q){
+  q=(q||'').trim();
+  var info=document.getElementById('urg-pos-info');
+  if(!q){info.style.display='none';renderUrgentes();return}
+  var ql=q.toLowerCase(),idx=-1;
+  for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
+  if(idx>=0){
+    var x=urgRankCache[idx];
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong>, '+x.aCrit+' item'+(x.aCrit>1?'ns':'')+' A crítico'+(x.aCrit>1?'s':'')+(x.sev>0?' · severidade '+fmtN(x.sev):'');
+  }else{
+    var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
+    info.innerHTML=existe
+      ?'Esse grupo <strong>não tem item A crítico</strong> agora, então fica fora do ranking de urgentes. Você ainda pode abri-lo pela busca de grupos.'
+      :'Nenhum grupo encontrado para a busca.';
+  }
+  info.style.display='block';
+  renderUrgentes();
+}
+function selecionarGrupoUrgente(el){
+  var g=el&&el.dataset?el.dataset.grupo:null;
+  if(!g)return;
+  fecharUrgentes();
+  switchTab('pedido',document.querySelectorAll('.tab')[1]);
+  if(!selectedGroups.has(g)){selectedGroups.add(g);updateChips();updateSelBadge();aoMudarSelecao()}
+  else renderPedido();
 }
 
 // ── TOGGLE VIEW ──
@@ -3167,7 +3315,7 @@ function marcarPedidoEnviado(grupos){
     var enc=g.replace(/\//g,'__SLASH__');
     return fetch(BACKEND+'/cotacoes/'+encodeURIComponent(enc)+'/pedido-enviado',{method:'PATCH',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({enviado_em:agora})});
-  })).then(function(){carregarCotacoes()});
+  })).then(function(){grupos.forEach(function(g){gruposPedidosSessao.add(g)});carregarCotacoes()});
 }
 
 // ── INDICADORES ──
@@ -3469,7 +3617,7 @@ async function sendHelp(){
   var msgs=document.getElementById('help-msgs');
   var ud=document.createElement('div');ud.style.cssText='align-self:flex-end;background:var(--blue);color:#fff;padding:6px 11px;border-radius:10px;font-size:12px;max-width:85%';ud.textContent=text;msgs.appendChild(ud);
   var ld=document.createElement('div');ld.style.cssText='font-size:12px;color:var(--text3)';ld.textContent='Respondendo...';msgs.appendChild(ld);msgs.scrollTop=msgs.scrollHeight;
-  var sys='Você é suporte do Agente de Compras da Casa São José. Responda sobre como usar o sistema em português, sem markdown, HTML simples. O sistema tem: Chat IA, Montar Pedido (grupos, cobertura meses, preço, qtd, exportar Excel), Cotações (marcar/concluir, sessões multi-grupo), Admin (usuários). Auto-save de preços e quantidades. Seja objetivo, máx 3 parágrafos.';
+  var sys='Você é suporte do Agente de Compras da Casa São José. Responda sobre como usar o sistema em português, sem markdown, HTML simples. O sistema tem: Chat IA, Montar Pedido (grupos, cobertura meses, preço, qtd, exportar Excel), Próximo urgente e painel Urgentes (ranking de grupos por itens A críticos), Cotações (marcar/concluir, sessões multi-grupo), Admin (usuários). Auto-save de preços e quantidades. Seja objetivo, máx 3 parágrafos.';
   try{
     var r=await fetch(BACKEND+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:500,system:sys,messages:[{role:'user',content:text}]})});
     var data=await r.json();
