@@ -30,6 +30,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #spacer{flex:1}
 .badge{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text3);background:var(--bg2)}
 .badge.on{background:var(--green-bg);color:var(--green);border-color:var(--green-light)}
+.badge-time{font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;cursor:default}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--bg2);color:var(--text)}
 .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -376,6 +377,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
     <div id="spacer"></div>
     <span id="save-indicator" style="font-size:11px;display:none"></span>
     <span id="sbadge" class="badge">sem dados</span>
+    <span id="last-update" class="badge-time" style="display:none"></span>
     <div id="user-info" style="display:none" onclick="abrirMeuPerfil()" title="Meu Perfil"><i class="ti ti-user" style="font-size:12px"></i> <strong id="user-nome"></strong> <i class="ti ti-chevron-down" style="font-size:9px;color:var(--text3)"></i></div>
     <button class="btn" id="sync-btn" onclick="solicitarSync()" title="Pedir sincronização com o ERP (Cronos) na máquina-servidor"><i class="ti ti-refresh"></i> Sincronizar agora</button>
     <button class="btn" onclick="openModal()"><i class="ti ti-upload"></i> Importar CSV</button>
@@ -624,6 +626,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <div class="manual-header"><i class="ti ti-table-import"></i> 2. Atualizar os dados do ERP</div>
             <div class="manual-body">
               <p>É o ponto de partida — toda análise depende dos dados estarem atualizados. Há três formas:</p>
+              <div class="manual-tip">⏱️ No topo, ao lado de "<strong>N produtos</strong>", aparece <strong>"Atualizado: data hora"</strong> — é o momento da última atualização do catálogo, no <strong>horário local (Mossoró/Natal)</strong>. Passe o mouse para ver a data e hora completas. Em telas estreitas ele encurta (ex.: "Atualizado há 5 min"). Use isso para confirmar que o sync ocorreu e quando.</div>
               <p style="margin-top:8px"><strong>🔄 Sincronizar agora (recomendado)</strong></p>
               <p>Clique em <strong>"Sincronizar agora"</strong> (canto superior direito). O sistema pede para a <strong>máquina-servidor</strong> ler o ERP Cronos e atualizar tudo automaticamente — você não precisa exportar nem colar nada. O botão mostra <em>"Sincronizando..."</em> e avisa quando concluir; os produtos recarregam sozinhos. Se já houver uma sincronização em andamento, o sistema apenas acompanha (não duplica).</p>
               <p style="margin-top:8px"><strong>🕕 Automática (todo dia)</strong></p>
@@ -1437,7 +1440,7 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
 function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarCategorias();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
@@ -1499,10 +1502,65 @@ function importData(){
     body:JSON.stringify({produtos:products,importado_por:currentUser.nome,importado_em:agora})})
   .then(function(r){return r.json()})
   .then(function(d){
-    if(d.ok){addBot('Importados e sincronizados por <strong>'+currentUser.nome+'</strong>.<br>Cotações concluídas apagadas. Em andamento mantidas com aviso.');carregarCotacoes()}
+    if(d.ok){setUltimaAtualizacao(agora);addBot('Importados e sincronizados por <strong>'+currentUser.nome+'</strong>.<br>Cotações concluídas apagadas. Em andamento mantidas com aviso.');carregarCotacoes()}
     else{addBot('Carregados localmente. Erro ao sincronizar: '+(d.error||''))}
   }).catch(function(){addBot('Carregados localmente. Sem conexão.')});
 }
+
+// ── ÚLTIMA ATUALIZAÇÃO DO CATÁLOGO (barra de navegação) ──
+// IMPORTANTE (fuso): o importado_em JÁ VEM EM HORÁRIO LOCAL (America/Recife, UTC-3):
+//   - o sync /erp/sync-compras grava com _agora_br() (datetime em UTC-3), formato
+//     "DD/MM/YYYY, HH:MM:SS";
+//   - o Importar CSV grava o toLocaleString('pt-BR') do navegador (também local).
+// Por isso NÃO aplicamos nenhum offset sobre esse valor — fazer isso o deixaria 3h
+// adiantado (o bug conhecido de "corrigir duas vezes"). Só convertemos UTC->local
+// quando a fonte é um timestamp ISO do banco (fallback finished_at do /sync/status).
+var TZ_LOCAL='America/Recife';
+var ultimaImportacaoStr='';
+function pad2(n){return(n<10?'0':'')+n}
+function parseImportTs(s){
+  if(!s)return null;
+  s=String(s).trim();
+  // Já-local "DD/MM/YYYY[,] HH:MM[:SS]" — usa os componentes como estão, sem offset.
+  var m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})[,\sT]+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if(m){
+    var d=+m[1],mo=+m[2],y=+m[3],h=+m[4],mi=+m[5],se=+(m[6]||0);
+    // Componentes estão em UTC-3 -> soma 3h para obter o instante real (epoch) e
+    // poder calcular "há X min" mesmo se o navegador estiver em outro fuso.
+    return {y:y,mo:mo,d:d,h:h,mi:mi,epoch:Date.UTC(y,mo-1,d,h,mi,se)+3*3600000};
+  }
+  // ISO/UTC do banco -> quebra nos componentes do fuso local (Recife).
+  var dt=new Date(s);
+  if(isNaN(dt))return null;
+  var p=dt.toLocaleString('en-GB',{timeZone:TZ_LOCAL,day:'2-digit',month:'2-digit',
+    year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
+    .match(/(\d{2})\/(\d{2})\/(\d{4}),?\s+(\d{2}):(\d{2})/);
+  if(!p)return {y:0,mo:0,d:0,h:0,mi:0,epoch:dt.getTime()};
+  return {y:+p[3],mo:+p[2],d:+p[1],h:+p[4],mi:+p[5],epoch:dt.getTime()};
+}
+function fmtTsLocal(s){var t=parseImportTs(s);return t?pad2(t.d)+'/'+pad2(t.mo)+'/'+t.y+' '+pad2(t.h)+':'+pad2(t.mi):(s||'')}
+function hojeLocalYMD(){return new Date().toLocaleDateString('en-CA',{timeZone:TZ_LOCAL})}
+function renderUltimaAtualizacao(){
+  var el=document.getElementById('last-update');if(!el)return;
+  var t=parseImportTs(ultimaImportacaoStr);
+  if(!t){el.style.display='none';el.textContent='';el.removeAttribute('title');return}
+  var dataFull=pad2(t.d)+'/'+pad2(t.mo)+'/'+t.y, horaFull=pad2(t.h)+':'+pad2(t.mi);
+  el.title='Última atualização do catálogo: '+dataFull+' '+horaFull+' (horário local)';
+  var ehHoje=(t.y+'-'+pad2(t.mo)+'-'+pad2(t.d))===hojeLocalYMD();
+  var label;
+  if(window.innerWidth<760){               // tela estreita: encurta
+    if(ehHoje){
+      var diffMin=Math.floor((Date.now()-t.epoch)/60000);
+      if(diffMin<1)label='Atualizado agora';
+      else if(diffMin<60)label='Atualizado há '+diffMin+' min';
+      else label='Atualizado '+horaFull;
+    }else label='Atualizado '+dataFull;
+  }else label='Atualizado: '+dataFull+' '+horaFull;
+  el.innerHTML='<i class="ti ti-clock" style="font-size:11px"></i> '+label;
+  el.style.display='inline-flex';
+}
+function setUltimaAtualizacao(s){ultimaImportacaoStr=s||'';renderUltimaAtualizacao()}
+window.addEventListener('resize',renderUltimaAtualizacao);
 
 // ── SINCRONIZAR AGORA (flag no banco + polling na máquina local) ──
 // O backend na nuvem não acessa o ERP Cronos (rede local). Este botão cria um pedido
@@ -1542,7 +1600,7 @@ function pollSyncStatus(){
     setSyncBtn(false);
     if(st==='concluido'){
       var q=(d.ultima_importacao&&d.ultima_importacao.importado_em)||(d.latest&&d.latest.finished_at)||'';
-      addBot('✅ Sincronização concluída'+(q?' — dados de <strong>'+q+'</strong>':'')+'. Recarregando produtos...');
+      addBot('✅ Sincronização concluída'+(q?' — dados de <strong>'+fmtTsLocal(q)+'</strong>':'')+'. Recarregando produtos...');
       carregarProdutos();
     }else if(st==='erro'){
       addBot('❌ Sincronização falhou: '+((d.latest&&d.latest.message)||'erro desconhecido')+'<br>Você ainda pode usar <strong>Importar CSV</strong> como alternativa.');
@@ -1580,9 +1638,10 @@ function carregarProdutos(){
     if(data.produtos&&data.produtos.length){
       products=data.produtos;aplicarDados();
       var m=data.meta||{};
-      addBot('Carregados <strong>'+products.length+' produtos</strong> — '+getGroups().length+' grupos.'+(m.importado_por?'<br>Última importação: <strong>'+m.importado_por+'</strong> em '+m.importado_em:''));
+      setUltimaAtualizacao(m.importado_em);
+      addBot('Carregados <strong>'+products.length+' produtos</strong> — '+getGroups().length+' grupos.'+(m.importado_por?'<br>Última importação: <strong>'+m.importado_por+'</strong> em '+fmtTsLocal(m.importado_em):''));
       carregarCotacoes();
-    }else{addBot('Nenhum dado no servidor. Clique em <strong>Importar CSV</strong>.')}
+    }else{setUltimaAtualizacao('');addBot('Nenhum dado no servidor. Clique em <strong>Importar CSV</strong>.')}
   }).catch(function(){addBot('Não foi possível conectar ao servidor.')});
 }
 
