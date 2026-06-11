@@ -2375,7 +2375,10 @@ function _renderPedidoInterno(meses){
       }
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
-        +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
+        +'<span class="pcol" style="font-size:10px">'+p.codigo
+          +((p.codigo_barras&&String(p.codigo_barras).trim())?''
+            :' <i class="ti ti-barcode-off" title="Sem código de barras — cadastrar no Cronos" style="color:var(--yellow);font-size:11px;vertical-align:-1px;opacity:.85"></i>')
+        +'</span>'
         +'<span class="pn" title="'+p.nome+'"><i class="ti ti-history hp-ico" title="Ver histórico de preços" onclick="abrirHistoricoProduto(this)"></i>'+p.nome+'</span>'
         // Pedido Fornecedor (qtd já pedida, a chegar) — somente exibição do dado de origem
         +'<span class="pcol" title="Já pedido ao fornecedor, a chegar"'+(p.pedido_forn>0?' style="color:var(--blue);font-weight:600"':'')+'>'+(p.pedido_forn>0?fmtN(p.pedido_forn):'—')+'</span>'
