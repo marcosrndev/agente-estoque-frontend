@@ -2649,7 +2649,7 @@ function exportERP(fornId){
 
   // ERP format:
   // Col A (pos 1) = Descrição do Produto
-  // Col B (pos 2) = Código
+  // Col B (pos 2) = Código de Barras (EAN; antes era o código interno)
   // Col C (pos 3) = Quantidade
   // Col D (pos 4) = Unidade
   // Col E (pos 5) = Preço Unit.
@@ -2660,7 +2660,7 @@ function exportERP(fornId){
   // Row 1: Header
   wsData.push([
     'Descrição do Produto',
-    'Código',
+    'Código de Barras',
     'Quantidade',
     'Unidade',
     'Preço Unit.'
@@ -2669,14 +2669,17 @@ function exportERP(fornId){
   // Rows 2-501: Products (max 500)
   var maxItens = 500;
   var count = 0;
+  var semEan = 0;
   selP.forEach(function(p){
     if(count >= maxItens) return;
     var cod = p.codigo;
     var qtd = qtds[cod] || 0;
     var preco = precos[cod] || 0;
+    var ean = (p.codigo_barras||'').toString().trim();  // EAN; código interno fica só na tela
+    if(!ean) semEan++;
     wsData.push([
       p.nome,           // A - Descrição
-      cod,              // B - Código
+      ean,              // B - Código de Barras (texto; preserva zeros à esquerda; vazio se faltar)
       qtd,              // C - Quantidade
       p.un,             // D - Unidade
       preco             // E - Preço Unit.
@@ -2688,6 +2691,12 @@ function exportERP(fornId){
     alert('Atenção: o arquivo foi limitado a 500 itens conforme o limite do ERP.');
   }
 
+  // Aviso (antes de gravar): itens sem código de barras saem com a coluna B em branco.
+  if(semEan>0){
+    if(!confirm(semEan+' '+(semEan===1?'item está':'itens estão')+' sem código de barras — '
+      +'a coluna do ERP sai em branco para '+(semEan===1?'ele':'eles')+'.\n\nExportar mesmo assim?'))return;
+  }
+
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(wsData);
 
@@ -2696,8 +2705,10 @@ function exportERP(fornId){
 
   // Format qty and price as numbers
   for(var r=1;r<wsData.length;r++){
+    var cellEan = XLSX.utils.encode_cell({r:r,c:1}); // B - força TEXTO (não perder zeros à esquerda)
     var cellQtd = XLSX.utils.encode_cell({r:r,c:2}); // C
     var cellPreco = XLSX.utils.encode_cell({r:r,c:4}); // E
+    if(ws[cellEan]){ ws[cellEan].t='s'; ws[cellEan].v=String(ws[cellEan].v); }  // replica o cell.t='s' do Agente de Estoque
     if(ws[cellQtd]) ws[cellQtd].t = 'n';
     if(ws[cellPreco]) ws[cellPreco].t = 'n';
   }
