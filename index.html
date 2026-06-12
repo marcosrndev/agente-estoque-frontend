@@ -50,9 +50,10 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .sbn{font-size:18px;font-weight:600;color:var(--text)}.sbn.r{color:var(--red)}.sbn.w{color:var(--yellow)}
 .sbl{font-size:10px;color:var(--text3)}
 /* Resumo financeiro DISCRETO do mês atual no header (1ª linha). Informativo, não clicável. */
-#fin-nav{display:flex;align-items:stretch;margin-left:8px}
-.fn-mes{display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;padding:0 9px 0 2px}
-.fn-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;line-height:1.1;padding:0 9px;border-left:1px solid var(--border)}
+#fin-nav{display:flex;align-items:center;gap:6px;margin-left:8px}
+.fn-mes{display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;padding:0 4px 0 2px}
+.fn-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;line-height:1.1;padding:3px 9px;border:1px solid var(--border);background:var(--bg2);border-radius:var(--radius-sm);transition:box-shadow .15s ease,transform .15s ease}
+.fn-item:hover{box-shadow:0 2px 6px rgba(0,0,0,.08);transform:translateY(-1px)}
 .fn-l{font-size:9px;color:var(--text3);white-space:nowrap}
 .fn-v{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fn-v.real{color:var(--yellow)}.fn-v.prev{color:var(--blue)}
