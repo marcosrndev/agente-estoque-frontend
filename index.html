@@ -4073,7 +4073,9 @@ function renderComparacao(d){
   function sig(v){return (v>=0?'+':'−')+'R$ '+fmtMoeda(Math.abs(v))}
   var df=d.diferenca||{realizado:0,planejado:0,resultado:0};
   var pctR=(d.a.realizado!==0)?((d.b.realizado-d.a.realizado)/Math.abs(d.a.realizado)*100):null;
-  var pctStr=(pctR===null)?'':(' ('+(pctR>=0?'+':'−')+fmtN(Math.abs(pctR),1)+'%)');
+  // % com 1 casa via toFixed: NÃO usar fmtN(x,1) — para n não-inteiro ele força
+  // minimumFractionDigits=2 > maximumFractionDigits=1, o que lança RangeError.
+  var pctStr=(pctR===null)?'':(' ('+(pctR>=0?'+':'−')+Math.abs(pctR).toFixed(1).replace('.',',')+'%)');
   var diffCard='<div class="fc-cmp-card fc-cmp-diff">'
     +'<div class="fc-cmp-card-tit">Diferença (B − A)</div>'
     +'<div class="fc-cmp-per">variação de B em relação a A</div>'
