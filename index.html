@@ -273,6 +273,32 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .fc-dash-res-n{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px;color:var(--text)}
 .fc-dash-res.fc-pos .fc-dash-res-n{color:var(--green)}
 .fc-dash-res.fc-neg .fc-dash-res-n{color:var(--red)}
+/* Análise: histórico anual (linha) + comparação de períodos */
+.fc-anal-sec{margin-bottom:26px}
+.fc-anal-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fc-anal-tit{font-size:13px;font-weight:600;color:var(--text);margin:0}
+#fc-anual-ano{font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:var(--font)}
+.fc-line-chart{width:100%;max-width:780px;height:auto;display:block;margin:0 auto}
+.fc-line-legend{display:flex;gap:18px;justify-content:center;font-size:11px;color:var(--text2);margin-bottom:6px}
+.fc-line-legend span{display:inline-flex;align-items:center;gap:6px}
+.fc-line-legend span::before{content:"";width:14px;height:3px;border-radius:2px;background:var(--c)}
+.fc-cmp-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin-bottom:14px}
+.fc-cmp-period{display:flex;flex-direction:column;gap:5px}
+.fc-cmp-lbl{font-size:11px;font-weight:600;color:var(--text3)}
+.fc-cmp-inputs{display:flex;align-items:center;gap:6px}
+.fc-cmp-inputs input{font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:var(--font)}
+.fc-cmp-ate{font-size:11px;color:var(--text3)}
+.fc-cmp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:6px}
+.fc-cmp-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
+.fc-cmp-diff{background:var(--bg2)}
+.fc-cmp-card-tit{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.fc-cmp-per{font-size:10px;color:var(--text3);margin-bottom:9px}
+.fc-cmp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--text2);padding:3px 0}
+.fc-cmp-row strong{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+.fc-cmp-row strong.fc-pos{color:var(--green)}
+.fc-cmp-row strong.fc-neg{color:var(--red)}
+.fc-cmp-warn{margin-top:12px;font-size:11px;color:var(--yellow);background:var(--yellow-bg);border:1px solid var(--yellow-light);border-radius:var(--radius-sm);padding:7px 10px;display:inline-flex;align-items:center;gap:6px}
+.fc-cmp-err{margin-top:6px;font-size:12px;color:var(--red)}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
 .forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
@@ -626,6 +652,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <button class="fc-subtab" onclick="switchFcSub('dashboard',this)">Dashboard</button>
             <button class="fc-subtab active" onclick="switchFcSub('realizado',this)">Realizado</button>
             <button class="fc-subtab" onclick="switchFcSub('projecao',this)">Projeção</button>
+            <button class="fc-subtab" onclick="switchFcSub('analise',this)">Análise</button>
           </div>
         </div>
         <div id="fc-sub-content">
@@ -642,6 +669,32 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div class="fc-sub" id="fc-sub-projecao" style="display:none">
             <div id="fc-projecao-resumo" style="font-size:12px;color:var(--text2);margin-bottom:12px">—</div>
             <div id="fc-projecao-lista"><div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div></div>
+          </div>
+          <div class="fc-sub" id="fc-sub-analise" style="display:none">
+            <!-- Seção 1: histórico anual (gráfico de linha) -->
+            <div class="fc-anal-sec">
+              <div class="fc-anal-head">
+                <h3 class="fc-anal-tit">Histórico anual</h3>
+                <select id="fc-anual-ano" onchange="carregarAnaliseAnual(this.value)"></select>
+              </div>
+              <div id="fc-anual-chart"><div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div></div>
+            </div>
+            <!-- Seção 2: comparação de períodos -->
+            <div class="fc-anal-sec">
+              <h3 class="fc-anal-tit" style="margin-bottom:10px">Comparar períodos</h3>
+              <div class="fc-cmp-form">
+                <div class="fc-cmp-period">
+                  <span class="fc-cmp-lbl">Período A</span>
+                  <div class="fc-cmp-inputs"><input type="month" id="cmp-a-ini"><span class="fc-cmp-ate">até</span><input type="month" id="cmp-a-fim"></div>
+                </div>
+                <div class="fc-cmp-period">
+                  <span class="fc-cmp-lbl">Período B</span>
+                  <div class="fc-cmp-inputs"><input type="month" id="cmp-b-ini"><span class="fc-cmp-ate">até</span><input type="month" id="cmp-b-fim"></div>
+                </div>
+                <button class="btn primary" onclick="compararPeriodos()"><i class="ti ti-arrows-left-right"></i> Comparar</button>
+              </div>
+              <div id="fc-cmp-result"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -3895,6 +3948,142 @@ function switchFcSub(sub,el){
   el.classList.add('active');
   var pane=document.getElementById('fc-sub-'+sub);
   pane.classList.add('active');pane.style.display='block';
+  if(sub==='analise')onOpenAnalise();
+}
+
+// ── Sub-aba ANÁLISE: histórico anual (linha) + comparação de períodos ──
+var _cmpDefaultsSet=false;
+function _pad2(n){return ('0'+n).slice(-2)}
+function onOpenAnalise(){
+  // Defaults da comparação (uma vez): A = mês atual; B = mesmo mês do ano anterior.
+  if(!_cmpDefaultsSet){
+    _cmpDefaultsSet=true;
+    var m=mesAtualBRT();
+    var cur=m.ano+'-'+_pad2(m.mes), prev=(m.ano-1)+'-'+_pad2(m.mes);
+    var set=function(id,v){var e=document.getElementById(id);if(e&&!e.value)e.value=v};
+    set('cmp-a-ini',cur);set('cmp-a-fim',cur);set('cmp-b-ini',prev);set('cmp-b-fim',prev);
+  }
+  // (Re)carrega o histórico anual do ano escolhido (ou o ano corrente na 1ª vez).
+  var sel=document.getElementById('fc-anual-ano');
+  var ano=(sel&&sel.value)?sel.value:mesAtualBRT().ano;
+  carregarAnaliseAnual(ano);
+}
+function carregarAnaliseAnual(ano){
+  var box=document.getElementById('fc-anual-chart');
+  if(box)box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div>';
+  fetch(BACKEND+'/fluxo-caixa/anual?ano='+ano)
+    .then(function(r){return r.json()})
+    .then(function(d){
+      renderAnualSelectAno(d.anos_disponiveis,d.ano);
+      renderAnualChart(d);
+    })
+    .catch(function(){if(box)box.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Erro ao carregar o histórico anual.</div>'});
+}
+function renderAnualSelectAno(anos,anoSel){
+  var sel=document.getElementById('fc-anual-ano');if(!sel)return;
+  anos=(anos&&anos.length)?anos.slice():[anoSel];
+  if(anos.indexOf(anoSel)<0)anos.unshift(anoSel);
+  sel.innerHTML=anos.map(function(a){return'<option value="'+a+'">'+a+'</option>'}).join('');
+  sel.value=String(anoSel);
+}
+function renderAnualChart(d){
+  var box=document.getElementById('fc-anual-chart');if(!box)return;
+  var meses=(d&&d.meses)||[];
+  var temReal=meses.some(function(m){return (Number(m.realizado)||0)>0});
+  var temPlan=meses.some(function(m){return m.planejado!==null&&m.planejado!==undefined});
+  if(!temReal&&!temPlan){box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Sem dados para '+(d&&d.ano)+'.</div>';return}
+  box.innerHTML=_buildLineChartAnual(meses);
+}
+// Gráfico de LINHA em SVG à mão — mesma abordagem do gráfico do Histórico de preços
+// e das barras do Dashboard. Duas séries (Realizado, Planejado) sobre jan→dez.
+// Planejado null = gap (linha interrompe, ponto não plotado).
+function _buildLineChartAnual(meses){
+  var W=780,H=270,PAD={l:60,r:16,t:18,b:34};
+  var plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+  var vals=[];
+  meses.forEach(function(m){vals.push(Number(m.realizado)||0);if(m.planejado!==null&&m.planejado!==undefined)vals.push(Number(m.planejado))});
+  var vMax=Math.max.apply(null,vals.concat([1]))*1.1;
+  function X(mes){return PAD.l+(mes-1)/11*plotW}
+  function Y(v){return PAD.t+plotH-(v/vMax)*plotH}
+  var C_REAL='#e67700', C_PLAN='#1971c2';
+  var svg='<svg class="fc-line-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  for(var i=0;i<=4;i++){
+    var y=PAD.t+i*plotH/4, gv=vMax-i*vMax/4;
+    svg+='<line x1="'+PAD.l+'" y1="'+y+'" x2="'+(W-PAD.r)+'" y2="'+y+'" stroke="#e9ecef" stroke-width="1"/>';
+    svg+='<text x="'+(PAD.l-6)+'" y="'+(y+3)+'" font-size="9" fill="#868e96" text-anchor="end">'+fmtN(Math.round(gv))+'</text>';
+  }
+  meses.forEach(function(m){
+    svg+='<text x="'+X(m.mes)+'" y="'+(H-PAD.b+16)+'" font-size="9" fill="#868e96" text-anchor="middle">'+(FC_MESES[m.mes-1]||'').slice(0,3)+'</text>';
+  });
+  // Linha REALIZADO (12 pontos contínuos).
+  var dr='M '+meses.map(function(m){return X(m.mes)+' '+Y(Number(m.realizado)||0)}).join(' L ');
+  svg+='<path d="'+dr+'" fill="none" stroke="'+C_REAL+'" stroke-width="2" stroke-linejoin="round"/>';
+  // Linha PLANEJADO em segmentos contínuos (gap onde null).
+  var segs=[],cur=[];
+  meses.forEach(function(m){
+    if(m.planejado===null||m.planejado===undefined){if(cur.length){segs.push(cur);cur=[]}}
+    else cur.push(m);
+  });
+  if(cur.length)segs.push(cur);
+  segs.forEach(function(seg){
+    if(seg.length>1){var d='M '+seg.map(function(m){return X(m.mes)+' '+Y(m.planejado)}).join(' L ');
+      svg+='<path d="'+d+'" fill="none" stroke="'+C_PLAN+'" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>';}
+  });
+  // Pontos + tooltips.
+  meses.forEach(function(m){
+    var x=X(m.mes), nome=FC_MESES[m.mes-1]||('Mês '+m.mes);
+    svg+='<circle cx="'+x+'" cy="'+Y(Number(m.realizado)||0)+'" r="3" fill="'+C_REAL+'"><title>'+nome+' — Realizado R$ '+fmtMoeda(m.realizado)+'</title></circle>';
+    if(m.planejado!==null&&m.planejado!==undefined)
+      svg+='<circle cx="'+x+'" cy="'+Y(m.planejado)+'" r="3" fill="'+C_PLAN+'"><title>'+nome+' — Planejado R$ '+fmtMoeda(m.planejado)+'</title></circle>';
+  });
+  svg+='</svg>';
+  var leg='<div class="fc-line-legend"><span style="--c:'+C_REAL+'">Realizado</span><span style="--c:'+C_PLAN+'">Planejado</span></div>';
+  return leg+svg;
+}
+// "2026-06" → "Jun/2026" (sem new Date, é só string ano-mês).
+function _ymLabel(s){if(!s)return'';var p=String(s).split('-');var m=parseInt(p[1],10);return (FC_MESES[m-1]||'').slice(0,3)+'/'+p[0]}
+function _periodoLabel(ini,fim){return (ini===fim)?_ymLabel(ini):(_ymLabel(ini)+' – '+_ymLabel(fim))}
+function compararPeriodos(){
+  var box=document.getElementById('fc-cmp-result');if(!box)return;
+  function v(id){var e=document.getElementById(id);return e?e.value:''}
+  var aI=v('cmp-a-ini'),aF=v('cmp-a-fim'),bI=v('cmp-b-ini'),bF=v('cmp-b-fim');
+  if(!aI||!aF||!bI||!bF){box.innerHTML='<div class="fc-cmp-err">Preencha os dois períodos (mês inicial e final).</div>';return}
+  if(aI>aF||bI>bF){box.innerHTML='<div class="fc-cmp-err">Em cada período, o mês inicial deve ser ≤ o final.</div>';return}
+  box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Comparando...</div>';
+  fetch(BACKEND+'/fluxo-caixa/comparar?a_ini='+aI+'&a_fim='+aF+'&b_ini='+bI+'&b_fim='+bF)
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d&&d.error){box.innerHTML='<div class="fc-cmp-err">'+d.error+'</div>';return}
+      renderComparacao(d);
+    })
+    .catch(function(){box.innerHTML='<div class="fc-cmp-err">Erro ao comparar.</div>'});
+}
+function renderComparacao(d){
+  var box=document.getElementById('fc-cmp-result');if(!box)return;
+  function rc(v){return (v<0)?'fc-neg':'fc-pos'}
+  function card(p,titulo){
+    return '<div class="fc-cmp-card">'
+      +'<div class="fc-cmp-card-tit">'+titulo+'</div>'
+      +'<div class="fc-cmp-per">'+_periodoLabel(p.ini,p.fim)+(p.n_meses>1?(' · '+p.n_meses+' meses'):'')+'</div>'
+      +'<div class="fc-cmp-row"><span>Realizado</span><strong>R$ '+fmtMoeda(p.realizado)+'</strong></div>'
+      +'<div class="fc-cmp-row"><span>Planejado</span><strong>R$ '+fmtMoeda(p.planejado)+'</strong></div>'
+      +'<div class="fc-cmp-row"><span>Resultado</span><strong class="'+rc(p.resultado)+'">R$ '+fmtMoeda(p.resultado)+'</strong></div>'
+      +'</div>';
+  }
+  function sig(v){return (v>=0?'+':'−')+'R$ '+fmtMoeda(Math.abs(v))}
+  var df=d.diferenca||{realizado:0,planejado:0,resultado:0};
+  var pctR=(d.a.realizado!==0)?((d.b.realizado-d.a.realizado)/Math.abs(d.a.realizado)*100):null;
+  var pctStr=(pctR===null)?'':(' ('+(pctR>=0?'+':'−')+fmtN(Math.abs(pctR),1)+'%)');
+  var diffCard='<div class="fc-cmp-card fc-cmp-diff">'
+    +'<div class="fc-cmp-card-tit">Diferença (B − A)</div>'
+    +'<div class="fc-cmp-per">variação de B em relação a A</div>'
+    +'<div class="fc-cmp-row"><span>Realizado</span><strong class="'+rc(df.realizado)+'">'+sig(df.realizado)+pctStr+'</strong></div>'
+    +'<div class="fc-cmp-row"><span>Planejado</span><strong>'+sig(df.planejado)+'</strong></div>'
+    +'<div class="fc-cmp-row"><span>Resultado</span><strong class="'+rc(df.resultado)+'">'+sig(df.resultado)+'</strong></div>'
+    +'</div>';
+  var totalSem=((d.a.meses_sem_limite||[]).length)+((d.b.meses_sem_limite||[]).length);
+  var warn=totalSem?('<div class="fc-cmp-warn"><i class="ti ti-alert-triangle"></i> '+totalSem+' '+(totalSem===1?'mês':'meses')+' sem limite definido — planejado pode estar subestimado.</div>'):'';
+  box.innerHTML='<div class="fc-cmp-grid">'+card(d.a,'Período A')+card(d.b,'Período B')+diffCard+'</div>'+warn;
 }
 function renderRealizado(){
   var lista=document.getElementById('fc-realizado-lista');if(!lista)return;
