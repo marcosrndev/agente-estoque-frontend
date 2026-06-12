@@ -3305,6 +3305,16 @@ function fmtDateShort(s){
   if(!s)return'';
   try{var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}catch(e){return s}
 }
+// Formata uma DATA DE CALENDÁRIO "YYYY-MM-DD" como dd/mm/aa SEM passar por fuso.
+// Diferente de fmtDateShort (que usa new Date() e desloca datas-puras um dia pra trás
+// no fuso local). Usada no Fluxo de Caixa, onde dt_vencimento/dt_baixa são datas puras
+// do banco — não instantes. Fallback pro fmtDateShort se o formato não for reconhecido.
+function fmtDateCal(s){
+  if(!s)return'';
+  var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
+  if(!m)return fmtDateShort(s);
+  return m[3]+'/'+m[2]+'/'+m[1].slice(2);
+}
 function snapshotHistoricoGrupo(grupo){
   var rows=[];
   var cache=itensCache[grupo]||{};
@@ -3731,7 +3741,7 @@ function renderRealizado(){
     html+='<tr>'
       +'<td>'+(t.fornecedor_nome||t.cod_fornecedor||'—')+'</td>'
       +'<td>'+(t.historico||'')+'</td>'
-      +'<td>'+fmtDateShort(t.dt_vencimento)+'</td>'
+      +'<td>'+fmtDateCal(t.dt_vencimento)+'</td>'
       +'<td class="num">'+fmtN(t.valor_titulo)+'</td>'
       +'<td>'+badge+'</td>'
       +'</tr>';
