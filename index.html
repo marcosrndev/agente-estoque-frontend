@@ -228,6 +228,25 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .fc-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
 .fc-badge.pago{background:var(--green-bg);color:var(--green);border:1px solid var(--green-light)}
 .fc-badge.vencer{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-light)}
+/* Cards de pedido da Projeção */
+.fc-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
+.fc-card:hover{border-color:var(--blue-light)}
+.fc-card.nao-mapeada{border-color:var(--yellow-light);background:var(--yellow-bg)}
+.fc-card-main{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
+.fc-chev{display:inline-flex;transition:transform .15s;color:var(--text3);flex-shrink:0}
+.fc-card.open .fc-chev{transform:rotate(90deg)}
+.fc-card-val{margin-left:auto;color:var(--blue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fc-card-sec{font-size:11px;color:var(--text3);margin-top:4px}
+.fc-card-parc{font-size:11px;color:var(--text2);margin-top:6px;display:flex;flex-direction:column;gap:3px}
+.fc-parc-line{display:flex;align-items:center;gap:6px}
+.fc-parc-line .fc-parc-pill{font-size:10px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-light);border-radius:20px;padding:1px 7px;white-space:nowrap}
+.fc-parc-line .fc-parc-val{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--text2)}
+.fc-warn{font-size:11px;color:var(--yellow);font-weight:600;margin-top:6px;display:inline-flex;align-items:center;gap:5px}
+.fc-card-itens{margin-top:9px;border-top:1px solid var(--border2);padding-top:8px}
+.fc-item-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text2);padding:3px 0}
+.fc-item-row .fc-item-nome{flex:1;min-width:0}
+.fc-item-row .fc-item-qtd{color:var(--text3);white-space:nowrap}
+.fc-item-row .fc-item-val{font-variant-numeric:tabular-nums;white-space:nowrap;min-width:80px;text-align:right}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
 .forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
@@ -587,7 +606,8 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <div id="fc-realizado-lista"><div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div></div>
           </div>
           <div class="fc-sub" id="fc-sub-projecao" style="display:none">
-            <div class="fc-placeholder"><i class="ti ti-calendar-stats"></i><div>Projeção — em breve</div></div>
+            <div id="fc-projecao-resumo" style="font-size:12px;color:var(--text2);margin-bottom:12px">—</div>
+            <div id="fc-projecao-lista"><div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div></div>
           </div>
         </div>
       </div>
@@ -3668,6 +3688,8 @@ function carregarFluxoCaixa(){
     .catch(function(){
       if(lista)lista.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Erro ao carregar o fluxo de caixa.</div>';
     });
+  // Projeção compartilha o seletor de mês — recarrega em paralelo.
+  carregarProjecao();
 }
 function renderFcBarra(d){
   document.getElementById('fc-c-limite').textContent=fcMoeda(d.limite);
@@ -3748,6 +3770,80 @@ function renderRealizado(){
   });
   html+='</tbody></table>';
   lista.innerHTML=html;
+}
+// ── Projeção: parcelas dos pedidos abertos que vencem no mês ──
+var fcProjData=null;
+function carregarProjecao(){
+  var lista=document.getElementById('fc-projecao-lista');
+  if(lista)lista.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div>';
+  fetch(BACKEND+'/fluxo-caixa/projecao?ano='+fcAno+'&mes='+fcMes)
+    .then(function(r){return r.json()})
+    .then(function(d){fcProjData=d;renderProjecao();})
+    .catch(function(){
+      if(lista)lista.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Erro ao carregar a projeção.</div>';
+    });
+}
+function renderProjecao(){
+  var lista=document.getElementById('fc-projecao-lista');if(!lista)return;
+  var d=fcProjData||{};
+  var pedidos=d.pedidos||[];
+  var comParcela=pedidos.filter(function(p){return (p.parcelas_no_mes||[]).length});
+  var resumo=document.getElementById('fc-projecao-resumo');
+  if(resumo){
+    resumo.innerHTML='Previsto: <strong style="color:var(--blue)">R$ '+fmtN(d.previsto_total||0)+'</strong> em <strong>'
+      +comParcela.length+'</strong> '+(comParcela.length===1?'pedido':'pedidos')
+      +' <span style="color:var(--text3)">(parcelas do mês)</span>';
+  }
+  if(!pedidos.length){
+    lista.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Nenhum pedido aberto com parcela vencendo neste mês.</div>';
+    return;
+  }
+  var html='';
+  pedidos.forEach(function(p){
+    var nm=p.nao_mapeada;
+    var cond=p.nome_condicao||p.cod_cond_pag||'—';
+    var resp=p.responsavel?(' · resp. '+p.responsavel):'';
+    var emit=p.dt_emissao?(' · emitido '+fmtDateCal(p.dt_emissao)):'';
+    var corpo;
+    if(nm){
+      corpo='<div class="fc-warn"><i class="ti ti-alert-triangle"></i> condição não reconhecida — verifique</div>';
+    }else{
+      corpo='<div class="fc-card-parc">';
+      (p.parcelas_no_mes||[]).forEach(function(parc){
+        corpo+='<div class="fc-parc-line"><span class="fc-parc-pill">Parc '+parc.numero+'/'+parc.total_parcelas+'</span>'
+          +'<span>vence '+fmtDateCal(parc.data_vencimento)+'</span>'
+          +'<span class="fc-parc-val">R$ '+fmtN(parc.valor)+'</span></div>';
+      });
+      corpo+='</div>';
+    }
+    var itens=p.itens||[];
+    var itensHtml='';
+    if(itens.length){
+      itens.forEach(function(it){
+        var qtd=it.qtd?(fmtN(it.qtd)+(it.unidade?(' '+it.unidade):'')):'';
+        itensHtml+='<div class="fc-item-row"><span class="fc-item-nome">'+(it.produto_nome||it.produto_codigo||'—')+'</span>'
+          +'<span class="fc-item-qtd">'+qtd+'</span>'
+          +'<span class="fc-item-val">R$ '+fmtN(it.total_item)+'</span></div>';
+      });
+    }else{
+      itensHtml='<div style="font-size:11px;color:var(--text3);padding:3px 0">Sem itens detalhados.</div>';
+    }
+    html+='<div class="fc-card'+(nm?' nao-mapeada':'')+'" onclick="toggleProjCard(this)">'
+      +'<div class="fc-card-main"><span class="fc-chev"><i class="ti ti-chevron-right"></i></span>'
+      +'<span>#'+(p.num_mov||p.id_mov||'—')+' · '+(p.fornecedor_nome||'—')+'</span>'
+      +'<span class="fc-card-val">R$ '+fmtN(p.valor_no_mes||0)+'</span></div>'
+      +'<div class="fc-card-sec">'+cond+resp+emit+'</div>'
+      +corpo
+      +'<div class="fc-card-itens" style="display:none">'+itensHtml+'</div>'
+      +'</div>';
+  });
+  lista.innerHTML=html;
+}
+function toggleProjCard(card){
+  var itens=card.querySelector('.fc-card-itens');if(!itens)return;
+  var open=itens.style.display!=='none';
+  itens.style.display=open?'none':'block';
+  card.classList.toggle('open',!open);
 }
 
 // ── ADMIN ──
