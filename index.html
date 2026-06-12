@@ -208,6 +208,26 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .ind-table th{background:var(--bg3);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase}
 .ind-table tr:last-child td{border-bottom:none}
 .ind-table .num{text-align:right;font-variant-numeric:tabular-nums}
+/* ── Fluxo de Caixa ── */
+#fc-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#fc-head{flex-shrink:0;padding:14px 14px 0;border-bottom:1px solid var(--border)}
+#fc-month-bar{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+#fc-month-label{font-size:14px;font-weight:600;min-width:130px;text-align:center}
+#fc-month-sel{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:var(--font)}
+.ind-card.fc-pos .ind-n{color:var(--green)}
+.ind-card.fc-neg .ind-n{color:var(--red)}
+#fc-subtabs{display:flex;gap:4px;margin-top:14px}
+.fc-subtab{padding:7px 14px;font-size:12px;color:var(--text3);cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:none;font-family:var(--font)}
+.fc-subtab.active{color:var(--text);background:var(--bg);border-color:var(--border);font-weight:600}
+#fc-sub-content{flex:1;overflow-y:auto;padding:14px}
+.fc-sub.active{display:block}
+.fc-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:48px 16px;color:var(--text3);font-size:13px}
+.fc-placeholder i{font-size:32px;opacity:.5}
+#fc-realizado-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+#fc-realizado-filtro{flex:1;min-width:200px;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:var(--font)}
+.fc-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
+.fc-badge.pago{background:var(--green-bg);color:var(--green);border:1px solid var(--green-light)}
+.fc-badge.vencer{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-light)}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
 .forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
@@ -395,6 +415,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
     <button class="tab active" onclick="switchTab('chat',this)"><i class="ti ti-message-circle"></i> Chat</button>
     <button class="tab" onclick="switchTab('pedido',this)"><i class="ti ti-shopping-cart"></i> Montar Pedido <span class="tbdg" id="sel-badge" style="display:none">0</span></button>
     <button class="tab" onclick="switchTab('cotacoes',this)"><i class="ti ti-clipboard-list"></i> Cotações <span class="tbdg" id="cot-badge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('fluxo-caixa',this)"><i class="ti ti-cash"></i> Fluxo de Caixa</button>
     <button class="tab" onclick="switchTab('indicadores',this)"><i class="ti ti-chart-bar"></i> Indicadores</button>
     <button class="tab" onclick="switchTab('historico',this)"><i class="ti ti-history"></i> Histórico</button>
     <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)"><i class="ti ti-settings"></i> Admin</button>
@@ -526,6 +547,48 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
         <div class="cot-section">
           <h3><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span> Concluídos <span style="font-weight:400;font-size:10px">(apagados na próxima importação)</span></h3>
           <div id="cot-concluidos"><div style="color:var(--text3);font-size:13px">Nenhum concluído ainda.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DE CAIXA -->
+    <div class="panel" id="panel-fluxo-caixa">
+      <div id="fc-body">
+        <div id="fc-head">
+          <div id="fc-month-bar">
+            <button class="btn" onclick="fcPrevMonth()" title="Mês anterior"><i class="ti ti-chevron-left"></i></button>
+            <span id="fc-month-label">—</span>
+            <button class="btn" onclick="fcNextMonth()" title="Próximo mês"><i class="ti ti-chevron-right"></i></button>
+            <select id="fc-month-sel" onchange="fcSelectMonth(this.value)" style="margin-left:6px"></select>
+            <button class="btn" onclick="carregarFluxoCaixa()" style="margin-left:auto"><i class="ti ti-refresh"></i> Atualizar</button>
+          </div>
+          <div class="ind-grid" id="fc-cards" style="margin-bottom:0">
+            <div class="ind-card"><div class="ind-l">Limite</div><div class="ind-n" id="fc-c-limite">—</div></div>
+            <div class="ind-card w"><div class="ind-l">Compras realizadas</div><div class="ind-n" id="fc-c-realizado">—</div></div>
+            <div class="ind-card b"><div class="ind-l">Compras previstas</div><div class="ind-n" id="fc-c-previsto">—</div></div>
+            <div class="ind-card" id="fc-card-saldo-r"><div class="ind-l">Saldo realizado</div><div class="ind-n" id="fc-c-saldo-r">—</div></div>
+            <div class="ind-card" id="fc-card-saldo-p"><div class="ind-l">Saldo c/ previsão</div><div class="ind-n" id="fc-c-saldo-p">—</div></div>
+          </div>
+          <div id="fc-subtabs">
+            <button class="fc-subtab" onclick="switchFcSub('dashboard',this)">Dashboard</button>
+            <button class="fc-subtab active" onclick="switchFcSub('realizado',this)">Realizado</button>
+            <button class="fc-subtab" onclick="switchFcSub('projecao',this)">Projeção</button>
+          </div>
+        </div>
+        <div id="fc-sub-content">
+          <div class="fc-sub" id="fc-sub-dashboard" style="display:none">
+            <div class="fc-placeholder"><i class="ti ti-chart-pie"></i><div>Dashboard — em breve</div></div>
+          </div>
+          <div class="fc-sub active" id="fc-sub-realizado">
+            <div id="fc-realizado-bar">
+              <div id="fc-realizado-resumo" style="font-size:12px;color:var(--text2)">—</div>
+              <input id="fc-realizado-filtro" type="text" placeholder="Filtrar por fornecedor..." oninput="renderRealizado()">
+            </div>
+            <div id="fc-realizado-lista"><div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div></div>
+          </div>
+          <div class="fc-sub" id="fc-sub-projecao" style="display:none">
+            <div class="fc-placeholder"><i class="ti ti-calendar-stats"></i><div>Projeção — em breve</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1471,6 +1534,7 @@ function switchTab(id,el){
   if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();}
   if(id==='indicadores')carregarIndicadores();
   if(id==='historico'){abrirAbaHistorico();}
+  if(id==='fluxo-caixa')carregarFluxoCaixa();
 }
 
 // ── CSV ──
@@ -3572,6 +3636,108 @@ function renderIndicadores(d){
     html+='</tbody></table></div>';
   }
   el.innerHTML=html;
+}
+
+// ── FLUXO DE CAIXA DE COMPRAS ──
+var FC_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var fcAno=null, fcMes=null, fcData=null;
+function fcMoeda(v){return v===null||v===undefined?'—':'R$ '+fmtN(v)}
+function carregarFluxoCaixa(){
+  if(!fcAno||!fcMes){var d=new Date();fcAno=d.getFullYear();fcMes=d.getMonth()+1;}
+  var lbl=document.getElementById('fc-month-label');if(lbl)lbl.textContent=FC_MESES[fcMes-1]+' / '+fcAno;
+  var lista=document.getElementById('fc-realizado-lista');
+  if(lista)lista.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">Carregando...</div>';
+  fetch(BACKEND+'/fluxo-caixa/resumo?ano='+fcAno+'&mes='+fcMes)
+    .then(function(r){return r.json()})
+    .then(function(d){
+      fcData=d;
+      renderFcBarra(d);
+      renderFcMonthSel(d);
+      renderRealizado();
+    })
+    .catch(function(){
+      if(lista)lista.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Erro ao carregar o fluxo de caixa.</div>';
+    });
+}
+function renderFcBarra(d){
+  document.getElementById('fc-c-limite').textContent=fcMoeda(d.limite);
+  document.getElementById('fc-c-realizado').textContent=fcMoeda(d.realizado_total);
+  document.getElementById('fc-c-previsto').textContent=fcMoeda(d.previsto_total);
+  _fcSaldoCard('fc-card-saldo-r','fc-c-saldo-r',d.saldo_realizado);
+  _fcSaldoCard('fc-card-saldo-p','fc-c-saldo-p',d.saldo_com_previsao);
+}
+function _fcSaldoCard(cardId,valId,valor){
+  var card=document.getElementById(cardId), val=document.getElementById(valId);
+  card.classList.remove('fc-pos','fc-neg');
+  if(valor!==null&&valor!==undefined){
+    card.classList.add(valor<0?'fc-neg':'fc-pos');
+  }
+  val.textContent=fcMoeda(valor);
+}
+function renderFcMonthSel(d){
+  var sel=document.getElementById('fc-month-sel');if(!sel)return;
+  var meses=(d&&d.meses_disponiveis)||[];
+  var atualVal=fcAno+'-'+fcMes, temAtual=false;
+  var html='';
+  meses.forEach(function(m){
+    var v=m.ano+'-'+m.mes;
+    if(v===atualVal)temAtual=true;
+    html+='<option value="'+v+'">'+FC_MESES[m.mes-1]+' / '+m.ano+'</option>';
+  });
+  if(!temAtual){
+    html='<option value="'+atualVal+'">'+FC_MESES[fcMes-1]+' / '+fcAno+'</option>'+html;
+  }
+  sel.innerHTML=html;
+  sel.value=atualVal;
+}
+function fcSelectMonth(v){
+  if(!v)return;
+  var parts=v.split('-');fcAno=parseInt(parts[0]);fcMes=parseInt(parts[1]);
+  carregarFluxoCaixa();
+}
+function fcPrevMonth(){fcMes--;if(fcMes<1){fcMes=12;fcAno--;}carregarFluxoCaixa();}
+function fcNextMonth(){fcMes++;if(fcMes>12){fcMes=1;fcAno++;}carregarFluxoCaixa();}
+function switchFcSub(sub,el){
+  document.querySelectorAll('.fc-subtab').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.fc-sub').forEach(function(p){p.classList.remove('active');p.style.display='none'});
+  el.classList.add('active');
+  var pane=document.getElementById('fc-sub-'+sub);
+  pane.classList.add('active');pane.style.display='block';
+}
+function renderRealizado(){
+  var lista=document.getElementById('fc-realizado-lista');if(!lista)return;
+  var d=fcData||{};
+  var titulos=d.titulos||[];
+  var filtro=norm((document.getElementById('fc-realizado-filtro')||{}).value||'');
+  var vis=filtro?titulos.filter(function(t){return norm(t.fornecedor_nome||'').indexOf(filtro)>-1}):titulos;
+  var totalVis=vis.reduce(function(s,t){return s+(Number(t.valor_titulo)||0)},0);
+  var resumo=document.getElementById('fc-realizado-resumo');
+  if(resumo){
+    resumo.innerHTML='Realizado: <strong>R$ '+fmtN(totalVis)+'</strong> em <strong>'+vis.length+'</strong> '
+      +(vis.length===1?'lançamento':'lançamentos')
+      +(filtro&&vis.length!==titulos.length?' <span style="color:var(--text3)">(de '+titulos.length+')</span>':'');
+  }
+  if(!vis.length){
+    lista.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px">'
+      +(titulos.length?'Nenhum título para este filtro.':'Nenhum título lançado neste mês.')+'</div>';
+    return;
+  }
+  var html='<table class="ind-table"><thead><tr>'
+    +'<th>Fornecedor</th><th>Histórico</th><th>Vencimento</th><th class="num">Valor</th><th>Situação</th>'
+    +'</tr></thead><tbody>';
+  vis.forEach(function(t){
+    var pago=!!t.dt_baixa;
+    var badge='<span class="fc-badge '+(pago?'pago':'vencer')+'">'+(pago?'Pago':'A vencer')+'</span>';
+    html+='<tr>'
+      +'<td>'+(t.fornecedor_nome||t.cod_fornecedor||'—')+'</td>'
+      +'<td>'+(t.historico||'')+'</td>'
+      +'<td>'+fmtDateShort(t.dt_vencimento)+'</td>'
+      +'<td class="num">'+fmtN(t.valor_titulo)+'</td>'
+      +'<td>'+badge+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  lista.innerHTML=html;
 }
 
 // ── ADMIN ──
