@@ -1175,6 +1175,9 @@ function navInput(e,el){
 function fmtN(n,maxDec){maxDec=maxDec||2;var num=Number(n);var minDec=Number.isInteger(num)?0:2;return num.toLocaleString('pt-BR',{minimumFractionDigits:minDec,maximumFractionDigits:maxDec})}
 // Formata número pra input de preço: mantém até 4 decimais, sem zeros à direita além das 2 obrigatórias
 function fmtNInput(n){if(n===null||n===undefined||n==='')return'';var s=Number(n).toFixed(4);s=s.replace(/(\.\d{2})0+$/,'$1');return s.replace('.',',')}
+// Formata qtd pra input SEM separador de milhar: fmtN gerava "1.234" (pt-BR) que o pNum
+// relia como 1.234 — corrompia toda qtd >= 1000 a cada re-render. Round-trip seguro.
+function fmtQtdInput(n){if(n===null||n===undefined||n===''||!Number(n))return'';return String(Number(n)).replace('.',',')}
 function fmtDate(){return new Date().toLocaleString('pt-BR')}
 function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
 function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':'OK'}
@@ -1248,8 +1251,8 @@ function carregarItensGrupo(grupo,cb){
     if(!(grupo in historicoCache)){
       historicoCache[grupo]={};
       carregarHistoricoGrupo(grupo,function(){
-        // re-render se este grupo ainda estiver selecionado
-        if(selectedGroups.has(grupo))renderPedido();
+        // re-render se este grupo ainda estiver selecionado (e ninguém estiver digitando)
+        if(selectedGroups.has(grupo)&&!pedidoEmEdicao())renderPedido();
       });
     }
     if(cb)cb();
@@ -1274,15 +1277,18 @@ function rebuildFornecedoresFromSelection(){
   }
 }
 
-// Captura os valores atuais dos inputs (preço, qtd, forn-preco) para itensCache
+// Captura os valores atuais dos inputs (preço, qtd, forn-preco) para itensCache.
+// Campo vazio/zerado é limpeza intencional: atualiza a entrada existente com 0 em vez
+// de descartar (o v>0 antigo fazia o valor velho "ressuscitar" no re-render).
+// Só cria entrada nova quando v>0, pra não inflar o cache com linhas nunca editadas.
 function capturePedidoInputs(){
   document.querySelectorAll('#ped-tbl-wrap .preco-input').forEach(function(pi){
     var g=pi.getAttribute('data-grupo-key'),cod=pi.dataset.cod;
-    if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(pi.value);if(v>0)itensCache[g][cod].preco=v;}
+    if(g&&cod){if(!itensCache[g])itensCache[g]={};var v=pNum(pi.value);if(itensCache[g][cod])itensCache[g][cod].preco=v;else if(v>0){itensCache[g][cod]={};itensCache[g][cod].preco=v;}}
   });
   document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
     var g=qi.getAttribute('data-grupo-key'),cod=qi.dataset.cod;
-    if(g&&cod){if(!itensCache[g])itensCache[g]={};if(!itensCache[g][cod])itensCache[g][cod]={};var v=pNum(qi.value);if(v>0)itensCache[g][cod].qtd_manual=v;}
+    if(g&&cod){if(!itensCache[g])itensCache[g]={};var v=pNum(qi.value);if(itensCache[g][cod])itensCache[g][cod].qtd_manual=v;else if(v>0){itensCache[g][cod]={};itensCache[g][cod].qtd_manual=v;}}
   });
   document.querySelectorAll('#ped-tbl-wrap .forn-preco').forEach(function(fi){
     var g=fi.getAttribute('data-grupo-key'),cod=fi.dataset.cod,fid=fi.dataset.fornId;
@@ -1356,12 +1362,23 @@ function onQtdChange(input,qtdSug,grupo){
 }
 
 var saveTimers={};
+// Marca edição na PRIMEIRA tecla (oninput) — o onchange só dispara no blur,
+// o que deixava o tick de 30s re-renderizar a tabela no meio da digitação.
+function marcarEdicaoPedido(){userEditedInputs=true}
+// Há edição em andamento? (campo da tabela focado, save pendente ou digitação não salva)
+// Re-renders em background (polling/sync/histórico) devem ser pulados enquanto true.
+function pedidoEmEdicao(){
+  var ae=document.activeElement;
+  if(ae&&ae.classList&&ae.classList.contains('item-input'))return true;
+  if(Object.keys(saveTimers).length>0)return true;
+  return userEditedInputs;
+}
 function triggerSave(grupo){
   if(!grupo)return;
   userEditedInputs=true; // mark that user is editing
   setSaveStatus('saving');
   if(saveTimers[grupo])clearTimeout(saveTimers[grupo]);
-  saveTimers[grupo]=setTimeout(function(){doSave(grupo);},1500);
+  saveTimers[grupo]=setTimeout(function(){delete saveTimers[grupo];doSave(grupo);},1500);
 }
 
 function doSave(grupo){
@@ -1816,8 +1833,9 @@ function carregarCotacoes(){
   .then(function(data){
     cotacoesCache=Array.isArray(data)?data:[];
     updateChips();
-    // Never re-render pedido from cotacao refresh if user has edited inputs
-    if(!userEditedInputs){renderPedido();}
+    // Never re-render pedido from cotacao refresh while user is editing
+    // (campo focado, digitação não salva ou save pendente) — ver pedidoEmEdicao()
+    if(!pedidoEmEdicao()){renderPedido();}
     var emCot=cotacoesCache.filter(function(c){return c.status==='em_cotacao'}).length;
     var cb=document.getElementById('cot-badge');cb.textContent=emCot;cb.style.display=emCot>0?'inline-flex':'none';
     if(document.getElementById('panel-cotacoes').classList.contains('active'))renderCotacoes();
@@ -2188,8 +2206,32 @@ function renderPedido(){
   _renderPedidoInterno(meses);
 }
 
+// Snapshot do input da tabela com foco (texto BRUTO + cursor) pra sobreviver ao
+// rebuild via innerHTML: um "0," em digitação parseia 0 e seria perdido pela captura.
+function _snapshotFocoPedido(){
+  var ae=document.activeElement;
+  if(!ae||!ae.classList||!ae.classList.contains('item-input'))return null;
+  var wrap=document.getElementById('ped-tbl-wrap');
+  if(!wrap||!wrap.contains(ae))return null;
+  return{
+    cls:ae.classList.contains('forn-preco')?'forn-preco':ae.classList.contains('preco-input')?'preco-input':'qtd-input',
+    cod:ae.dataset.cod||'',fornId:ae.dataset.fornId||null,
+    valor:ae.value,selStart:ae.selectionStart,selEnd:ae.selectionEnd
+  };
+}
+function _restaurarFocoPedido(snap){
+  if(!snap)return;
+  var sel='#ped-tbl-wrap .'+snap.cls+'[data-cod="'+snap.cod+'"]'+(snap.fornId?'[data-forn-id="'+snap.fornId+'"]':'');
+  var inp=document.querySelector(sel);
+  if(!inp)return;
+  inp.value=snap.valor;
+  inp.focus();
+  try{inp.setSelectionRange(snap.selStart,snap.selEnd)}catch(e){}
+}
+
 function _renderPedidoInterno(meses){
   if(!meses)meses=getMeses();
+  var foco=_snapshotFocoPedido();
   // Captura inputs antes de re-renderizar (preserva valores não-salvos)
   capturePedidoInputs();
   var selP=products.filter(function(p){
@@ -2309,6 +2351,7 @@ function _renderPedidoInterno(meses){
             +'<input class="item-input forn-preco" type="text" inputmode="decimal" placeholder="0,0000"'
             +' value="'+(v>0?fmtNInput(v):'')+'"'
             +' data-forn-id="'+f.id+'" data-cod="'+p.codigo+'" data-grupo-key="'+g+'"'
+            +' oninput="marcarEdicaoPedido()"'
             +' onchange="onFornPrecoChange(this,\''+gEsc+'\')"'
             +' onkeydown="navInput(event,this)">'
           +'</span>'
@@ -2326,12 +2369,16 @@ function _renderPedidoInterno(meses){
           +'<input class="item-input preco-input" type="text" inputmode="decimal" placeholder="0,0000"'
           +' value="'+(savedPreco?fmtNInput(savedPreco):'')+'"'
           +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
+          +' oninput="marcarEdicaoPedido()"'
           +' onchange="onPrecoChange(this,'+qtdSug+',\''+gEsc+'\');"'
           +' onkeydown="navInput(event,this)"></span>';
       }
 
       html+='<div class="'+rowClass+'" style="grid-template-columns:'+COLS+'" data-grupo="'+g+'" data-cod="'+p.codigo+'">'
-        +'<span class="pcol" style="font-size:10px">'+p.codigo+'</span>'
+        +'<span class="pcol" style="font-size:10px">'+p.codigo
+          +((p.codigo_barras&&String(p.codigo_barras).trim())?''
+            :' <i class="ti ti-barcode-off" title="Sem código de barras — cadastrar no Cronos" style="color:var(--yellow);font-size:11px;vertical-align:-1px;opacity:.85"></i>')
+        +'</span>'
         +'<span class="pn" title="'+p.nome+'"><i class="ti ti-history hp-ico" title="Ver histórico de preços" onclick="abrirHistoricoProduto(this)"></i>'+p.nome+'</span>'
         // Pedido Fornecedor (qtd já pedida, a chegar) — somente exibição do dado de origem
         +'<span class="pcol" title="Já pedido ao fornecedor, a chegar"'+(p.pedido_forn>0?' style="color:var(--blue);font-weight:600"':'')+'>'+(p.pedido_forn>0?fmtN(p.pedido_forn):'—')+'</span>'
@@ -2343,8 +2390,9 @@ function _renderPedidoInterno(meses){
         +precoCell
         // Qtd
         +'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
-            +' value="'+(savedQtd?fmtN(savedQtd):'')+'"'
+            +' value="'+(savedQtd?fmtQtdInput(savedQtd):'')+'"'
             +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
+            +' oninput="marcarEdicaoPedido()"'
             +' onchange="onQtdChange(this,'+qtdSug+',\''+gEsc+'\');"'
             +' onkeydown="navInput(event,this)"></span>'
         // Comprar mín
@@ -2390,6 +2438,7 @@ function _renderPedidoInterno(meses){
     });
   }
   atualizarTotais();
+  _restaurarFocoPedido(foco);
 }
 
 function clearPedido(){capturePedidoInputs();selectedGroups.clear();fornecedoresCols=[];fornSeq=0;updateChips();updateSelBadge();renderPedido()}
@@ -2603,7 +2652,7 @@ function exportERP(fornId){
 
   // ERP format:
   // Col A (pos 1) = Descrição do Produto
-  // Col B (pos 2) = Código
+  // Col B (pos 2) = Código de Barras (EAN; antes era o código interno)
   // Col C (pos 3) = Quantidade
   // Col D (pos 4) = Unidade
   // Col E (pos 5) = Preço Unit.
@@ -2614,7 +2663,7 @@ function exportERP(fornId){
   // Row 1: Header
   wsData.push([
     'Descrição do Produto',
-    'Código',
+    'Código de Barras',
     'Quantidade',
     'Unidade',
     'Preço Unit.'
@@ -2623,14 +2672,17 @@ function exportERP(fornId){
   // Rows 2-501: Products (max 500)
   var maxItens = 500;
   var count = 0;
+  var semEan = 0;
   selP.forEach(function(p){
     if(count >= maxItens) return;
     var cod = p.codigo;
     var qtd = qtds[cod] || 0;
     var preco = precos[cod] || 0;
+    var ean = (p.codigo_barras||'').toString().trim();  // EAN; código interno fica só na tela
+    if(!ean) semEan++;
     wsData.push([
       p.nome,           // A - Descrição
-      cod,              // B - Código
+      ean,              // B - Código de Barras (texto; preserva zeros à esquerda; vazio se faltar)
       qtd,              // C - Quantidade
       p.un,             // D - Unidade
       preco             // E - Preço Unit.
@@ -2642,6 +2694,12 @@ function exportERP(fornId){
     alert('Atenção: o arquivo foi limitado a 500 itens conforme o limite do ERP.');
   }
 
+  // Aviso (antes de gravar): itens sem código de barras saem com a coluna B em branco.
+  if(semEan>0){
+    if(!confirm(semEan+' '+(semEan===1?'item está':'itens estão')+' sem código de barras — '
+      +'a coluna do ERP sai em branco para '+(semEan===1?'ele':'eles')+'.\n\nExportar mesmo assim?'))return;
+  }
+
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(wsData);
 
@@ -2650,8 +2708,10 @@ function exportERP(fornId){
 
   // Format qty and price as numbers
   for(var r=1;r<wsData.length;r++){
+    var cellEan = XLSX.utils.encode_cell({r:r,c:1}); // B - força TEXTO (não perder zeros à esquerda)
     var cellQtd = XLSX.utils.encode_cell({r:r,c:2}); // C
     var cellPreco = XLSX.utils.encode_cell({r:r,c:4}); // E
+    if(ws[cellEan]){ ws[cellEan].t='s'; ws[cellEan].v=String(ws[cellEan].v); }  // replica o cell.t='s' do Agente de Estoque
     if(ws[cellQtd]) ws[cellQtd].t = 'n';
     if(ws[cellPreco]) ws[cellPreco].t = 'n';
   }
