@@ -299,6 +299,18 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .fc-cmp-row strong.fc-neg{color:var(--red)}
 .fc-cmp-warn{margin-top:12px;font-size:11px;color:var(--yellow);background:var(--yellow-bg);border:1px solid var(--yellow-light);border-radius:var(--radius-sm);padding:7px 10px;display:inline-flex;align-items:center;gap:6px}
 .fc-cmp-err{margin-top:6px;font-size:12px;color:var(--red)}
+/* Comparação: títulos de gráfico, legenda tracejada e resumo compacto de totais */
+.fc-cmp-chart-tit{font-size:12px;font-weight:600;color:var(--text2);margin:14px 0 4px}
+.fc-line-legend span.dash::before{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
+.fc-cmp-summary{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.fc-cmp-sum-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:var(--text2);padding:7px 11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.fc-cmp-sum-diff{background:var(--bg2)}
+.fc-cmp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fc-cmp-sum-per{font-weight:700;color:var(--text);min-width:128px}
+.fc-cmp-sum-n{color:var(--text3)}
+.fc-cmp-sum-n strong{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600;margin-left:3px}
+.fc-cmp-sum-n strong.fc-pos{color:var(--green)}
+.fc-cmp-sum-n strong.fc-neg{color:var(--red)}
 .cot-card.enviado{opacity:.85;border-color:var(--blue-light);background:var(--blue-bg)}
 .grph-lock.env{background:var(--blue-bg);color:var(--blue)}
 .forn-cad-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35}
@@ -3955,13 +3967,14 @@ function switchFcSub(sub,el){
 var _cmpDefaultsSet=false;
 function _pad2(n){return ('0'+n).slice(-2)}
 function onOpenAnalise(){
-  // Defaults da comparação (uma vez): A = mês atual; B = mesmo mês do ano anterior.
+  // Defaults (uma vez) pensados pra comparar EVOLUÇÃO ano a ano: A = jan→mês atual
+  // do ano corrente; B = o mesmo intervalo no ano anterior.
   if(!_cmpDefaultsSet){
     _cmpDefaultsSet=true;
     var m=mesAtualBRT();
-    var cur=m.ano+'-'+_pad2(m.mes), prev=(m.ano-1)+'-'+_pad2(m.mes);
     var set=function(id,v){var e=document.getElementById(id);if(e&&!e.value)e.value=v};
-    set('cmp-a-ini',cur);set('cmp-a-fim',cur);set('cmp-b-ini',prev);set('cmp-b-fim',prev);
+    set('cmp-a-ini',m.ano+'-01');set('cmp-a-fim',m.ano+'-'+_pad2(m.mes));
+    set('cmp-b-ini',(m.ano-1)+'-01');set('cmp-b-fim',(m.ano-1)+'-'+_pad2(m.mes));
   }
   // (Re)carrega o histórico anual do ano escolhido (ou o ano corrente na 1ª vez).
   var sel=document.getElementById('fc-anual-ano');
@@ -4058,34 +4071,97 @@ function compararPeriodos(){
     })
     .catch(function(){box.innerHTML='<div class="fc-cmp-err">Erro ao comparar.</div>'});
 }
+// "2026-06" → série usa ano/mes inteiros; rótulo curto "Jun/2026".
+function _mesAnoLabel(ano,mes){return (FC_MESES[mes-1]||('M'+mes)).slice(0,3)+'/'+ano}
+// Gráfico de linhas alinhado por POSIÇÃO (1º mês, 2º mês...), não por nome de mês —
+// assim compara evolução mesmo com períodos que não coincidem. Mesma abordagem SVG
+// do gráfico anual. opts.zeroBase=true inclui o zero na escala (p/ Resultado, que pode
+// ser negativo) e desenha a linha do zero. Valores null = gap (não plota).
+function _buildCmpLineChart(series,opts){
+  opts=opts||{};
+  var W=760,H=opts.h||250,PAD={l:64,r:14,t:14,b:28};
+  var plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+  var maxPos=0;series.forEach(function(s){if(s.points.length>maxPos)maxPos=s.points.length});
+  var vals=[];series.forEach(function(s){s.points.forEach(function(p){if(p.value!==null&&p.value!==undefined)vals.push(Number(p.value))})});
+  if(!maxPos||!vals.length)return '<div style="color:var(--text3);font-size:12px;padding:8px">Sem dados para o gráfico.</div>';
+  var vMax=Math.max.apply(null,vals), vMin=Math.min.apply(null,vals);
+  vMin=Math.min(vMin,0);                       // baseline no zero (realizado é sempre >=0)
+  if(opts.zeroBase)vMax=Math.max(vMax,0);
+  if(vMax===vMin)vMax=vMin+1;
+  var range=vMax-vMin, padv=range*0.1||1; vMax+=padv; if(vMin<0)vMin-=padv; range=vMax-vMin;
+  function X(pos){return maxPos>1?PAD.l+pos/(maxPos-1)*plotW:PAD.l+plotW/2}
+  function Y(v){return PAD.t+plotH-(v-vMin)/range*plotH}
+  var svg='<svg class="fc-line-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  for(var i=0;i<=4;i++){
+    var y=PAD.t+i*plotH/4, gv=vMax-i*range/4;
+    svg+='<line x1="'+PAD.l+'" y1="'+y+'" x2="'+(W-PAD.r)+'" y2="'+y+'" stroke="#e9ecef" stroke-width="1"/>';
+    svg+='<text x="'+(PAD.l-6)+'" y="'+(y+3)+'" font-size="9" fill="#868e96" text-anchor="end">'+fmtN(Math.round(gv))+'</text>';
+  }
+  if(vMin<0&&vMax>0){var yz=Y(0);svg+='<line x1="'+PAD.l+'" y1="'+yz+'" x2="'+(W-PAD.r)+'" y2="'+yz+'" stroke="#adb5bd" stroke-width="1.2"/>';}
+  for(var k=0;k<maxPos;k++){
+    svg+='<text x="'+X(k)+'" y="'+(H-PAD.b+15)+'" font-size="9" fill="#868e96" text-anchor="middle">Mês '+(k+1)+'</text>';
+  }
+  series.forEach(function(s){
+    var segs=[],cur=[];
+    s.points.forEach(function(p){if(p.value===null||p.value===undefined){if(cur.length){segs.push(cur);cur=[]}}else cur.push(p)});
+    if(cur.length)segs.push(cur);
+    segs.forEach(function(seg){
+      if(seg.length>1){var dp='M '+seg.map(function(p){return X(p.pos)+' '+Y(p.value)}).join(' L ');
+        svg+='<path d="'+dp+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round"'+(s.dash?' stroke-dasharray="6 4"':'')+'/>';}
+    });
+    s.points.forEach(function(p){
+      if(p.value===null||p.value===undefined)return;
+      svg+='<circle cx="'+X(p.pos)+'" cy="'+Y(p.value)+'" r="3" fill="'+s.color+'"><title>'+s.label+' — '+p.mesLabel+': R$ '+fmtMoeda(p.value)+'</title></circle>';
+    });
+  });
+  svg+='</svg>';
+  var leg='<div class="fc-line-legend">'+series.map(function(s){return '<span style="--c:'+s.color+'"'+(s.dash?' class="dash"':'')+'>'+s.label+'</span>'}).join('')+'</div>';
+  return leg+svg;
+}
 function renderComparacao(d){
   var box=document.getElementById('fc-cmp-result');if(!box)return;
   function rc(v){return (v<0)?'fc-neg':'fc-pos'}
-  function card(p,titulo){
-    return '<div class="fc-cmp-card">'
-      +'<div class="fc-cmp-card-tit">'+titulo+'</div>'
-      +'<div class="fc-cmp-per">'+_periodoLabel(p.ini,p.fim)+(p.n_meses>1?(' · '+p.n_meses+' meses'):'')+'</div>'
-      +'<div class="fc-cmp-row"><span>Realizado</span><strong>R$ '+fmtMoeda(p.realizado)+'</strong></div>'
-      +'<div class="fc-cmp-row"><span>Planejado</span><strong>R$ '+fmtMoeda(p.planejado)+'</strong></div>'
-      +'<div class="fc-cmp-row"><span>Resultado</span><strong class="'+rc(p.resultado)+'">R$ '+fmtMoeda(p.resultado)+'</strong></div>'
-      +'</div>';
-  }
   function sig(v){return (v>=0?'+':'−')+'R$ '+fmtMoeda(Math.abs(v))}
+  var serieA=d.a.serie||[], serieB=d.b.serie||[];
+  var labA=_periodoLabel(d.a.ini,d.a.fim), labB=_periodoLabel(d.b.ini,d.b.fim);
+  var C_A='#1971c2', C_B='#e67700';
+  function pts(serie,campo){return serie.map(function(it,i){return {pos:i,value:it[campo],mesLabel:_mesAnoLabel(it.ano,it.mes)}})}
+  // Gráfico 1 (principal): Realizado de A e B, sobrepostos por posição.
+  var realChart=_buildCmpLineChart([
+    {label:labA,color:C_A,dash:false,points:pts(serieA,'realizado')},
+    {label:labB,color:C_B,dash:true, points:pts(serieB,'realizado')}
+  ],{h:250});
+  // Gráfico 2 (menor): Resultado mês a mês (pode ser negativo → escala com zero).
+  var temResultado=serieA.concat(serieB).some(function(it){return it.resultado!==null&&it.resultado!==undefined});
+  var resChart=temResultado?_buildCmpLineChart([
+    {label:labA,color:C_A,dash:false,points:pts(serieA,'resultado')},
+    {label:labB,color:C_B,dash:true, points:pts(serieB,'resultado')}
+  ],{h:175,zeroBase:true}):'<div style="color:var(--text3);font-size:12px;padding:8px">Sem limite definido nos períodos — defina limites para ver o resultado mês a mês.</div>';
+  // Resumo compacto de totais + diferença (B − A).
   var df=d.diferenca||{realizado:0,planejado:0,resultado:0};
   var pctR=(d.a.realizado!==0)?((d.b.realizado-d.a.realizado)/Math.abs(d.a.realizado)*100):null;
-  // % com 1 casa via toFixed: NÃO usar fmtN(x,1) — para n não-inteiro ele força
-  // minimumFractionDigits=2 > maximumFractionDigits=1, o que lança RangeError.
   var pctStr=(pctR===null)?'':(' ('+(pctR>=0?'+':'−')+Math.abs(pctR).toFixed(1).replace('.',',')+'%)');
-  var diffCard='<div class="fc-cmp-card fc-cmp-diff">'
-    +'<div class="fc-cmp-card-tit">Diferença (B − A)</div>'
-    +'<div class="fc-cmp-per">variação de B em relação a A</div>'
-    +'<div class="fc-cmp-row"><span>Realizado</span><strong class="'+rc(df.realizado)+'">'+sig(df.realizado)+pctStr+'</strong></div>'
-    +'<div class="fc-cmp-row"><span>Planejado</span><strong>'+sig(df.planejado)+'</strong></div>'
-    +'<div class="fc-cmp-row"><span>Resultado</span><strong class="'+rc(df.resultado)+'">'+sig(df.resultado)+'</strong></div>'
-    +'</div>';
+  function sumRow(p,tag,cor){
+    return '<div class="fc-cmp-sum-row"><span class="fc-cmp-dot" style="background:'+cor+'"></span>'
+      +'<span class="fc-cmp-sum-per">'+tag+' · '+_periodoLabel(p.ini,p.fim)+'</span>'
+      +'<span class="fc-cmp-sum-n">Realizado <strong>R$ '+fmtMoeda(p.realizado)+'</strong></span>'
+      +'<span class="fc-cmp-sum-n">Planejado <strong>R$ '+fmtMoeda(p.planejado)+'</strong></span>'
+      +'<span class="fc-cmp-sum-n">Resultado <strong class="'+rc(p.resultado)+'">R$ '+fmtMoeda(p.resultado)+'</strong></span>'
+      +'</div>';
+  }
+  var summary='<div class="fc-cmp-summary">'
+    +sumRow(d.a,'A',C_A)+sumRow(d.b,'B',C_B)
+    +'<div class="fc-cmp-sum-row fc-cmp-sum-diff"><span class="fc-cmp-dot" style="background:var(--text3)"></span>'
+      +'<span class="fc-cmp-sum-per">Δ B − A</span>'
+      +'<span class="fc-cmp-sum-n">Realizado <strong class="'+rc(df.realizado)+'">'+sig(df.realizado)+pctStr+'</strong></span>'
+      +'<span class="fc-cmp-sum-n">Planejado <strong>'+sig(df.planejado)+'</strong></span>'
+      +'<span class="fc-cmp-sum-n">Resultado <strong class="'+rc(df.resultado)+'">'+sig(df.resultado)+'</strong></span>'
+    +'</div></div>';
   var totalSem=((d.a.meses_sem_limite||[]).length)+((d.b.meses_sem_limite||[]).length);
   var warn=totalSem?('<div class="fc-cmp-warn"><i class="ti ti-alert-triangle"></i> '+totalSem+' '+(totalSem===1?'mês':'meses')+' sem limite definido — planejado pode estar subestimado.</div>'):'';
-  box.innerHTML='<div class="fc-cmp-grid">'+card(d.a,'Período A')+card(d.b,'Período B')+diffCard+'</div>'+warn;
+  box.innerHTML='<div class="fc-cmp-chart-tit">Realizado — evolução mês a mês</div>'+realChart
+    +'<div class="fc-cmp-chart-tit">Resultado (planejado − realizado) mês a mês</div>'+resChart
+    +summary+warn;
 }
 function renderRealizado(){
   var lista=document.getElementById('fc-realizado-lista');if(!lista)return;
