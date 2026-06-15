@@ -1285,7 +1285,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <div id="urgentes-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box wide">
     <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
-    <div style="font-size:11px;color:var(--text3);margin-top:-6px"><strong>Camadas estritas A &gt; B &gt; C &gt; sem-ABC:</strong> a camada do grupo é a maior curva com item <strong>em falta</strong> (abaixo do ponto de reposição, ou estoque mínimo no fallback). Todos os grupos com <strong>A</strong> em falta vêm antes dos de <strong>B</strong>, depois <strong>C</strong>, depois os só com itens <strong>sem ABC</strong> — quantidade não troca a camada. Dentro da camada, ordena pelo <strong>lucro em risco</strong> (soma de (preço−custo)×consumo só dos itens em falta), depois nome. Só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px"><strong>Camadas estritas A &gt; B &gt; C &gt; sem-ABC:</strong> a camada do grupo é a maior curva com item <strong>em falta</strong> (abaixo do ponto de reposição, ou estoque mínimo no fallback). Todos os grupos com <strong>A</strong> em falta vêm antes dos de <strong>B</strong>, depois <strong>C</strong>, depois os só com itens <strong>sem ABC</strong> — quantidade não troca a camada. Dentro da camada, ordena pelo <strong>furo mensal estimado</strong> — quanto lucro deixa de entrar por mês com os itens do grupo em falta (soma de (preço−custo)×consumo médio só dos itens em falta, × 30 dias) — depois nome. É uma estimativa; só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
     <div class="urg-filtros">
       <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
       <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
@@ -2299,7 +2299,7 @@ function proximoUrgente(){
   var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>camada '+(topo.camada||'sem ABC')+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+(topo.nS?' · S/ABC '+topo.nS:'')+') · lucro em risco R$ '+fmtMoeda(topo.lucroFalta)+'. Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>camada '+(topo.camada||'sem ABC')+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+(topo.nS?' · S/ABC '+topo.nS:'')+') · furo mensal estimado R$ '+fmtMoeda(topo.lucroFalta*30)+'. Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
@@ -2392,7 +2392,7 @@ function renderUrgentes(){
   if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
   cont.innerHTML=visiveis.map(function(v){
     var x=v.x,pos=v.pos;
-    var meta='camada '+(x.camada||'sem ABC')+' · '+x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+') · lucro em risco R$ '+fmtMoeda(x.lucroFalta);
+    var meta='camada '+(x.camada||'sem ABC')+' · '+x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+') · furo mensal estimado R$ '+fmtMoeda(x.lucroFalta*30);
     return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
       +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
       +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+'</div></span>'
@@ -2408,7 +2408,7 @@ function onUrgSearch(q){
   for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
   if(idx>=0){
     var x=urgRankCache[idx];
-    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · camada '+(x.camada||'sem ABC')+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+' · lucro em risco R$ '+fmtMoeda(x.lucroFalta);
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · camada '+(x.camada||'sem ABC')+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+' · furo mensal estimado R$ '+fmtMoeda(x.lucroFalta*30);
   }else{
     var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
