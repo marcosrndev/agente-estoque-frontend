@@ -377,6 +377,10 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .urg-filtros{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .urg-fbtn{font-size:11px;padding:4px 11px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:var(--font)}
 .urg-fbtn.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+.urg-admin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.urg-peso{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.urg-peso input{width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg);color:var(--text)}
+.urg-peso input:focus{border-color:var(--blue)}
 .urg-pos-info{font-size:12px;color:var(--text2);background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius-sm);padding:7px 10px;display:none}
 .urg-list{max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
 .urg-row{display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);cursor:pointer;text-align:left}
@@ -1285,7 +1289,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <div id="urgentes-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box wide">
     <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
-    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Conta só itens <strong>a comprar</strong> (abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo). Ordem: + itens <strong>A</strong> → + <strong>B</strong> → + <strong>C</strong> → maior <strong>quantidade p/ o mínimo</strong> → nome (A→Z). Grupos sem item A aparecem mais abaixo; só ficam de fora os sem nada a comprar.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Ordena por <strong>urgência de ruptura ponderada por ABC</strong> (item abaixo do ponto de reposição pesa conforme a curva A/B/C); o <strong>lucro do grupo</strong> só <strong>desempata</strong>. Conta itens <strong>em falta</strong> (abaixo do ponto, ou estoque mínimo no fallback). Só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
     <div class="urg-filtros">
       <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
       <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
@@ -1293,6 +1297,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
       <button class="urg-fbtn" data-top="0" onclick="setUrgTop(0,this)">Todos</button>
       <input id="urg-search" placeholder="Buscar grupo..." oninput="onUrgSearch(this.value)" style="margin-left:auto;flex:1;min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg2);color:var(--text)">
     </div>
+    <div class="urg-admin" id="urg-admin" style="display:none"></div>
     <div class="urg-pos-info" id="urg-pos-info"></div>
     <div class="urg-list" id="urg-list"></div>
     <div class="modal-btns">
@@ -1318,6 +1323,9 @@ var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 // "Próximo urgente" pula esses até um novo import do ERP (que zera este controle).
 var gruposPedidosSessao=new Set();
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
+// Pesos por curva ABC do ranking de prioridade (compartilhados; ajustáveis por admin).
+// Defaults batem com o seed da tabela ranking_config (A=5, B=2, C=1).
+var rankingConfig={peso_a:5,peso_b:2,peso_c:1};
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
@@ -1687,7 +1695,19 @@ function doLogin(){
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
 function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarRankingConfig();carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+// Carrega os pesos do ranking (linha única no backend). Falha silenciosa = mantém defaults.
+function carregarRankingConfig(){
+  fetch(BACKEND+'/ranking-config').then(function(r){return r.json()}).then(function(d){
+    if(d&&!d.error){
+      rankingConfig={
+        peso_a:(d.peso_a!=null?Number(d.peso_a):5),
+        peso_b:(d.peso_b!=null?Number(d.peso_b):2),
+        peso_c:(d.peso_c!=null?Number(d.peso_c):1)
+      };
+    }
+  }).catch(function(){});
+}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -2299,37 +2319,70 @@ function proximoUrgente(){
   var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+topo.compra+' a comprar (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+'). Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>urgência '+fmtN(topo.urgencia,1)+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+') · lucro R$ '+fmtMoeda(topo.lucro)+'. Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
-// Critério oficial da planilha. Em cada grupo conta SÓ os itens com necessidade de
-// compra (precisaComprar: abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo).
-// Cadeia de ordenação: + itens A → + itens B → + itens C → maior soma de "Comprar para
-// Mínimo" (QUANTIDADE, não R$) → nome do grupo (alfabético). Grupos sem item A NÃO são
-// excluídos — como A é o 1º critério, caem naturalmente para o fim. Só não entram os
-// grupos sem nada a comprar e os já pedidos na sessão. O filtro é só p/ ORDENAR — ao
-// selecionar, abre o grupo INTEIRO (A, B e C). Mesma função alimenta o "Próximo urgente".
+// NOVO critério (margem/giro): ordena GRUPOS por URGÊNCIA DE RUPTURA ponderada por ABC;
+// o LUCRO do grupo só DESEMPATA (NÃO é lucro×urgência — ruptura manda, lucro desempata).
+//
+// Urgência de cada item = fração de ruptura × peso da curva (rankingConfig.peso_a/b/c):
+//   - fração de ruptura: estoque zerado = 1 (máxima); abaixo do ponto de reposição =
+//     1 − estoque_atual/ponto_reposicao (quanto mais abaixo, maior); no ponto/acima = 0.
+//   - sem ponto_reposicao: fallback p/ estoque mínimo (1 − estoque_atual/est_min);
+//     sem os dois = 0.
+//   - itens sem ABC usam o MENOR peso.
+// Urgência do GRUPO = soma das urgências ponderadas dos itens em falta (fração>0).
+// Lucro do GRUPO = soma de (preco_venda − custo_compra) × consumo_medio de TODOS os itens
+//   (item sem preço/custo/consumo conta 0). É o desempate, em R$ totais (não margem %).
+// Só entram grupos com urgência>0 e não pedidos na sessão. Abrir = grupo INTEIRO (A,B,C).
+// Mesma função alimenta o painel "Urgentes" e o "Próximo urgente".
 var urgTopFiltro=10, urgRankCache=[];
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+// Peso da curva ABC (cai p/ o menor peso quando não há ABC). Tolera config inválida.
+function pesoCurva(abc){
+  var pa=Number(rankingConfig.peso_a),pb=Number(rankingConfig.peso_b),pc=Number(rankingConfig.peso_c);
+  if(!isFinite(pa))pa=5;if(!isFinite(pb))pb=2;if(!isFinite(pc))pc=1;
+  var a=(abc||'').toString().toUpperCase();
+  if(a==='A')return pa;if(a==='B')return pb;if(a==='C')return pc;
+  return Math.min(pa,pb,pc);
+}
+// Fração de ruptura em [0,1]: 1=zerado; 0=no ponto/acima ou sem dado de referência.
+function fracRuptura(p){
+  var est=Number(p.estoque_atual)||0;
+  if(est<=0)return 1;
+  var ponto=Number(p.ponto_reposicao);
+  if(isFinite(ponto)&&ponto>0){var f=1-est/ponto;return f<=0?0:(f>1?1:f);}
+  var emin=Number(p.est_min);
+  if(isFinite(emin)&&emin>0){var fm=1-est/emin;return fm<=0?0:(fm>1?1:fm);}
+  return 0;
+}
+function urgenciaItem(p){return fracRuptura(p)*pesoCurva(p.abc);}
+// Lucro total do item: (preço − custo) × consumo. Faltando qualquer um dos 3 → 0.
+function lucroItem(p){
+  var pv=Number(p.preco_venda),cc=Number(p.custo_compra),cm=Number(p.consumo_medio);
+  if(!isFinite(pv)||!isFinite(cc)||!isFinite(cm))return 0;
+  return (pv-cc)*cm;
+}
 function rankGruposUrgentes(){
   var byG={};
   products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var arr=Object.keys(byG).map(function(g){
     var items=byG[g];
-    var compra=items.filter(precisaComprar);                       // só itens a comprar
-    var nA=compra.filter(function(p){return p.abc==='A'}).length;
-    var nB=compra.filter(function(p){return p.abc==='B'}).length;
-    var nC=compra.filter(function(p){return p.abc==='C'}).length;
-    var qtdMin=compra.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
-    return{grupo:g,nA:nA,nB:nB,nC:nC,qtdMin:qtdMin,compra:compra.length,total:items.length};
-  }).filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
+    var emFalta=items.filter(function(p){return fracRuptura(p)>0});      // abaixo do ponto/zerados
+    var urgencia=emFalta.reduce(function(s,p){return s+urgenciaItem(p)},0);
+    var lucro=items.reduce(function(s,p){return s+lucroItem(p)},0);       // lucro: TODOS os itens
+    var nA=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='A'}).length;
+    var nB=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='B'}).length;
+    var nC=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='C'}).length;
+    var qtdMin=emFalta.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
+    return{grupo:g,urgencia:urgencia,lucro:lucro,nA:nA,nB:nB,nC:nC,
+           qtdMin:qtdMin,compra:emFalta.length,total:items.length};
+  }).filter(function(x){return x.urgencia>0&&!gruposPedidosSessao.has(x.grupo)});
   arr.sort(function(a,b){
-    if(b.nA!==a.nA)return b.nA-a.nA;                               // 1º: + itens A
-    if(b.nB!==a.nB)return b.nB-a.nB;                               // 2º: + itens B
-    if(b.nC!==a.nC)return b.nC-a.nC;                               // 3º: + itens C
-    if(Math.abs(b.qtdMin-a.qtdMin)>0.001)return b.qtdMin-a.qtdMin; // 4º: maior qtd p/ mínimo
-    return a.grupo<b.grupo?-1:1;                                   // 5º: alfabético
+    if(Math.abs(b.urgencia-a.urgencia)>1e-9)return b.urgencia-a.urgencia; // 1º: urgência ponderada por ABC
+    if(Math.abs(b.lucro-a.lucro)>1e-9)return b.lucro-a.lucro;             // 2º (desempate): maior lucro
+    return a.grupo<b.grupo?-1:1;                                          // 3º: alfabético
   });
   return arr;
 }
@@ -2338,8 +2391,42 @@ function abrirUrgentes(){
   urgRankCache=rankGruposUrgentes();
   var s=document.getElementById('urg-search');if(s)s.value='';
   document.getElementById('urg-pos-info').style.display='none';
+  renderUrgAdmin();
   renderUrgentes();
   document.getElementById('urgentes-overlay').style.display='flex';
+}
+// Painel de pesos (SÓ admin): edita peso_a/b/c, persiste no backend e recalcula o ranking.
+function renderUrgAdmin(){
+  var box=document.getElementById('urg-admin');if(!box)return;
+  if(!(currentUser&&currentUser.is_admin)){box.style.display='none';box.innerHTML='';return}
+  box.style.display='flex';
+  box.innerHTML='<span style="font-size:11px;color:var(--text3)"><i class="ti ti-adjustments"></i> Pesos por curva (admin):</span>'
+    +'<label class="urg-peso">A <input id="peso-a" type="number" min="0" step="0.5" value="'+rankingConfig.peso_a+'"></label>'
+    +'<label class="urg-peso">B <input id="peso-b" type="number" min="0" step="0.5" value="'+rankingConfig.peso_b+'"></label>'
+    +'<label class="urg-peso">C <input id="peso-c" type="number" min="0" step="0.5" value="'+rankingConfig.peso_c+'"></label>'
+    +'<button class="btn primary" style="padding:4px 11px;font-size:11px" onclick="salvarPesosRanking()"><i class="ti ti-device-floppy"></i> Salvar pesos</button>'
+    +'<span id="urg-admin-msg" style="font-size:11px;color:var(--text3)"></span>';
+}
+function salvarPesosRanking(){
+  var a=parseFloat(document.getElementById('peso-a').value);
+  var b=parseFloat(document.getElementById('peso-b').value);
+  var c=parseFloat(document.getElementById('peso-c').value);
+  if(![a,b,c].every(function(v){return isFinite(v)&&v>=0})){alert('Os pesos devem ser números maiores ou iguais a zero.');return}
+  var msg=document.getElementById('urg-admin-msg');if(msg)msg.textContent='Salvando...';
+  fetch(BACKEND+'/ranking-config',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({peso_a:a,peso_b:b,peso_c:c,atualizado_por:currentUser?currentUser.nome:'',username:currentUser?currentUser.username:''})})
+    .then(function(r){return r.json()})
+    .then(function(res){
+      if(res&&res.ok){
+        rankingConfig={peso_a:a,peso_b:b,peso_c:c};
+        urgRankCache=rankGruposUrgentes();renderUrgentes();
+        if(msg)msg.textContent='Salvo. Ranking recalculado.';
+      }else{
+        if(msg)msg.textContent='';
+        alert('Erro ao salvar os pesos'+(res&&res.error?': '+res.error:'')+'.');
+      }
+    })
+    .catch(function(){if(msg)msg.textContent='';alert('Erro ao salvar os pesos.')});
 }
 function fecharUrgentes(){document.getElementById('urgentes-overlay').style.display='none'}
 function setUrgTop(n,btn){
@@ -2363,11 +2450,11 @@ function renderUrgentes(){
   if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
   cont.innerHTML=visiveis.map(function(v){
     var x=v.x,pos=v.pos;
-    var meta=x.compra+' a comprar (A '+x.nA+' · B '+x.nB+' · C '+x.nC+')'+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
+    var meta=x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+') · lucro R$ '+fmtMoeda(x.lucro);
     return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
       +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
       +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+'</div></span>'
-      +'<span class="urg-acrit">'+x.nA+' A</span>'
+      +'<span class="urg-acrit" title="Urgência ponderada por ABC">urg '+fmtN(x.urgencia,1)+'</span>'
       +'</button>';
   }).join('');
 }
@@ -2379,7 +2466,7 @@ function onUrgSearch(q){
   for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
   if(idx>=0){
     var x=urgRankCache[idx];
-    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · a comprar: A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · urgência '+fmtN(x.urgencia,1)+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+' · lucro R$ '+fmtMoeda(x.lucro);
   }else{
     var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
