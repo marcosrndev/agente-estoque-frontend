@@ -1289,7 +1289,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <div id="urgentes-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box wide">
     <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
-    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Ordena por <strong>urgência de ruptura ponderada por ABC</strong> (item abaixo do ponto de reposição pesa conforme a curva A/B/C); o <strong>lucro do grupo</strong> só <strong>desempata</strong>. Conta itens <strong>em falta</strong> (abaixo do ponto, ou estoque mínimo no fallback). Só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px"><strong>Camadas estritas A &gt; B &gt; C:</strong> a camada do grupo é a maior curva com item <strong>em falta</strong> (abaixo do ponto de reposição, ou estoque mínimo no fallback). Todos os grupos com <strong>A</strong> em falta vêm antes dos de <strong>B</strong>, que vêm antes dos só-<strong>C</strong> — quantidade não troca a camada. Dentro da camada: maior <strong>urgência</strong> da camada, depois maior <strong>lucro</strong> (desempate), depois nome. Só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
     <div class="urg-filtros">
       <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
       <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
@@ -2319,32 +2319,33 @@ function proximoUrgente(){
   var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>urgência '+fmtN(topo.urgencia,1)+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+') · lucro R$ '+fmtMoeda(topo.lucro)+'. Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>camada '+(topo.camada||'—')+' · urgência '+fmtN(topo.urgencia,1)+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+') · lucro R$ '+fmtMoeda(topo.lucro)+'. Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
-// NOVO critério (margem/giro): ordena GRUPOS por URGÊNCIA DE RUPTURA ponderada por ABC;
-// o LUCRO do grupo só DESEMPATA (NÃO é lucro×urgência — ruptura manda, lucro desempata).
+// Critério: CAMADAS ESTRITAS A > B > C. A camada do grupo = a MAIOR curva que tem item
+// EM FALTA (qualquer A em falta → camada A; senão B; senão C; senão itens sem ABC).
+// A ordem entre grupos é LEXICOGRÁFICA por camada: TODOS os de camada A, depois B, depois
+// C — quantidade NÃO troca de camada (um grupo só-C nunca passa um grupo com A em falta).
+// DENTRO da camada: (a) urgência da camada = soma das frações de ruptura SÓ dos itens da
+// curva da camada (maior 1º); (b) desempate lucro do grupo; (c) desempate nome (A→Z).
 //
-// Urgência de cada item = fração de ruptura × peso da curva (rankingConfig.peso_a/b/c):
-//   - fração de ruptura: estoque zerado = 1 (máxima); abaixo do ponto de reposição =
-//     1 − estoque_atual/ponto_reposicao (quanto mais abaixo, maior); no ponto/acima = 0.
-//   - sem ponto_reposicao: fallback p/ estoque mínimo (1 − estoque_atual/est_min);
-//     sem os dois = 0.
-//   - itens sem ABC usam o MENOR peso.
-// Urgência do GRUPO = soma das urgências ponderadas dos itens em falta (fração>0).
-// Lucro do GRUPO = soma de (preco_venda − custo_compra) × consumo_medio de TODOS os itens
-//   (item sem preço/custo/consumo conta 0). É o desempate, em R$ totais (não margem %).
-// Só entram grupos com urgência>0 e não pedidos na sessão. Abrir = grupo INTEIRO (A,B,C).
-// Mesma função alimenta o painel "Urgentes" e o "Próximo urgente".
+// "Em falta" = fração de ruptura > 0: estoque zerado = 1; abaixo do ponto_reposicao =
+// 1 − estoque/ponto; fallback estoque mínimo; no ponto/acima = 0.
+// Os PESOS peso_a/b/c NÃO definem a ordem (a camada é estrita; dentro da camada o peso é
+// constante, então não reordena). Ficam só como multiplicador COSMÉTICO do número de
+// urgência exibido. Lucro do GRUPO = soma (preco_venda − custo_compra) × consumo_medio de
+// TODOS os itens (faltando dado = 0). Só entram grupos com algo em falta e não pedidos na
+// sessão. Abrir = grupo INTEIRO. Mesma função alimenta "Urgentes" e "Próximo urgente".
 var urgTopFiltro=10, urgRankCache=[];
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-// Peso da curva ABC (cai p/ o menor peso quando não há ABC). Tolera config inválida.
-function pesoCurva(abc){
+// Curva normalizada do item: 'A' | 'B' | 'C' | '' (sem ABC).
+function curvaDe(p){var a=(p.abc||'').toString().toUpperCase();return(a==='A'||a==='B'||a==='C')?a:'';}
+// Peso da curva (cosmético; cai p/ o menor peso quando não há ABC). Tolera config inválida.
+function pesoCurva(curva){
   var pa=Number(rankingConfig.peso_a),pb=Number(rankingConfig.peso_b),pc=Number(rankingConfig.peso_c);
   if(!isFinite(pa))pa=5;if(!isFinite(pb))pb=2;if(!isFinite(pc))pc=1;
-  var a=(abc||'').toString().toUpperCase();
-  if(a==='A')return pa;if(a==='B')return pb;if(a==='C')return pc;
+  if(curva==='A')return pa;if(curva==='B')return pb;if(curva==='C')return pc;
   return Math.min(pa,pb,pc);
 }
 // Fração de ruptura em [0,1]: 1=zerado; 0=no ponto/acima ou sem dado de referência.
@@ -2357,32 +2358,39 @@ function fracRuptura(p){
   if(isFinite(emin)&&emin>0){var fm=1-est/emin;return fm<=0?0:(fm>1?1:fm);}
   return 0;
 }
-function urgenciaItem(p){return fracRuptura(p)*pesoCurva(p.abc);}
 // Lucro total do item: (preço − custo) × consumo. Faltando qualquer um dos 3 → 0.
 function lucroItem(p){
   var pv=Number(p.preco_venda),cc=Number(p.custo_compra),cm=Number(p.consumo_medio);
   if(!isFinite(pv)||!isFinite(cc)||!isFinite(cm))return 0;
   return (pv-cc)*cm;
 }
+// Índice da camada p/ ordenar: A=0, B=1, C=2, sem-ABC=3 (sempre por último).
+var CAMADA_IDX={A:0,B:1,C:2,'':3};
 function rankGruposUrgentes(){
   var byG={};
   products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var arr=Object.keys(byG).map(function(g){
     var items=byG[g];
-    var emFalta=items.filter(function(p){return fracRuptura(p)>0});      // abaixo do ponto/zerados
-    var urgencia=emFalta.reduce(function(s,p){return s+urgenciaItem(p)},0);
+    var emFalta=items.filter(function(p){return fracRuptura(p)>0});       // abaixo do ponto/zerados
     var lucro=items.reduce(function(s,p){return s+lucroItem(p)},0);       // lucro: TODOS os itens
-    var nA=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='A'}).length;
-    var nB=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='B'}).length;
-    var nC=emFalta.filter(function(p){return(p.abc||'').toUpperCase()==='C'}).length;
+    // Frações e contagem por curva, só dos itens EM FALTA.
+    var fracPorCurva={A:0,B:0,C:0,'':0}, cntPorCurva={A:0,B:0,C:0,'':0};
+    emFalta.forEach(function(p){var c=curvaDe(p);fracPorCurva[c]+=fracRuptura(p);cntPorCurva[c]++;});
+    // Camada = MAIOR curva com item em falta (A>B>C>sem-ABC).
+    var camada=cntPorCurva.A>0?'A':cntPorCurva.B>0?'B':cntPorCurva.C>0?'C':'';
+    var urgCamada=fracPorCurva[camada];                                   // soma das frações SÓ da camada
+    var urgencia=urgCamada*pesoCurva(camada);                             // peso só escala (cosmético)
     var qtdMin=emFalta.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
-    return{grupo:g,urgencia:urgencia,lucro:lucro,nA:nA,nB:nB,nC:nC,
+    return{grupo:g,camada:camada,camadaIdx:CAMADA_IDX[camada],
+           urgencia:urgencia,urgCamada:urgCamada,lucro:lucro,
+           nA:cntPorCurva.A,nB:cntPorCurva.B,nC:cntPorCurva.C,
            qtdMin:qtdMin,compra:emFalta.length,total:items.length};
-  }).filter(function(x){return x.urgencia>0&&!gruposPedidosSessao.has(x.grupo)});
+  }).filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
   arr.sort(function(a,b){
-    if(Math.abs(b.urgencia-a.urgencia)>1e-9)return b.urgencia-a.urgencia; // 1º: urgência ponderada por ABC
-    if(Math.abs(b.lucro-a.lucro)>1e-9)return b.lucro-a.lucro;             // 2º (desempate): maior lucro
-    return a.grupo<b.grupo?-1:1;                                          // 3º: alfabético
+    if(a.camadaIdx!==b.camadaIdx)return a.camadaIdx-b.camadaIdx;          // 1º: camada estrita A>B>C
+    if(Math.abs(b.urgencia-a.urgencia)>1e-9)return b.urgencia-a.urgencia; // 2º: urgência da camada
+    if(Math.abs(b.lucro-a.lucro)>1e-9)return b.lucro-a.lucro;             // 3º (desempate): maior lucro
+    return a.grupo<b.grupo?-1:1;                                          // 4º: nome (A→Z)
   });
   return arr;
 }
@@ -2400,7 +2408,7 @@ function renderUrgAdmin(){
   var box=document.getElementById('urg-admin');if(!box)return;
   if(!(currentUser&&currentUser.is_admin)){box.style.display='none';box.innerHTML='';return}
   box.style.display='flex';
-  box.innerHTML='<span style="font-size:11px;color:var(--text3)"><i class="ti ti-adjustments"></i> Pesos por curva (admin):</span>'
+  box.innerHTML='<span style="font-size:11px;color:var(--text3)" title="A ordem é por camada estrita A&gt;B&gt;C; os pesos só escalam o número de urgência exibido (cosmético)."><i class="ti ti-adjustments"></i> Pesos por curva (admin, cosmético):</span>'
     +'<label class="urg-peso">A <input id="peso-a" type="number" min="0" step="0.5" value="'+rankingConfig.peso_a+'"></label>'
     +'<label class="urg-peso">B <input id="peso-b" type="number" min="0" step="0.5" value="'+rankingConfig.peso_b+'"></label>'
     +'<label class="urg-peso">C <input id="peso-c" type="number" min="0" step="0.5" value="'+rankingConfig.peso_c+'"></label>'
@@ -2450,11 +2458,11 @@ function renderUrgentes(){
   if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
   cont.innerHTML=visiveis.map(function(v){
     var x=v.x,pos=v.pos;
-    var meta=x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+') · lucro R$ '+fmtMoeda(x.lucro);
+    var meta='camada '+(x.camada||'—')+' · '+x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+') · lucro R$ '+fmtMoeda(x.lucro);
     return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
       +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
       +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+'</div></span>'
-      +'<span class="urg-acrit" title="Urgência ponderada por ABC">urg '+fmtN(x.urgencia,1)+'</span>'
+      +'<span class="urg-acrit" title="Camada (maior curva em falta) · urgência da camada">'+(x.camada||'—')+' · '+fmtN(x.urgencia,1)+'</span>'
       +'</button>';
   }).join('');
 }
@@ -2466,7 +2474,7 @@ function onUrgSearch(q){
   for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
   if(idx>=0){
     var x=urgRankCache[idx];
-    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · urgência '+fmtN(x.urgencia,1)+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+' · lucro R$ '+fmtMoeda(x.lucro);
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · camada '+(x.camada||'—')+' · urgência '+fmtN(x.urgencia,1)+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+' · lucro R$ '+fmtMoeda(x.lucro);
   }else{
     var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
