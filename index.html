@@ -1285,7 +1285,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <div id="urgentes-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box wide">
     <h3><i class="ti ti-flame" style="color:var(--red)"></i> Grupos urgentes <span id="urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
-    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Conta só itens <strong>a comprar</strong> (abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo). Ordem: + itens <strong>A</strong> → + <strong>B</strong> → + <strong>C</strong> → maior <strong>quantidade p/ o mínimo</strong> → nome (A→Z). Grupos sem item A aparecem mais abaixo; só ficam de fora os sem nada a comprar.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px"><strong>Camadas estritas A &gt; B &gt; C &gt; sem-ABC:</strong> a camada do grupo é a maior curva com item <strong>em falta</strong> (abaixo do ponto de reposição, ou estoque mínimo no fallback). Todos os grupos com <strong>A</strong> em falta vêm antes dos de <strong>B</strong>, depois <strong>C</strong>, depois os só com itens <strong>sem ABC</strong> — quantidade não troca a camada. Dentro da camada, ordena pelo <strong>furo mensal estimado</strong> — quanto lucro deixa de entrar por mês com os itens do grupo em falta (soma de (preço−custo)×consumo médio só dos itens em falta, × 30 dias) — depois nome. É uma estimativa; só ficam de fora os sem nada em falta e os já pedidos na sessão.</div>
     <div class="urg-filtros">
       <span style="font-size:11px;color:var(--text3)">Mostrar:</span>
       <button class="urg-fbtn" data-top="5" onclick="setUrgTop(5,this)">Top 5</button>
@@ -2299,37 +2299,66 @@ function proximoUrgente(){
   var topo=rank[idx],proximo=topo.grupo,prio=idx+1;
   switchTab('pedido',document.querySelectorAll('.tab')[1]);
   if(!selectedGroups.has(proximo)){selectedGroups.add(proximo);updateChips();updateSelBadge();aoMudarSelecao()}
-  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>'+topo.compra+' a comprar (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+'). Selecionado na aba Montar Pedido.');
+  addBot('Próximo urgente <strong>#'+prio+':</strong> <em>'+proximo+'</em><br>camada '+(topo.camada||'sem ABC')+' · '+topo.compra+' em falta (A '+topo.nA+' · B '+topo.nB+' · C '+topo.nC+(topo.nS?' · S/ABC '+topo.nS:'')+') · furo mensal estimado R$ '+fmtMoeda(topo.lucroFalta*30)+'. Selecionado na aba Montar Pedido.');
 }
 
 // ── PAINEL URGENTES (ranking de grupos) ──
-// Critério oficial da planilha. Em cada grupo conta SÓ os itens com necessidade de
-// compra (precisaComprar: abaixo do mínimo, ou dentro do mínimo mas abaixo do máximo).
-// Cadeia de ordenação: + itens A → + itens B → + itens C → maior soma de "Comprar para
-// Mínimo" (QUANTIDADE, não R$) → nome do grupo (alfabético). Grupos sem item A NÃO são
-// excluídos — como A é o 1º critério, caem naturalmente para o fim. Só não entram os
-// grupos sem nada a comprar e os já pedidos na sessão. O filtro é só p/ ORDENAR — ao
-// selecionar, abre o grupo INTEIRO (A, B e C). Mesma função alimenta o "Próximo urgente".
+// Critério: CAMADAS ESTRITAS A > B > C > sem-ABC. A camada do grupo = a MAIOR curva que
+// tem item EM FALTA (qualquer A em falta → camada A; senão B; senão C; senão só itens
+// sem classificação → camada "sem-ABC", a mais baixa).
+// A ordem entre grupos é LEXICOGRÁFICA por camada: TODOS os de camada A, depois B, depois
+// C, depois sem-ABC — quantidade NÃO troca de camada (um grupo só-C nunca passa um grupo
+// com A em falta). DENTRO da camada, ordena por LUCRO EM FALTA (desc) e depois nome (A→Z).
+//
+// "Em falta" = fração de ruptura > 0: estoque zerado = 1; abaixo do ponto_reposicao =
+// 1 − estoque/ponto; fallback estoque mínimo; no ponto/acima = 0.
+// LUCRO EM FALTA do grupo = soma de (preco_venda − custo_compra) × consumo_medio SOMENTE
+// dos itens EM FALTA (não em falta não conta; faltando preço/custo/consumo conta 0). Mede
+// quanto lucro está em risco AGORA. Só entram grupos com algo em falta e não pedidos na
+// sessão. Abrir = grupo INTEIRO (todos os itens em falta). Alimenta "Urgentes" e "Próximo
+// urgente". Os pesos A/B/C foram removidos: a camada é estrita e o desempate é o lucro.
 var urgTopFiltro=10, urgRankCache=[];
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+// Curva normalizada do item: 'A' | 'B' | 'C' | '' (sem ABC).
+function curvaDe(p){var a=(p.abc||'').toString().toUpperCase();return(a==='A'||a==='B'||a==='C')?a:'';}
+// Fração de ruptura em [0,1]: 1=zerado; 0=no ponto/acima ou sem dado de referência.
+function fracRuptura(p){
+  var est=Number(p.estoque_atual)||0;
+  if(est<=0)return 1;
+  var ponto=Number(p.ponto_reposicao);
+  if(isFinite(ponto)&&ponto>0){var f=1-est/ponto;return f<=0?0:(f>1?1:f);}
+  var emin=Number(p.est_min);
+  if(isFinite(emin)&&emin>0){var fm=1-est/emin;return fm<=0?0:(fm>1?1:fm);}
+  return 0;
+}
+// Lucro total do item: (preço − custo) × consumo. Faltando qualquer um dos 3 → 0.
+function lucroItem(p){
+  var pv=Number(p.preco_venda),cc=Number(p.custo_compra),cm=Number(p.consumo_medio);
+  if(!isFinite(pv)||!isFinite(cc)||!isFinite(cm))return 0;
+  return (pv-cc)*cm;
+}
+// Índice da camada p/ ordenar: A=0, B=1, C=2, sem-ABC=3 (sempre por último).
+var CAMADA_IDX={A:0,B:1,C:2,'':3};
 function rankGruposUrgentes(){
   var byG={};
   products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
   var arr=Object.keys(byG).map(function(g){
     var items=byG[g];
-    var compra=items.filter(precisaComprar);                       // só itens a comprar
-    var nA=compra.filter(function(p){return p.abc==='A'}).length;
-    var nB=compra.filter(function(p){return p.abc==='B'}).length;
-    var nC=compra.filter(function(p){return p.abc==='C'}).length;
-    var qtdMin=compra.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
-    return{grupo:g,nA:nA,nB:nB,nC:nC,qtdMin:qtdMin,compra:compra.length,total:items.length};
+    var emFalta=items.filter(function(p){return fracRuptura(p)>0});       // abaixo do ponto/zerados
+    var cnt={A:0,B:0,C:0,'':0};
+    var lucroFalta=0;                                                     // lucro SÓ dos itens em falta
+    emFalta.forEach(function(p){cnt[curvaDe(p)]++;lucroFalta+=lucroItem(p);});
+    // Camada = MAIOR curva com item em falta (A>B>C>sem-ABC).
+    var camada=cnt.A>0?'A':cnt.B>0?'B':cnt.C>0?'C':'';
+    var qtdMin=emFalta.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
+    return{grupo:g,camada:camada,camadaIdx:CAMADA_IDX[camada],lucroFalta:lucroFalta,
+           nA:cnt.A,nB:cnt.B,nC:cnt.C,nS:cnt[''],
+           qtdMin:qtdMin,compra:emFalta.length,total:items.length};
   }).filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
   arr.sort(function(a,b){
-    if(b.nA!==a.nA)return b.nA-a.nA;                               // 1º: + itens A
-    if(b.nB!==a.nB)return b.nB-a.nB;                               // 2º: + itens B
-    if(b.nC!==a.nC)return b.nC-a.nC;                               // 3º: + itens C
-    if(Math.abs(b.qtdMin-a.qtdMin)>0.001)return b.qtdMin-a.qtdMin; // 4º: maior qtd p/ mínimo
-    return a.grupo<b.grupo?-1:1;                                   // 5º: alfabético
+    if(a.camadaIdx!==b.camadaIdx)return a.camadaIdx-b.camadaIdx;              // 1º: camada estrita A>B>C>sem-ABC
+    if(Math.abs(b.lucroFalta-a.lucroFalta)>1e-9)return b.lucroFalta-a.lucroFalta; // 2º: maior lucro EM FALTA
+    return a.grupo<b.grupo?-1:1;                                              // 3º: nome (A→Z)
   });
   return arr;
 }
@@ -2363,11 +2392,11 @@ function renderUrgentes(){
   if(!visiveis.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo do ranking corresponde à busca.</div>';return}
   cont.innerHTML=visiveis.map(function(v){
     var x=v.x,pos=v.pos;
-    var meta=x.compra+' a comprar (A '+x.nA+' · B '+x.nB+' · C '+x.nC+')'+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
+    var meta='camada '+(x.camada||'sem ABC')+' · '+x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+') · furo mensal estimado R$ '+fmtMoeda(x.lucroFalta*30);
     return'<button class="urg-row'+(q?' hit':'')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
       +'<span class="urg-rank'+(pos<=3?' top':'')+'">'+pos+'º</span>'
       +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+'</div></span>'
-      +'<span class="urg-acrit">'+x.nA+' A</span>'
+      +'<span class="urg-acrit" title="Camada: maior curva com item em falta">'+(x.camada||'S/ABC')+'</span>'
       +'</button>';
   }).join('');
 }
@@ -2379,7 +2408,7 @@ function onUrgSearch(q){
   for(var i=0;i<urgRankCache.length;i++){if(urgRankCache[i].grupo.toLowerCase().indexOf(ql)>=0){idx=i;break}}
   if(idx>=0){
     var x=urgRankCache[idx];
-    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · a comprar: A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.qtdMin>0?' · '+fmtN(x.qtdMin)+' p/ mínimo':'');
+    info.innerHTML='<strong>'+escAttr(x.grupo)+'</strong> — <strong>'+(idx+1)+'º lugar</strong> · camada '+(x.camada||'sem ABC')+' · em falta A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+' · furo mensal estimado R$ '+fmtMoeda(x.lucroFalta*30);
   }else{
     var jaPedido=false;gruposPedidosSessao.forEach(function(g){if(g.toLowerCase().indexOf(ql)>=0)jaPedido=true});
     var existe=products.some(function(p){return p.grupo.toLowerCase().indexOf(ql)>=0});
