@@ -178,6 +178,24 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cat-form-btns{display:flex;gap:5px;justify-content:flex-end}
 .cat-add-btn{margin-left:auto;font-size:14px;font-weight:700;background:var(--blue-bg);color:var(--blue);border:none;border-radius:var(--radius-sm);width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 .cat-add-btn:hover{background:var(--blue);color:#fff}
+/* ── Grupos favoritos (acompanhamento manual) ── */
+#fav-section-header{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.fav-item{display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:var(--radius-sm);font-size:11px;color:var(--text2);cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+.fav-item:hover{background:var(--bg2);border-color:var(--border2);color:var(--text)}
+.fav-item .cat-nome{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.fav-item.fav-okzero{opacity:.66}
+.fav-item .cat-act{background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);padding:1px 4px;border-radius:3px}
+.fav-item .cat-act:hover{color:var(--red);background:var(--red-bg)}
+.fav-furo{font-size:10px;font-weight:700;color:var(--red);white-space:nowrap}
+.fav-okmsg{font-size:10px;color:var(--text3);white-space:nowrap}
+/* estrela no cabeçalho do grupo (Montar Pedido) */
+.grph-fav{color:var(--text3)}
+.grph-fav.on{color:var(--yellow);border-color:var(--yellow-light);background:var(--yellow-bg)}
+.grph-fav:hover{color:var(--yellow)}
+/* seção Favoritos dentro do overlay de Urgentes */
+.fav-urg-row.semfalta{opacity:.82;background:var(--bg)}
+.fav-rm{cursor:pointer;color:var(--text3);font-size:15px;font-weight:700;padding:0 5px;border-radius:3px;line-height:1}
+.fav-rm:hover{color:var(--red);background:var(--red-bg)}
 .export-modal-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:5px 0}
 .export-modal-list label{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;background:var(--bg2);font-family:var(--font)}
 .export-modal-list label:hover{background:var(--bg);border-color:var(--blue)}
@@ -558,6 +576,13 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             </div>
             <div class="cat-list-wrap" id="cat-list-pedido"></div>
             <div id="cat-form-wrap"></div>
+          </div>
+          <div id="fav-section">
+            <div id="fav-section-header">
+              <i class="ti ti-star-filled" style="color:var(--yellow);font-size:11px"></i>
+              <span style="flex:1">Favoritos <span id="fav-count" style="color:var(--text3);font-weight:600">(0)</span></span>
+            </div>
+            <div class="cat-list-wrap" id="fav-list-pedido"></div>
           </div>
           <div id="sb-title" style="padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Grupos</div>
           <div id="ped-grupos-list"><span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span></div>
@@ -1294,7 +1319,13 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
       <input id="urg-search" placeholder="Buscar grupo..." oninput="onUrgSearch(this.value)" style="margin-left:auto;flex:1;min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;background:var(--bg2);color:var(--text)">
     </div>
     <div class="urg-pos-info" id="urg-pos-info"></div>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:4px 0 2px">Normais (ranking automático)</div>
     <div class="urg-list" id="urg-list"></div>
+    <div id="fav-urg-section" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <h3 style="font-size:14px;margin:0"><i class="ti ti-star-filled" style="color:var(--yellow)"></i> Favoritos <span style="font-size:11px;font-weight:500;color:var(--text3)">— acompanhamento manual</span> <span id="fav-urg-count" style="font-size:11px;font-weight:500;color:var(--text3)"></span></h3>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">Grupos marcados com a estrela para acompanhar por julgamento próprio. Aparecem <strong>sempre</strong>, mesmo sem item em falta — útil p/ produto novo, cujo consumo de 180 dias ainda subestima a saída. Os <strong>com item em falta vêm destacados no topo</strong> (mesma régua dos normais: camada A&gt;B&gt;C e furo mensal estimado); os sem falta ficam abaixo, em estado neutro.</div>
+      <div class="urg-list" id="fav-urg-list" style="max-height:34vh;margin-top:8px"></div>
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="fecharUrgentes()">Fechar</button>
     </div>
@@ -1318,6 +1349,7 @@ var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 // "Próximo urgente" pula esses até um novo import do ERP (que zera este controle).
 var gruposPedidosSessao=new Set();
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
+var favoritosCache=[];  // [{grupo,criado_por,criado_em}] — grupos favoritados (compartilhado)
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
@@ -1686,8 +1718,8 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];favoritosCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFavoritos();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -1884,6 +1916,7 @@ function carregarProdutos(){
   .then(function(data){
     if(data.produtos&&data.produtos.length){
       products=data.produtos;aplicarDados();
+      renderFavoritosSidebar();  // furo dos favoritos depende dos produtos recém-carregados
       var m=data.meta||{};
       setUltimaAtualizacao(m.importado_em);
       addBot('Carregados <strong>'+products.length+' produtos</strong> — '+getGroups().length+' grupos.'+(m.importado_por?'<br>Última importação: <strong>'+m.importado_por+'</strong> em '+fmtTsLocal(m.importado_em):''));
@@ -2339,28 +2372,152 @@ function lucroItem(p){
 }
 // Índice da camada p/ ordenar: A=0, B=1, C=2, sem-ABC=3 (sempre por último).
 var CAMADA_IDX={A:0,B:1,C:2,'':3};
+// Estado de UM grupo (camada, lucro/furo em falta, contagens). EXTRAÍDO p/ ser reusado
+// tanto pelos "Normais" (rankGruposUrgentes) quanto pelos Favoritos — uma única régua,
+// sem duplicar lógica. NÃO filtra nem ordena: devolve o estado cru do grupo.
+function estadoDoGrupo(g,items){
+  var emFalta=items.filter(function(p){return fracRuptura(p)>0});         // abaixo do ponto/zerados
+  var cnt={A:0,B:0,C:0,'':0};
+  var lucroFalta=0;                                                       // lucro SÓ dos itens em falta
+  emFalta.forEach(function(p){cnt[curvaDe(p)]++;lucroFalta+=lucroItem(p);});
+  // Camada = MAIOR curva com item em falta (A>B>C>sem-ABC).
+  var camada=cnt.A>0?'A':cnt.B>0?'B':cnt.C>0?'C':'';
+  var qtdMin=emFalta.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
+  return{grupo:g,camada:camada,camadaIdx:CAMADA_IDX[camada],lucroFalta:lucroFalta,
+         nA:cnt.A,nB:cnt.B,nC:cnt.C,nS:cnt[''],
+         qtdMin:qtdMin,compra:emFalta.length,total:items.length};
+}
+// Comparador da régua de urgência: camada estrita A>B>C>sem-ABC; depois maior furo
+// (lucro em falta); depois nome A→Z. Mesma usada nos Normais e nos Favoritos com falta.
+function cmpUrgencia(a,b){
+  if(a.camadaIdx!==b.camadaIdx)return a.camadaIdx-b.camadaIdx;
+  if(Math.abs(b.lucroFalta-a.lucroFalta)>1e-9)return b.lucroFalta-a.lucroFalta;
+  return a.grupo<b.grupo?-1:1;
+}
 function rankGruposUrgentes(){
   var byG={};
   products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
-  var arr=Object.keys(byG).map(function(g){
-    var items=byG[g];
-    var emFalta=items.filter(function(p){return fracRuptura(p)>0});       // abaixo do ponto/zerados
-    var cnt={A:0,B:0,C:0,'':0};
-    var lucroFalta=0;                                                     // lucro SÓ dos itens em falta
-    emFalta.forEach(function(p){cnt[curvaDe(p)]++;lucroFalta+=lucroItem(p);});
-    // Camada = MAIOR curva com item em falta (A>B>C>sem-ABC).
-    var camada=cnt.A>0?'A':cnt.B>0?'B':cnt.C>0?'C':'';
-    var qtdMin=emFalta.reduce(function(s,p){return s+(p.comprar_min>0?p.comprar_min:0)},0);
-    return{grupo:g,camada:camada,camadaIdx:CAMADA_IDX[camada],lucroFalta:lucroFalta,
-           nA:cnt.A,nB:cnt.B,nC:cnt.C,nS:cnt[''],
-           qtdMin:qtdMin,compra:emFalta.length,total:items.length};
-  }).filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
+  var arr=Object.keys(byG).map(function(g){return estadoDoGrupo(g,byG[g])})
+    .filter(function(x){return x.compra>0&&!gruposPedidosSessao.has(x.grupo)});
+  arr.sort(cmpUrgencia);
+  return arr;
+}
+// ── FAVORITOS: estado de todos os grupos favoritados (inclusive SEM item em falta) ──
+// Diferença-chave vs. Normais: NÃO filtra por compra>0 nem por pedidos da sessão —
+// favorito é acompanhamento manual e aparece sempre. Ordem: com falta primeiro
+// (régua dos normais: camada+furo), sem falta depois (por nome).
+function isFavorito(g){return favoritosCache.some(function(f){return f.grupo===g})}
+function estadoFavoritos(){
+  if(!favoritosCache.length)return[];
+  var byG={};
+  products.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
+  var arr=favoritosCache.map(function(f){
+    var items=byG[f.grupo]||[];
+    var st=estadoDoGrupo(f.grupo,items);
+    st.criado_por=f.criado_por;st.criado_em=f.criado_em;st.existe=items.length>0;
+    return st;
+  });
   arr.sort(function(a,b){
-    if(a.camadaIdx!==b.camadaIdx)return a.camadaIdx-b.camadaIdx;              // 1º: camada estrita A>B>C>sem-ABC
-    if(Math.abs(b.lucroFalta-a.lucroFalta)>1e-9)return b.lucroFalta-a.lucroFalta; // 2º: maior lucro EM FALTA
-    return a.grupo<b.grupo?-1:1;                                              // 3º: nome (A→Z)
+    var af=a.compra>0?0:1,bf=b.compra>0?0:1;
+    if(af!==bf)return af-bf;                 // com falta sobem ao topo
+    if(af===0)return cmpUrgencia(a,b);       // entre os com falta: mesma régua dos normais
+    return a.grupo<b.grupo?-1:1;             // entre os sem falta: nome A→Z
   });
   return arr;
+}
+// Embute um nome de grupo com segurança dentro de um onclick='...(\'g\')'.
+function jsStr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+// "há N dias" a partir de um ISO timestamp (higiene: mostra idade do favorito).
+function haDias(iso){
+  if(!iso)return'';
+  var d=new Date(iso);if(isNaN(d))return'';
+  var dias=Math.floor((Date.now()-d.getTime())/86400000);
+  if(dias<=0)return'hoje';
+  return dias===1?'há 1 dia':'há '+dias+' dias';
+}
+// ── Carregar / alternar / renderizar favoritos ──
+function carregarFavoritos(){
+  fetch(BACKEND+'/favoritos').then(function(r){return r.json()}).then(function(data){
+    favoritosCache=Array.isArray(data)?data:[];atualizarFavoritosUI();
+  }).catch(function(){favoritosCache=[];atualizarFavoritosUI()});
+}
+function toggleFavorito(g){
+  if(!g)return;
+  if(isFavorito(g)){
+    favoritosCache=favoritosCache.filter(function(f){return f.grupo!==g});       // otimista
+    atualizarFavoritosUI();
+    fetch(BACKEND+'/favoritos/'+encodeURIComponent(g.replace(/\//g,'__SLASH__')),{method:'DELETE'})
+      .catch(function(){carregarFavoritos()});                                    // reverte se falhar
+  }else{
+    var por=(currentUser&&(currentUser.username||currentUser.nome))||'—';
+    favoritosCache.unshift({grupo:g,criado_por:por,criado_em:new Date().toISOString()}); // otimista
+    atualizarFavoritosUI();
+    fetch(BACKEND+'/favoritos',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({grupo:g,criado_por:por})})
+      .catch(function(){carregarFavoritos()});                                    // reverte se falhar
+  }
+}
+// Atualiza TODA a UI de favoritos sem re-render pesado: lista lateral, estrelas dos
+// cabeçalhos (in-place, sem perder inputs digitados) e, se aberta, a seção dos urgentes.
+function atualizarFavoritosUI(){
+  renderFavoritosSidebar();
+  sincronizarEstrelas();
+  var ov=document.getElementById('urgentes-overlay');
+  if(ov&&ov.style.display!=='none')renderFavoritosUrgentes();
+}
+function sincronizarEstrelas(){
+  document.querySelectorAll('[data-fav-grupo]').forEach(function(btn){
+    var g=btn.getAttribute('data-fav-grupo'),on=isFavorito(g);
+    btn.classList.toggle('on',on);
+    btn.title=on?'Remover dos favoritos':'Adicionar aos favoritos';
+    var ic=btn.querySelector('i');if(ic)ic.className='ti '+(on?'ti-star-filled':'ti-star');
+  });
+}
+function renderFavoritosSidebar(){
+  var el=document.getElementById('fav-list-pedido');
+  if(!el)return;
+  var favs=estadoFavoritos();
+  var cnt=document.getElementById('fav-count');if(cnt)cnt.textContent='('+favs.length+')';
+  if(!favs.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 8px">Nenhum favorito. Use a <i class="ti ti-star"></i> no cabeçalho do grupo (aba Montar Pedido).</div>';return}
+  el.innerHTML='';
+  favs.forEach(function(x){
+    var div=document.createElement('div');div.className='fav-item'+(x.compra>0?'':' fav-okzero');
+    var dir=x.compra>0
+      ?'<span class="fav-furo" title="Furo mensal estimado">R$ '+fmtMoeda(x.lucroFalta*30)+'</span>'
+      :'<span class="fav-okmsg">'+(x.existe?'sem falta':'sem itens')+'</span>';
+    var tip=(x.existe?(x.compra>0?x.compra+' em falta':'sem item em falta'):'sem itens importados')
+      +(x.criado_por?' · '+x.criado_por:'')+(x.criado_em?' · '+haDias(x.criado_em):'');
+    div.innerHTML='<span class="cat-nome" title="'+escAttr(tip)+'"><i class="ti ti-star-filled" style="color:var(--yellow);font-size:10px"></i>'+escAttr(x.grupo)+'</span>'
+      +dir
+      +'<button class="cat-act" title="Remover dos favoritos" onclick="event.stopPropagation();toggleFavorito(\''+jsStr(x.grupo)+'\')">×</button>';
+    div.onclick=(function(g){return function(){
+      selectedGroups.add(g);updateChips();updateSelBadge();aoMudarSelecao();
+    }})(x.grupo);
+    el.appendChild(div);
+  });
+}
+function renderFavoritosUrgentes(){
+  var cont=document.getElementById('fav-urg-list');
+  if(!cont)return;
+  var favs=estadoFavoritos();
+  var cnt=document.getElementById('fav-urg-count');if(cnt)cnt.textContent=favs.length?'('+favs.length+')':'';
+  if(!favs.length){cont.innerHTML='<div class="urg-empty">Nenhum grupo favoritado. Marque com a <i class="ti ti-star"></i> no cabeçalho do grupo (aba Montar Pedido).</div>';return}
+  cont.innerHTML=favs.map(function(x){
+    var temFalta=x.compra>0;
+    var meta=x.existe
+      ?(temFalta?'camada '+(x.camada||'sem ABC')+' · '+x.compra+' em falta (A '+x.nA+' · B '+x.nB+' · C '+x.nC+(x.nS?' · S/ABC '+x.nS:'')+') · furo mensal estimado R$ '+fmtMoeda(x.lucroFalta*30)
+                :'sem item em falta no momento — acompanhando')
+      :'sem itens importados para este grupo';
+    var dono=(x.criado_por?'adicionado por '+escAttr(x.criado_por):'')+(x.criado_em?(x.criado_por?' · ':'')+haDias(x.criado_em):'');
+    return'<button class="urg-row fav-urg-row'+(temFalta?'':' semfalta')+'" data-grupo="'+escAttr(x.grupo)+'" onclick="selecionarGrupoUrgente(this)">'
+      +'<span class="urg-rank'+(temFalta?' top':'')+'" style="font-size:13px"><i class="ti '+(temFalta?'ti-flame':'ti-eye')+'"'+(temFalta?'':' style="color:var(--text3)"')+'></i></span>'
+      +'<span style="overflow:hidden;min-width:0"><span class="urg-gname">'+escAttr(x.grupo)+'</span><div class="urg-gmeta">'+meta+(dono?' · '+dono:'')+'</div></span>'
+      +'<span style="display:flex;align-items:center;gap:7px">'
+        +(temFalta?'<span class="urg-acrit" title="Camada: maior curva com item em falta">'+(x.camada||'S/ABC')+'</span>':'<span class="fav-okmsg">sem falta</span>')
+        +'<span class="fav-rm" title="Remover dos favoritos" onclick="event.stopPropagation();toggleFavorito(\''+jsStr(x.grupo)+'\')">×</span>'
+      +'</span>'
+      +'</button>';
+  }).join('');
 }
 function abrirUrgentes(){
   if(!products.length){alert('Importe produtos primeiro.');return}
@@ -2368,6 +2525,7 @@ function abrirUrgentes(){
   var s=document.getElementById('urg-search');if(s)s.value='';
   document.getElementById('urg-pos-info').style.display='none';
   renderUrgentes();
+  renderFavoritosUrgentes();
   document.getElementById('urgentes-overlay').style.display='flex';
 }
 function fecharUrgentes(){document.getElementById('urgentes-overlay').style.display='none'}
@@ -2557,6 +2715,7 @@ function _renderPedidoInterno(meses){
       (aC?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:10px">A:'+aC+'</span>':'')+
       (bC?'<span style="font-size:9px;background:var(--yellow-bg);color:var(--yellow);padding:1px 5px;border-radius:10px">B:'+bC+'</span>':'')+
       (cC?'<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 5px;border-radius:10px">C:'+cC+'</span>':'')+
+      '<button class="btn grph-fav'+(isFavorito(g)?' on':'')+'" style="font-size:11px;padding:2px 7px" data-fav-grupo="'+escAttr(g)+'" title="'+(isFavorito(g)?'Remover dos favoritos':'Adicionar aos favoritos')+'" onclick="event.stopPropagation();toggleFavorito(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti '+(isFavorito(g)?'ti-star-filled':'ti-star')+'"></i></button>'+
       cotTag+
       '<button class="btn" style="font-size:9px;padding:2px 7px;margin-left:auto" onclick="event.stopPropagation();autoFillQtd(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti ti-wand"></i> Auto-preencher Qtd</button>'+
       '</div>';
