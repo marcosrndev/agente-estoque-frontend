@@ -179,7 +179,9 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cat-add-btn{margin-left:auto;font-size:14px;font-weight:700;background:var(--blue-bg);color:var(--blue);border:none;border-radius:var(--radius-sm);width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 .cat-add-btn:hover{background:var(--blue);color:#fff}
 /* ── Grupos favoritos (acompanhamento manual) ── */
-#fav-section-header{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+#fav-section-header{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;cursor:pointer;user-select:none}
+#fav-section-header:hover{background:var(--bg2)}
+.fav-falta-ind{color:var(--red);font-weight:700;text-transform:none;letter-spacing:0;margin-left:4px}
 .fav-item{display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:var(--radius-sm);font-size:11px;color:var(--text2);cursor:pointer;margin-bottom:2px;border:1px solid transparent}
 .fav-item:hover{background:var(--bg2);border-color:var(--border2);color:var(--text)}
 .fav-item .cat-nome{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
@@ -578,11 +580,12 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <div id="cat-form-wrap"></div>
           </div>
           <div id="fav-section">
-            <div id="fav-section-header">
+            <div id="fav-section-header" onclick="toggleFavSection()" title="Mostrar/ocultar favoritos">
+              <span class="dados-toggle-arrow" id="fav-arrow" style="font-size:9px">▼</span>
               <i class="ti ti-star-filled" style="color:var(--yellow);font-size:11px"></i>
-              <span style="flex:1">Favoritos <span id="fav-count" style="color:var(--text3);font-weight:600">(0)</span></span>
+              <span style="flex:1">Favoritos <span id="fav-count" style="color:var(--text3);font-weight:600">(0)</span><span id="fav-falta-ind"></span></span>
             </div>
-            <div class="cat-list-wrap" id="fav-list-pedido"></div>
+            <div class="cat-list-wrap" id="fav-list-pedido" style="display:none"></div>
           </div>
           <div id="sb-title" style="padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Grupos</div>
           <div id="ped-grupos-list"><span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span></div>
@@ -1350,6 +1353,7 @@ var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 var gruposPedidosSessao=new Set();
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
 var favoritosCache=[];  // [{grupo,criado_por,criado_em}] — grupos favoritados (compartilhado)
+var favSectionAberta=false;  // acordeao da lateral: comeca FECHADA (so memoria da sessao)
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
@@ -2473,11 +2477,25 @@ function sincronizarEstrelas(){
     var ic=btn.querySelector('i');if(ic)ic.className='ti '+(on?'ti-star-filled':'ti-star');
   });
 }
+// Acordeao da seção Favoritos na lateral: expande/recolhe a lista. Recolhida (padrão),
+// a seção ocupa só a linha do título — os Grupos ficam logo abaixo, sem empurrão,
+// por mais favoritos que existam. Estado só em memória (não persiste entre reloads).
+function toggleFavSection(){favSectionAberta=!favSectionAberta;aplicarFavSectionEstado();}
+function aplicarFavSectionEstado(){
+  var lista=document.getElementById('fav-list-pedido'),arrow=document.getElementById('fav-arrow');
+  if(lista)lista.style.display=favSectionAberta?'':'none';
+  if(arrow)arrow.classList.toggle('open',favSectionAberta);
+}
 function renderFavoritosSidebar(){
   var el=document.getElementById('fav-list-pedido');
   if(!el)return;
   var favs=estadoFavoritos();
+  var emFalta=favs.filter(function(x){return x.compra>0}).length;
   var cnt=document.getElementById('fav-count');if(cnt)cnt.textContent='('+favs.length+')';
+  // Indicador de em-falta visível mesmo com a seção FECHADA: avisa que vale abrir.
+  var ind=document.getElementById('fav-falta-ind');
+  if(ind)ind.innerHTML=emFalta>0?'<span class="fav-falta-ind">· '+emFalta+' em falta</span>':'';
+  aplicarFavSectionEstado();
   if(!favs.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 8px">Nenhum favorito. Use a <i class="ti ti-star"></i> no cabeçalho do grupo (aba Montar Pedido).</div>';return}
   el.innerHTML='';
   favs.forEach(function(x){
