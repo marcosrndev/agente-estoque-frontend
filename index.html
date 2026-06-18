@@ -2347,8 +2347,11 @@ function proximoUrgente(){
 // C, depois sem-ABC — quantidade NÃO troca de camada (um grupo só-C nunca passa um grupo
 // com A em falta). DENTRO da camada, ordena por LUCRO EM FALTA (desc) e depois nome (A→Z).
 //
-// "Em falta" = fração de ruptura > 0: estoque zerado = 1; abaixo do ponto_reposicao =
-// 1 − estoque/ponto; fallback estoque mínimo; no ponto/acima = 0.
+// "Em falta" = comprar_min > 0, a MESMA régua da tela de Montar Pedido. comprar_min é
+// est_min − (estoque_atual + pedido_forn): só é > 0 quando o item, MESMO com o pedido ao
+// fornecedor a caminho, continua abaixo do mínimo. Mercadoria já pedida NÃO conta como
+// falta (some do ranking), e o que entra bate com o "a comprar" exibido por item na tela.
+// (Não usamos o "reforço até o máximo"/comprar_max aqui: isso é top-up, não ruptura.)
 // LUCRO EM FALTA do grupo = soma de (preco_venda − custo_compra) × consumo_medio SOMENTE
 // dos itens EM FALTA (não em falta não conta; faltando preço/custo/consumo conta 0). Mede
 // quanto lucro está em risco AGORA. Só entram grupos com algo em falta e não pedidos na
@@ -2358,16 +2361,6 @@ var urgTopFiltro=10, urgRankCache=[];
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 // Curva normalizada do item: 'A' | 'B' | 'C' | '' (sem ABC).
 function curvaDe(p){var a=(p.abc||'').toString().toUpperCase();return(a==='A'||a==='B'||a==='C')?a:'';}
-// Fração de ruptura em [0,1]: 1=zerado; 0=no ponto/acima ou sem dado de referência.
-function fracRuptura(p){
-  var est=Number(p.estoque_atual)||0;
-  if(est<=0)return 1;
-  var ponto=Number(p.ponto_reposicao);
-  if(isFinite(ponto)&&ponto>0){var f=1-est/ponto;return f<=0?0:(f>1?1:f);}
-  var emin=Number(p.est_min);
-  if(isFinite(emin)&&emin>0){var fm=1-est/emin;return fm<=0?0:(fm>1?1:fm);}
-  return 0;
-}
 // Lucro total do item: (preço − custo) × consumo. Faltando qualquer um dos 3 → 0.
 function lucroItem(p){
   var pv=Number(p.preco_venda),cc=Number(p.custo_compra),cm=Number(p.consumo_medio);
@@ -2380,7 +2373,7 @@ var CAMADA_IDX={A:0,B:1,C:2,'':3};
 // tanto pelos "Normais" (rankGruposUrgentes) quanto pelos Favoritos — uma única régua,
 // sem duplicar lógica. NÃO filtra nem ordena: devolve o estado cru do grupo.
 function estadoDoGrupo(g,items){
-  var emFalta=items.filter(function(p){return fracRuptura(p)>0});         // abaixo do ponto/zerados
+  var emFalta=items.filter(function(p){return p.comprar_min>0});         // abaixo do mínimo MESMO com pedido_forn (comprar_min = est_min − (estoque+pedido))
   var cnt={A:0,B:0,C:0,'':0};
   var lucroFalta=0;                                                       // lucro SÓ dos itens em falta
   emFalta.forEach(function(p){cnt[curvaDe(p)]++;lucroFalta+=lucroItem(p);});
