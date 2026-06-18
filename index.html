@@ -383,6 +383,14 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #admin-body{flex:1;overflow-y:auto;padding:18px}
 .admin-section{max-width:580px}
 .admin-section h2{font-size:14px;font-weight:600;margin-bottom:12px}
+#gloja-list{margin-top:10px;max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:6px}
+#gloja-count{font-size:11px;color:var(--text3);white-space:nowrap}
+.gloja-row{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:var(--radius-sm);cursor:pointer}
+.gloja-row:hover{background:var(--bg2)}
+.gloja-row.on{background:var(--blue-bg)}
+.gloja-row input{cursor:pointer;margin:0}
+.gloja-nome{flex:1;font-size:12px}
+.gloja-badge{font-size:9px;font-weight:600;background:var(--blue);color:#fff;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 .user-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
 .user-card .u-name{flex:1;font-size:13px;font-weight:500}
 .user-card .u-info{font-size:11px;color:var(--text3)}
@@ -789,6 +797,16 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             </div>
             <div style="font-size:11px;color:var(--text3);margin-top:6px">O CNPJ é usado para evitar duplicidade. Qualquer usuário também pode cadastrar pelo dropdown em <strong>Montar Pedido</strong>.</div>
           </div>
+        </div>
+        <div class="admin-section" style="margin-top:24px">
+          <h2>Saldo da Loja por grupo</h2>
+          <p style="font-size:11px;color:var(--text3);margin:-4px 0 10px">Por padrão o sistema usa só o estoque dos depósitos (não conta a loja). Marque aqui os grupos cujo estoque na <strong>loja</strong> é confiável: para eles, o saldo da loja é <strong>somado</strong> ao estoque no cálculo de compra, para o sistema não mandar comprar o que já existe na loja.</p>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="gloja-search" type="text" placeholder="Buscar grupo..." oninput="renderGrupoLojaList()" style="flex:1">
+            <span id="gloja-count">—</span>
+          </div>
+          <div id="gloja-list"><div style="color:var(--text3)">Carregando...</div></div>
+          <div class="manual-tip" style="margin-top:8px">⏱️ A mudança será aplicada no <strong>próximo sync de produtos</strong> — o "comprar" e o status são recalculados durante a sincronização, não em tempo real.</div>
         </div>
       </div>
     </div>
@@ -1732,10 +1750,60 @@ function switchTab(id,el){
   el.classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if(id==='cotacoes')renderCotacoes();
-  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();}
+  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();carregarGrupoConfig();}
   if(id==='indicadores')carregarIndicadores();
   if(id==='historico'){abrirAbaHistorico();}
   if(id==='fluxo-caixa')carregarFluxoCaixa();
+}
+
+// ── ADMIN: grupos que somam o saldo da LOJA ao estoque ──
+// Conjunto de grupos marcados (presença = marcado). A mudança vale no próximo sync.
+var grupoLojaSet=new Set();
+function carregarGrupoConfig(){
+  fetch(BACKEND+'/grupo-config').then(function(r){return r.json()}).then(function(data){
+    grupoLojaSet=new Set((Array.isArray(data)?data:[]).map(function(x){return x.grupo}));
+    renderGrupoLojaList();
+  }).catch(function(){var el=document.getElementById('gloja-list');if(el)el.innerHTML='<div style="color:var(--text3)">Não foi possível carregar.</div>'});
+}
+function renderGrupoLojaList(){
+  var cont=document.getElementById('gloja-list');if(!cont)return;
+  var q=(document.getElementById('gloja-search').value||'').trim().toLowerCase();
+  // União dos grupos dos produtos com os já marcados — assim um grupo marcado sempre
+  // aparece (e pode ser desmarcado) mesmo que os produtos ainda não tenham carregado.
+  var grupos=[...new Set(getGroups().concat([...grupoLojaSet]))].sort();
+  // Marcados primeiro, depois alfabético; filtra pela busca.
+  var lista=grupos.filter(function(g){return !q||g.toLowerCase().indexOf(q)>=0}).sort(function(a,b){
+    var ma=grupoLojaSet.has(a)?0:1,mb=grupoLojaSet.has(b)?0:1;
+    if(ma!==mb)return ma-mb;
+    return a<b?-1:1;
+  });
+  var cnt=document.getElementById('gloja-count');
+  if(cnt)cnt.textContent=grupoLojaSet.size+' marcado'+(grupoLojaSet.size===1?'':'s');
+  if(!grupos.length){cont.innerHTML='<div style="color:var(--text3)">Importe/sincronize os produtos primeiro para listar os grupos.</div>';return}
+  if(!lista.length){cont.innerHTML='<div style="color:var(--text3)">Nenhum grupo encontrado.</div>';return}
+  cont.innerHTML=lista.slice(0,400).map(function(g){
+    var on=grupoLojaSet.has(g);
+    var gj=g.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return'<label class="gloja-row'+(on?' on':'')+'">'
+      +'<input type="checkbox"'+(on?' checked':'')+' onchange="toggleGrupoLoja(\''+gj+'\',this.checked)">'
+      +'<span class="gloja-nome">'+escAttr(g)+'</span>'
+      +(on?'<span class="gloja-badge"><i class="ti ti-building-store"></i> inclui loja</span>':'')
+      +'</label>';
+  }).join('')+(lista.length>400?'<div style="color:var(--text3);font-size:11px;margin-top:6px">Mostrando 400 de '+lista.length+'. Refine a busca.</div>':'');
+}
+function toggleGrupoLoja(g,marcar){
+  var por=(currentUser&&(currentUser.username||currentUser.nome))||'—';
+  if(marcar){
+    grupoLojaSet.add(g);
+    fetch(BACKEND+'/grupo-config',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({grupo:g,criado_por:por,username:currentUser?currentUser.username:''})})
+      .then(function(r){if(!r.ok)throw 0}).catch(function(){grupoLojaSet.delete(g);alert('Falha ao marcar o grupo.');carregarGrupoConfig()});
+  }else{
+    grupoLojaSet.delete(g);
+    fetch(BACKEND+'/grupo-config/'+encodeURIComponent(g.replace(/\//g,'__SLASH__')),{method:'DELETE'})
+      .then(function(r){if(!r.ok)throw 0}).catch(function(){grupoLojaSet.add(g);alert('Falha ao desmarcar o grupo.');carregarGrupoConfig()});
+  }
+  renderGrupoLojaList();
 }
 
 // ── CSV ──
@@ -2723,6 +2791,7 @@ function _renderPedidoInterno(meses){
     html+='<div class="grph" onclick="abrirCotacao(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+
       '<span style="font-size:10px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">#'+prio+'</span>'+
       '<strong>'+g+'</strong>'+
+      ((itens.length&&itens[0].inclui_loja)?'<span class="gloja-badge" title="Este grupo soma o saldo da LOJA (local 01) ao estoque dos depósitos no cálculo de compra"><i class="ti ti-building-store"></i> inclui loja</span>':'')+
       (aC?'<span style="font-size:9px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:10px">A:'+aC+'</span>':'')+
       (bC?'<span style="font-size:9px;background:var(--yellow-bg);color:var(--yellow);padding:1px 5px;border-radius:10px">B:'+bC+'</span>':'')+
       (cC?'<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 5px;border-radius:10px">C:'+cC+'</span>':'')+
