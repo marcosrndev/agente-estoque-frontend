@@ -86,7 +86,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .pn{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pnum{font-size:11px;text-align:right;color:var(--text2)}.pnum.hi{color:var(--text);font-weight:600}
 .urg{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:500;text-align:center;white-space:nowrap}
-.urg.c{background:var(--red-bg);color:var(--red)}.urg.a{background:var(--yellow-bg);color:var(--yellow)}.urg.o{background:var(--green-bg);color:var(--green)}
+.urg.c{background:var(--red-bg);color:var(--red)}.urg.a{background:var(--yellow-bg);color:var(--yellow)}.urg.o{background:var(--green-bg);color:var(--green)}.urg.s{background:var(--bg3);color:var(--text3);white-space:normal;line-height:1.2}
 .qk{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 7px}
 .qkb{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-family:var(--font)}
 .qkb:hover{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-light)}
@@ -527,6 +527,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
     <div class="sbc"><div class="sbn" id="s-total">0</div><div class="sbl">produtos</div></div>
     <div class="sbc"><div class="sbn r" id="s-crit">0</div><div class="sbl">críticos</div></div>
     <div class="sbc"><div class="sbn w" id="s-atenc">0</div><div class="sbl">atenção</div></div>
+    <div class="sbc" title="Itens sem estoque mín/máx cadastrados no Cronos — sem cálculo de compra"><div class="sbn" id="s-semplan" style="color:var(--text3)">0</div><div class="sbl">sem planej.</div></div>
     <div class="sbc"><div class="sbn" id="s-grupos">0</div><div class="sbl">grupos</div></div>
   </div>
 
@@ -880,10 +881,11 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div class="manual-card" onclick="toggleManual(this)">
             <div class="manual-header"><i class="ti ti-alert-triangle"></i> 3. Urgências, Classes ABC e prioridades</div>
             <div class="manual-body">
-              <p><strong>Tipos de urgência (cor por item):</strong></p>
-              <p><span class="urg c">Crítico</span> — estoque zerado ou abaixo de 50% do mínimo</p>
-              <p><span class="urg a">Atenção</span> — abaixo do estoque mínimo (precisa comprar)</p>
-              <p><span class="urg o">OK</span> — estoque adequado</p>
+              <p><strong>Status do item (vem do sistema, já contando o pedido a chegar):</strong></p>
+              <p><span class="urg c">Crítico</span> — estoque + pedido ao fornecedor não cobre nem o mínimo</p>
+              <p><span class="urg a">Atenção</span> — cobre o mínimo, mas não chega ao máximo</p>
+              <p><span class="urg o">Em estoque</span> — cobre o máximo (nada a comprar)</p>
+              <p><span class="urg s">Sem planejamento</span> — produto sem estoque mín/máx cadastrados no Cronos; sem cálculo de compra. Cadastre o mín/máx para o item entrar na régua.</p>
               <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo, já <strong>descontando o que está a chegar</strong> (pedido fornecedor) — fórmula: (mínimo − (estoque atual + pedido fornecedor)) ÷ mínimo. 100% = zerado.</p>
               <p><strong>Classe ABC do item:</strong> vem do ERP — A é o que mais gera receita, C o que menos. Em conflito, priorize A.</p>
               <p><strong>Prioridade dos grupos (#1, #2, #3...):</strong> calculada automaticamente por:</p>
@@ -1461,8 +1463,22 @@ function fmtNInput(n){if(n===null||n===undefined||n==='')return'';var s=Number(n
 // relia como 1.234 — corrompia toda qtd >= 1000 a cada re-render. Round-trip seguro.
 function fmtQtdInput(n){if(n===null||n===undefined||n===''||!Number(n))return'';return String(Number(n)).replace('.',',')}
 function fmtDate(){return new Date().toLocaleString('pt-BR')}
-function urg(p){if(p.estoque_atual<=0)return'c';if(p.comprar_min>0&&p.estoque_atual<p.est_min*0.5)return'c';if(p.comprar_min>0)return'a';return'o'}
-function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':'OK'}
+// Selo de status: espelha o campo `status` gravado pelo backend (main.py /erp/sync-compras),
+// única fonte de verdade — disp = estoque_atual + pedido_forn comparado a est_min/est_max.
+// 'c'=Crítico, 'a'=Atenção, 'o'=Em estoque, 's'=Sem planejamento (sem mín/máx cadastrados).
+function urg(p){
+  var s=p.status;
+  if(s==='Crítico')return'c';
+  if(s==='Atenção')return'a';
+  if(s==='Em estoque')return'o';
+  if(s==='—')return's';
+  // Status ausente (dado antigo/importação sem o campo): aplica a MESMA régua do backend.
+  var min=Number(p.est_min)||0,max=Number(p.est_max)||0;
+  if(min<=0&&max<=0)return's';
+  var disp=(Number(p.estoque_atual)||0)+(Number(p.pedido_forn)||0);
+  return disp<min?'c':disp<max?'a':'o';
+}
+function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':u==='s'?'Sem planejamento':'Em estoque'}
 function urgScore(p){if(p.est_min<=0)return 0;return(p.est_min-(p.estoque_atual+p.pedido_forn))/p.est_min}
 // Necessidade de compra (regra oficial da planilha): item abaixo do mínimo, OU dentro
 // do mínimo porém abaixo do máximo. Equivale aos itens "a comprar" (Crítico + Atenção);
@@ -1971,12 +1987,14 @@ function checarSyncInicial(){
 function aplicarDados(){
   var crit=products.filter(function(p){return urg(p)==='c'}).length;
   var atenc=products.filter(function(p){return urg(p)==='a'}).length;
+  var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
   document.getElementById('sbadge').textContent=products.length+' produtos';
   document.getElementById('sbadge').className='badge on';
   document.getElementById('stats-bar').style.display='flex';
   document.getElementById('s-total').textContent=products.length;
   document.getElementById('s-crit').textContent=crit;
   document.getElementById('s-atenc').textContent=atenc;
+  document.getElementById('s-semplan').textContent=semPlan;
   document.getElementById('s-grupos').textContent=getGroups().length;
   document.getElementById('qkbtns').style.display='flex';
   updateSidebar();updateChips();
@@ -2740,10 +2758,12 @@ function _renderPedidoInterno(meses){
   empty.style.display='none';stats.style.display='flex';tbl.style.display='block';
   var crit=selP.filter(function(p){return urg(p)==='c'}).length;
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
+  var semPlan=selP.filter(function(p){return urg(p)==='s'}).length;
   var compraCount=selP.filter(function(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max)}).length;
   stats.innerHTML='<div class="ps"><div class="ps-n">'+selP.length+'</div><div class="ps-l">'+(showAllItems?'total':'a comprar')+'</div></div>'
     +'<div class="ps"><div class="ps-n r">'+crit+'</div><div class="ps-l">críticos</div></div>'
     +'<div class="ps"><div class="ps-n w">'+atenc+'</div><div class="ps-l">atenção</div></div>'
+    +(semPlan>0?'<div class="ps" title="Itens sem estoque mín/máx cadastrados no Cronos"><div class="ps-n" style="color:var(--text3)">'+semPlan+'</div><div class="ps-l">sem planej.</div></div>':'')
     +'<div class="ps"><div class="ps-n">'+selectedGroups.size+'</div><div class="ps-l">grupos</div></div>';
   info.textContent=(showAllItems?selP.length+' itens ('+compraCount+' a comprar)':compraCount+' a comprar')+' · '+selectedGroups.size+' grupo(s)';
 
@@ -2802,9 +2822,10 @@ function _renderPedidoInterno(meses){
 
     itens.forEach(function(p){
       var u=urg(p);
+      var isSemPlan=u==='s';
       var us=urgScore(p);
-      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
-      var urgColor=us>=1?'var(--red)':us>0.5?'var(--yellow)':'var(--green)';
+      var urgPct=isSemPlan?'—':us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var urgColor=isSemPlan?'var(--text3)':us>=1?'var(--red)':us>0.5?'var(--yellow)':'var(--green)';
       var qtdSug=calcQtdMeses(p,meses);
       var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
       var isOk=u==='o'&&p.comprar_min<=0;
@@ -2893,15 +2914,15 @@ function _renderPedidoInterno(meses){
             +' onchange="onQtdChange(this,'+qtdSug+',\''+gEsc+'\');"'
             +' onkeydown="navInput(event,this)"></span>'
         // Comprar mín
-        +'<span class="pcol">'+(!isOk?fmtN(p.comprar_min):'—')+'</span>'
+        +'<span class="pcol">'+((isOk||isSemPlan)?'—':fmtN(p.comprar_min))+'</span>'
         // Sugerido
-        +'<span class="pcol '+(isOk?'':'hi')+'">'+(isOk?'—':fmtN(Math.ceil(qtdSug)))+'</span>'
+        +'<span class="pcol '+((isOk||isSemPlan)?'':'hi')+'">'+((isOk||isSemPlan)?'—':fmtN(Math.ceil(qtdSug)))+'</span>'
         // Urgência
         +'<span class="pcol" style="color:'+urgColor+';font-weight:600">'+urgPct+'</span>'
         // Valor total
         +'<span class="pcol hi" id="vt_'+safeCod+'" style="font-size:11px;color:'+(initVt!=='—'?'var(--green)':'')+'">'+initVt+'</span>'
-        // Status
-        +(isOk?'<span class="ok-badge">Em estoque</span>':'<span class="urg '+u+'">'+urgL(u)+'</span>')
+        // Status (espelha o status do backend; "Sem planejamento" = falta cadastrar mín/máx no Cronos)
+        +(isOk?'<span class="ok-badge">Em estoque</span>':'<span class="urg '+u+'"'+(isSemPlan?' title="Sem estoque mín/máx cadastrados no Cronos — sem cálculo de compra"':'')+'>'+urgL(u)+'</span>')
         +'</div>';
     });
   });
@@ -3328,10 +3349,12 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
     var prio=allSorted.indexOf(g)+1;
     wsData.push(fillRow(['▸  '+g]));
     itens.forEach(function(p){
+      var u=urg(p);
+      var isSemPlan=u==='s';
       var us=urgScore(p);
-      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var urgPct=isSemPlan?'—':us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
       var qtdSug=calcQtdMeses(p,meses);
-      var isOk=urg(p)==='o'&&p.comprar_min<=0;
+      var isOk=u==='o'&&p.comprar_min<=0;
       var precosLinha=fornIds.map(function(fid){return precosForn[fid][p.codigo]||0});
       var menor=0;precosLinha.forEach(function(v){if(v>0&&(menor===0||v<menor))menor=v});
       var qtdManual=qtds[p.codigo]||0;
@@ -3343,12 +3366,12 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
       ];
       precosLinha.forEach(function(v){row.push(v>0?v:'')});
       row.push(menor>0?menor:'');
-      row.push(isOk?'':qtdManual>0?qtdManual:Math.ceil(qtdSug));
+      row.push((isOk||isSemPlan)?'':qtdManual>0?qtdManual:Math.ceil(qtdSug));
       row.push(menor>0&&qtdUsar>0?menor*qtdUsar:'');
-      row.push(isOk?'':p.comprar_min);
-      row.push(isOk?'':Math.ceil(qtdSug));
+      row.push((isOk||isSemPlan)?'':p.comprar_min);
+      row.push((isOk||isSemPlan)?'':Math.ceil(qtdSug));
       row.push(isOk?'Em estoque':urgPct);
-      row.push(isOk?'Em estoque':urgL(urg(p)));
+      row.push(isOk?'Em estoque':urgL(u));
       row.push(p.grupo);
       row.push(p.abc);
       row.push('#'+prio);
@@ -3411,28 +3434,30 @@ function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
     wsData.push(['▸  '+g,'','','','','','','','','','','','','','','','#'+prio]);
     itens.forEach(function(p){
       var safeCod=p.codigo.replace(/[^a-zA-Z0-9]/g,'_');
+      var u=urg(p);
+      var isSemPlan=u==='s';
       var us=urgScore(p);
-      var urgPct=us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
+      var urgPct=isSemPlan?'—':us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
       var qtdSug=calcQtdMeses(p,meses);
       var preco=precos[p.codigo]||precos[safeCod]||0;
       var qtdManual=qtds[p.codigo]||qtds[safeCod]||0;
       var qtdUsar=qtdManual>0?qtdManual:Math.ceil(qtdSug);
       var vt=preco>0?preco*qtdUsar:0;
       totalGeral+=vt;
-      var isOk=urg(p)==='o'&&p.comprar_min<=0;
+      var isOk=u==='o'&&p.comprar_min<=0;
       var total=preco>0&&qtdManual>0?preco*qtdManual:preco>0&&Math.ceil(qtdSug)>0?preco*Math.ceil(qtdSug):'';
       wsData.push([
         p.codigo, p.nome, p.un,
         isOk?'':preco||'',
-        isOk?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
+        (isOk||isSemPlan)?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
         isOk?'':total,
         fid?nomeForn:'',
         p.estoque_atual, p.est_min, p.est_max,
         p.grupo, p.abc,
-        isOk?'':p.comprar_min,
-        isOk?'':Math.ceil(qtdSug),
+        (isOk||isSemPlan)?'':p.comprar_min,
+        (isOk||isSemPlan)?'':Math.ceil(qtdSug),
         isOk?'Em estoque':urgPct,
-        isOk?'Em estoque':urgL(urg(p)),
+        isOk?'Em estoque':urgL(u),
         '#'+prio
       ]);
     });
@@ -4047,6 +4072,7 @@ function renderIndicadores(d){
   var valEnv=valStatus.pedido_enviado||0;
   var totalProds=products.length;
   var critic=products.filter(function(p){return urg(p)==='c'}).length;
+  var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
   var aComprar=products.filter(function(p){return p.comprar_min>0}).length;
   var topForn=d.top_fornecedores||[];
 
@@ -4054,6 +4080,7 @@ function renderIndicadores(d){
     +'<div class="ind-card"><div class="ind-l">Produtos</div><div class="ind-n">'+fmtN(totalProds)+'</div></div>'
     +'<div class="ind-card r"><div class="ind-l">Críticos</div><div class="ind-n">'+critic+'</div></div>'
     +'<div class="ind-card w"><div class="ind-l">A comprar</div><div class="ind-n">'+aComprar+'</div></div>'
+    +'<div class="ind-card"><div class="ind-l">Sem planejamento</div><div class="ind-n">'+semPlan+'</div><div class="ind-sub">sem mín/máx no Cronos</div></div>'
     +'<div class="ind-card"><div class="ind-l">Grupos</div><div class="ind-n">'+getGroups().length+'</div></div>'
     +'</div></div>';
 
@@ -4723,13 +4750,16 @@ function buildCtx(filterText){
   if(!products.length)return'Nenhum produto.';
   var gs=getGroups();
   var crit=products.filter(function(p){return urg(p)==='c'}).length;
-  var resumo='RESUMO: '+products.length+' produtos | '+crit+' críticos | '+gs.length+' grupos\n';
+  var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
+  var resumo='RESUMO: '+products.length+' produtos | '+crit+' críticos | '+semPlan+' sem planejamento (sem mín/máx, não contam como críticos) | '+gs.length+' grupos\n'
+    +'LEGENDA STATUS: [C]=Crítico [A]=Atenção [O]=Em estoque [S]=Sem planejamento (mín/máx não cadastrados no Cronos)\n';
   var subset=[];
   if(filterText){
     var ft=filterText.toLowerCase();
     var gMen=gs.find(function(g){return ft.includes(g.toLowerCase())});
     if(gMen){subset=products.filter(function(p){return p.grupo===gMen})}
-    else if(/cr[ií]t|zero/.test(ft)){subset=products.filter(function(p){return urg(p)==='c'}).slice(0,300)}
+    else if(/zerad|zero/.test(ft)){subset=products.filter(function(p){return Number(p.estoque_atual)<=0}).slice(0,300)}
+    else if(/cr[ií]t/.test(ft)){subset=products.filter(function(p){return urg(p)==='c'}).slice(0,300)}
     else if(/lista|compra|repor|m[ií]nimo/.test(ft)){subset=products.filter(function(p){return p.comprar_min>0}).slice(0,300)}
     else if(/resumo|geral|ranking/.test(ft)){
       var byG={};products.filter(function(p){return p.comprar_min>0}).forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
@@ -4771,7 +4801,8 @@ async function sendMsg(){
     var tp=[],low=text.toLowerCase(),gs=getGroups();
     var gMen=gs.find(function(g){return low.includes(g.toLowerCase())});
     if(gMen){tp=products.filter(function(p){return p.grupo===gMen&&p.comprar_min>0})}
-    else if(/cr[ií]t|zero/.test(low)){tp=products.filter(function(p){return urg(p)==='c'})}
+    else if(/zerad|zero/.test(low)){tp=products.filter(function(p){return Number(p.estoque_atual)<=0})}
+    else if(/cr[ií]t/.test(low)){tp=products.filter(function(p){return urg(p)==='c'})}
     else if(/lista|compra|m[ií]nimo/.test(low)){tp=products.filter(function(p){return p.comprar_min>0})}
     tp.sort(function(a,b){return urgScore(b)-urgScore(a)});
     addBot(reply,tp.length?tp:null);
