@@ -381,8 +381,25 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .dados-toggle-arrow{display:inline-block;transition:transform .2s ease}
 .dados-toggle-arrow.open{transform:rotate(180deg)}
 #panel-admin{flex-direction:column;overflow:hidden}
-#admin-body{flex:1;overflow-y:auto;padding:18px}
-.admin-section{max-width:580px}
+/* Admin: menu lateral (esquerda) + UMA seção por vez (direita) */
+#admin-body{flex:1;display:flex;overflow:hidden}
+#admin-menu{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+#admin-menu .adm-nav-title{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:4px 10px 6px}
+.adm-nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;color:var(--text2);background:none;border:none;border-left:2px solid transparent;border-radius:0 var(--radius-sm) var(--radius-sm) 0;cursor:pointer;font-family:var(--font);text-align:left;white-space:nowrap}
+.adm-nav-item i{font-size:15px;color:var(--text3)}
+.adm-nav-item:hover{background:var(--bg);color:var(--text)}
+.adm-nav-item.active{background:var(--blue-bg);color:var(--blue);border-left-color:var(--blue);font-weight:600}
+.adm-nav-item.active i{color:var(--blue)}
+#admin-content{flex:1;overflow-y:auto;padding:18px}
+.admin-section{max-width:580px;display:none}
+.admin-section.active{display:block}
+@media(max-width:780px){
+  #admin-body{flex-direction:column}
+  #admin-menu{width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--border);padding:6px 8px}
+  #admin-menu .adm-nav-title{display:none}
+  .adm-nav-item{border-left:none;border-bottom:2px solid transparent;border-radius:var(--radius-sm) var(--radius-sm) 0 0}
+  .adm-nav-item.active{border-bottom-color:var(--blue)}
+}
 .admin-section h2{font-size:14px;font-weight:600;margin-bottom:12px}
 #gloja-list{margin-top:10px;max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:6px}
 #gloja-count{font-size:11px;color:var(--text3);white-space:nowrap}
@@ -788,7 +805,15 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
     <!-- ADMIN -->
     <div class="panel" id="panel-admin">
       <div id="admin-body">
-        <div class="admin-section">
+        <div id="admin-menu">
+          <div class="adm-nav-title">Administração</div>
+          <button class="adm-nav-item" data-adm="usuarios" onclick="switchAdminSec('usuarios')"><i class="ti ti-users"></i> Gerenciar Usuários</button>
+          <button class="adm-nav-item" data-adm="fornecedores" onclick="switchAdminSec('fornecedores')"><i class="ti ti-truck"></i> Cadastro de Fornecedores</button>
+          <button class="adm-nav-item" data-adm="loja" onclick="switchAdminSec('loja')"><i class="ti ti-building-store"></i> Saldo da Loja por grupo</button>
+          <button class="adm-nav-item" data-adm="novidades" onclick="switchAdminSec('novidades')"><i class="ti ti-speakerphone"></i> Novidades / Avisos</button>
+        </div>
+        <div id="admin-content">
+        <div class="admin-section" id="adm-sec-usuarios">
           <h2>Gerenciar Usuários</h2>
           <div id="user-list"><div style="color:var(--text3)">Carregando...</div></div>
           <div class="novo-user-form">
@@ -805,7 +830,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <div id="new-user-msg" class="form-msg" style="display:none"></div>
           </div>
         </div>
-        <div class="admin-section" style="margin-top:24px">
+        <div class="admin-section" id="adm-sec-fornecedores">
           <h2>Cadastro de Fornecedores</h2>
           <div id="forn-cad-wrap">
             <div style="display:flex;align-items:center;gap:8px">
@@ -824,7 +849,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
             <div style="font-size:11px;color:var(--text3);margin-top:6px">O CNPJ é usado para evitar duplicidade. Qualquer usuário também pode cadastrar pelo dropdown em <strong>Montar Pedido</strong>.</div>
           </div>
         </div>
-        <div class="admin-section" style="margin-top:24px">
+        <div class="admin-section" id="adm-sec-loja">
           <h2>Saldo da Loja por grupo</h2>
           <p style="font-size:11px;color:var(--text3);margin:-4px 0 10px">Por padrão o sistema usa só o estoque dos depósitos (não conta a loja). Marque aqui os grupos cujo estoque na <strong>loja</strong> é confiável: para eles, o saldo da loja é <strong>somado</strong> ao estoque no cálculo de compra, para o sistema não mandar comprar o que já existe na loja.</p>
           <div style="display:flex;align-items:center;gap:8px">
@@ -834,7 +859,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div id="gloja-list"><div style="color:var(--text3)">Carregando...</div></div>
           <div class="manual-tip" style="margin-top:8px">⏱️ A mudança será aplicada no <strong>próximo sync de produtos</strong> — o "comprar" e o status são recalculados durante a sincronização, não em tempo real.</div>
         </div>
-        <div class="admin-section" style="margin-top:24px">
+        <div class="admin-section" id="adm-sec-novidades">
           <h2>Novidades / Avisos</h2>
           <p style="font-size:11px;color:var(--text3);margin:-4px 0 10px">A novidade <strong>mais recente</strong> aparece em um pop-up quando cada usuário abre o sistema. Quem clicar em <strong>"Não exibir novamente"</strong> só volta a ver um pop-up quando houver uma novidade <strong>mais nova</strong> (a lembrança fica no navegador de cada um). Editar uma novidade não a reexibe para quem já dispensou — para avisar todo mundo de novo, publique uma nova.</p>
           <div class="novo-user-form" style="margin-top:0">
@@ -855,6 +880,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           </div>
           <div id="novid-list"><div style="color:var(--text3)">Carregando...</div></div>
         </div>
+        </div><!-- /admin-content -->
       </div>
     </div>
 
@@ -1206,7 +1232,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div class="manual-card" onclick="toggleManual(this)">
             <div class="manual-header"><i class="ti ti-settings"></i> 17. Admin (somente administradores)</div>
             <div class="manual-body">
-              <p>A aba <strong>Admin</strong> só aparece para usuários com perfil de administrador.</p>
+              <p>A aba <strong>Admin</strong> só aparece para usuários com perfil de administrador. Dentro dela, um <strong>menu lateral</strong> à esquerda lista as seções (Usuários, Fornecedores, Saldo da Loja, Novidades) e a área à direita mostra uma seção por vez.</p>
               <p><strong>Gerenciar Usuários:</strong></p>
               <ul>
                 <li>Criar novo usuário (login + nome + senha)</li>
@@ -1843,7 +1869,7 @@ function switchTab(id,el){
   el.classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if(id==='cotacoes')renderCotacoes();
-  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();carregarGrupoConfig();carregarNovidadesAdmin();}
+  if(id==='admin')switchAdminSec('usuarios'); // sempre abre a 1ª seção do menu lateral
   if(id==='indicadores')carregarIndicadores();
   if(id==='historico'){abrirAbaHistorico();}
   if(id==='fluxo-caixa')carregarFluxoCaixa();
@@ -1983,6 +2009,23 @@ function removerNovidade(id){
     carregarNovidadesAdmin();
   })
   .catch(function(){novidMsg('Erro de conexão.',false)});
+}
+
+// ── ADMIN: menu lateral de seções (uma visível por vez) ──
+// Só reorganização visual: cada seção mantém seus ids/forms/funções. Ao abrir uma
+// seção, chama o carregador que antes rodava todo junto ao entrar na aba Admin.
+var ADMIN_SEC_LOADERS={
+  usuarios:function(){carregarUsuarios()},
+  fornecedores:function(){renderFornecedoresCadastrados()},
+  loja:function(){carregarGrupoConfig()},
+  novidades:function(){carregarNovidadesAdmin()}
+};
+function switchAdminSec(key){
+  if(!ADMIN_SEC_LOADERS[key])key='usuarios';
+  document.querySelectorAll('#admin-menu .adm-nav-item').forEach(function(b){b.classList.toggle('active',b.dataset.adm===key)});
+  document.querySelectorAll('#admin-content .admin-section').forEach(function(sec){sec.classList.toggle('active',sec.id==='adm-sec-'+key)});
+  var c=document.getElementById('admin-content');if(c)c.scrollTop=0;
+  try{ADMIN_SEC_LOADERS[key]()}catch(e){console.error('admin sec',key,e)}
 }
 
 // ── ADMIN: grupos que somam o saldo da LOJA ao estoque ──
