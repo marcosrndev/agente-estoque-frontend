@@ -391,6 +391,9 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .gloja-row input{cursor:pointer;margin:0}
 .gloja-nome{flex:1;font-size:12px}
 .gloja-badge{font-size:9px;font-weight:600;background:var(--blue);color:#fff;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+/* Tag do item "Indisponível na Compra" (Cronos): fora do ranking/contagem de críticos, mas visível */
+.indisp-badge{font-size:9px;font-weight:600;background:var(--red);color:#fff;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;white-space:nowrap;margin-right:5px;vertical-align:1px}
+.pn.indisp-nome{font-weight:700}
 .user-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
 .user-card .u-name{flex:1;font-size:13px;font-weight:500}
 .user-card .u-info{font-size:11px;color:var(--text3)}
@@ -886,6 +889,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p><span class="urg a">Atenção</span> — cobre o mínimo, mas não chega ao máximo</p>
               <p><span class="urg o">Em estoque</span> — cobre o máximo (nada a comprar)</p>
               <p><span class="urg s">Sem planejamento</span> — produto sem estoque mín/máx cadastrados no Cronos; sem cálculo de compra. Cadastre o mín/máx para o item entrar na régua.</p>
+              <p><span class="indisp-badge">Indisponível p/ compra</span> — produto marcado com o checkbox "Indisponível na Compra" no Cronos. Continua visível (nome em negrito, com esta tag), mas <strong>não conta</strong> no contador de críticos, nos indicadores nem no ranking de Urgentes. Desmarque no Cronos para o item voltar às métricas (vale a partir do próximo sync).</p>
               <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo, já <strong>descontando o que está a chegar</strong> (pedido fornecedor) — fórmula: (mínimo − (estoque atual + pedido fornecedor)) ÷ mínimo. 100% = zerado.</p>
               <p><strong>Classe ABC do item:</strong> vem do ERP — A é o que mais gera receita, C o que menos. Em conflito, priorize A.</p>
               <p><strong>Prioridade dos grupos (#1, #2, #3...):</strong> calculada automaticamente por:</p>
@@ -1479,6 +1483,11 @@ function urg(p){
   return disp<min?'c':disp<max?'a':'o';
 }
 function urgL(u){return u==='c'?'Crítico':u==='a'?'Atenção':u==='s'?'Sem planejamento':'Em estoque'}
+// "Indisponível na Compra" (checkbox do Cronos, ZProdutosCompl). O item mantém seus
+// comprar_min/status reais e continua VISÍVEL nas telas, mas fica FORA das métricas de
+// compra: ranking de Urgentes, contadores de críticos e indicadores (análogo ao "sem
+// planejamento"). Sinalizado com a tag vermelha "Indisponível p/ compra".
+function isIndisp(p){return p.indisponivel_compra===true}
 function urgScore(p){if(p.est_min<=0)return 0;return(p.est_min-(p.estoque_atual+p.pedido_forn))/p.est_min}
 // Necessidade de compra (regra oficial da planilha): item abaixo do mínimo, OU dentro
 // do mínimo porém abaixo do máximo. Equivale aos itens "a comprar" (Crítico + Atenção);
@@ -1985,7 +1994,8 @@ function checarSyncInicial(){
 }
 
 function aplicarDados(){
-  var crit=products.filter(function(p){return urg(p)==='c'}).length;
+  // Indisponíveis p/ compra não contam como críticos (visíveis, mas fora das métricas).
+  var crit=products.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
   var atenc=products.filter(function(p){return urg(p)==='a'}).length;
   var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
   document.getElementById('sbadge').textContent=products.length+' produtos';
@@ -2045,13 +2055,13 @@ function sortItemsByUrgency(prods){
 function updateSidebar(){
   var gs=getGroups(),list=document.getElementById('cat-list');list.innerHTML='';
   var all=document.createElement('button');all.className='cbt active';
-  var tc=products.filter(function(p){return urg(p)==='c'}).length;
+  var tc=products.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
   all.innerHTML='<span class="cn">Todos os grupos</span><span class="cc '+(tc>0?'r':'')+'">'+products.length+'</span>';
   all.onclick=function(){ask('Faça um resumo geral: grupos mais críticos, total a comprar, destaques.');setAct(all)};
   list.appendChild(all);
   gs.forEach(function(g){
     var pr=products.filter(function(p){return p.grupo===g});
-    var cr=pr.filter(function(p){return urg(p)==='c'}).length;
+    var cr=pr.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
     var at=pr.filter(function(p){return urg(p)==='a'}).length;
     var btn=document.createElement('button');btn.className='cbt';
     btn.innerHTML='<span class="cn">'+g+'</span><span class="cc '+(cr>0?'r':at>0?'w':'')+'">'+pr.length+'</span>';
@@ -2459,7 +2469,11 @@ var CAMADA_IDX={A:0,B:1,C:2,'':3};
 // tanto pelos "Normais" (rankGruposUrgentes) quanto pelos Favoritos — uma única régua,
 // sem duplicar lógica. NÃO filtra nem ordena: devolve o estado cru do grupo.
 function estadoDoGrupo(g,items){
-  var emFalta=items.filter(function(p){return p.comprar_min>0});         // abaixo do mínimo MESMO com pedido_forn (comprar_min = est_min − (estoque+pedido))
+  // "Em falta" = comprar_min>0 E comprável: item marcado "Indisponível na Compra" no
+  // Cronos NÃO entra (não conta no furo/camada/contagens nem faz o grupo entrar no
+  // ranking; grupo só com indisponíveis em falta fica com compra=0 e sai). O item
+  // segue visível na tela de Montar Pedido, com a tag vermelha.
+  var emFalta=items.filter(function(p){return p.comprar_min>0&&!isIndisp(p)});  // abaixo do mínimo MESMO com pedido_forn (comprar_min = est_min − (estoque+pedido))
   var cnt={A:0,B:0,C:0,'':0};
   var lucroFalta=0;                                                       // lucro SÓ dos itens em falta
   emFalta.forEach(function(p){cnt[curvaDe(p)]++;lucroFalta+=lucroItem(p);});
@@ -2756,10 +2770,10 @@ function _renderPedidoInterno(meses){
       tbl=document.getElementById('ped-tbl-wrap'),info=document.getElementById('ped-info');
   if(selectedGroups.size===0){empty.style.display='flex';stats.style.display='none';tbl.style.display='none';info.textContent='';renderFornecedoresBar();return}
   empty.style.display='none';stats.style.display='flex';tbl.style.display='block';
-  var crit=selP.filter(function(p){return urg(p)==='c'}).length;
+  var crit=selP.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
   var semPlan=selP.filter(function(p){return urg(p)==='s'}).length;
-  var compraCount=selP.filter(function(p){return p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max)}).length;
+  var compraCount=selP.filter(function(p){return !isIndisp(p)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max))}).length;
   stats.innerHTML='<div class="ps"><div class="ps-n">'+selP.length+'</div><div class="ps-l">'+(showAllItems?'total':'a comprar')+'</div></div>'
     +'<div class="ps"><div class="ps-n r">'+crit+'</div><div class="ps-l">críticos</div></div>'
     +'<div class="ps"><div class="ps-n w">'+atenc+'</div><div class="ps-l">atenção</div></div>'
@@ -2897,7 +2911,11 @@ function _renderPedidoInterno(meses){
           +((p.codigo_barras&&String(p.codigo_barras).trim())?''
             :' <i class="ti ti-barcode-off" title="Sem código de barras — cadastrar no Cronos" style="color:var(--yellow);font-size:11px;vertical-align:-1px;opacity:.85"></i>')
         +'</span>'
-        +'<span class="pn" title="'+p.nome+'"><i class="ti ti-history hp-ico" title="Ver histórico de preços" onclick="abrirHistoricoProduto(this)"></i>'+p.nome+'</span>'
+        // Indisponível p/ compra: tag vermelha na frente + nome em NEGRITO (a tag tem
+        // precedência visual sobre qualquer outra condição do item, ex. sem planejamento).
+        +'<span class="pn'+(isIndisp(p)?' indisp-nome':'')+'" title="'+p.nome+'"><i class="ti ti-history hp-ico" title="Ver histórico de preços" onclick="abrirHistoricoProduto(this)"></i>'
+          +(isIndisp(p)?'<span class="indisp-badge" title="Marcado como Indisponível na Compra no Cronos — fora do ranking de urgentes e da contagem de críticos">Indisponível p/ compra</span>':'')
+          +p.nome+'</span>'
         // Pedido Fornecedor (qtd já pedida, a chegar) — somente exibição do dado de origem
         +'<span class="pcol" title="Já pedido ao fornecedor, a chegar"'+(p.pedido_forn>0?' style="color:var(--blue);font-weight:600"':'')+'>'+(p.pedido_forn>0?fmtN(p.pedido_forn):'—')+'</span>'
         // Estoque atual
@@ -3362,7 +3380,7 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
       var vt=menor>0?menor*qtdUsar:0;
       totalGeral+=vt;
       var row=[
-        p.codigo,p.nome,p.un,p.estoque_atual
+        p.codigo,(isIndisp(p)?'[INDISPONÍVEL P/ COMPRA] ':'')+p.nome,p.un,p.estoque_atual
       ];
       precosLinha.forEach(function(v){row.push(v>0?v:'')});
       row.push(menor>0?menor:'');
@@ -3447,7 +3465,7 @@ function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
       var isOk=u==='o'&&p.comprar_min<=0;
       var total=preco>0&&qtdManual>0?preco*qtdManual:preco>0&&Math.ceil(qtdSug)>0?preco*Math.ceil(qtdSug):'';
       wsData.push([
-        p.codigo, p.nome, p.un,
+        p.codigo, (isIndisp(p)?'[INDISPONÍVEL P/ COMPRA] ':'')+p.nome, p.un,
         isOk?'':preco||'',
         (isOk||isSemPlan)?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
         isOk?'':total,
@@ -4011,8 +4029,10 @@ function validarExportacao(fornId){
   products.forEach(function(p){
     if(!selectedGroups.has(p.grupo))return;
     var u=urg(p);
-    if(u==='c'&&!precosForn[p.codigo])critSemPreco++;
-    if(p.comprar_min>0&&!qtds[p.codigo])semQtd++;
+    // Indisponível p/ compra não gera alerta (não será comprado): nem "crítico sem
+    // preço" (que bloqueia exportação) nem "a comprar sem qtd".
+    if(u==='c'&&!isIndisp(p)&&!precosForn[p.codigo])critSemPreco++;
+    if(p.comprar_min>0&&!isIndisp(p)&&!qtds[p.codigo])semQtd++;
     // suspeitos: preço > 30% acima da menor cotação histórica
     var preco=precosForn[p.codigo];
     if(preco){
@@ -4071,9 +4091,10 @@ function renderIndicadores(d){
   var valConcl=valStatus.concluido||0;
   var valEnv=valStatus.pedido_enviado||0;
   var totalProds=products.length;
-  var critic=products.filter(function(p){return urg(p)==='c'}).length;
+  // Indisponíveis p/ compra fora das métricas (mesma régua do contador do topo/ranking).
+  var critic=products.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
   var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
-  var aComprar=products.filter(function(p){return p.comprar_min>0}).length;
+  var aComprar=products.filter(function(p){return p.comprar_min>0&&!isIndisp(p)}).length;
   var topForn=d.top_fornecedores||[];
 
   var html='<div class="ind-section"><h3>Estoque</h3><div class="ind-grid">'
@@ -4731,7 +4752,7 @@ function addBot(html,tbl){
   if(tbl&&tbl.length){
     var rows=tbl.slice(0,12).map(function(p){
       var u=urg(p),abc=p.abc==='A'?'color:var(--red);font-weight:600':p.abc==='B'?'color:var(--yellow);font-weight:600':'color:var(--text3)';
-      return'<div class="ptbl-r"><span class="pn" title="'+p.nome+'">'+p.nome+'</span>'
+      return'<div class="ptbl-r"><span class="pn'+(isIndisp(p)?' indisp-nome':'')+'" title="'+p.nome+'">'+(isIndisp(p)?'<span class="indisp-badge">Indisponível p/ compra</span>':'')+p.nome+'</span>'
         +'<span class="pnum" style="'+abc+'">'+p.abc+'</span>'
         +'<span class="pnum">'+fmtN(p.estoque_atual)+'</span>'
         +'<span class="pnum">'+fmtN(p.est_min)+'</span>'
@@ -4749,10 +4770,11 @@ function rmTyping(){var e=document.getElementById('typ');if(e)e.remove()}
 function buildCtx(filterText){
   if(!products.length)return'Nenhum produto.';
   var gs=getGroups();
-  var crit=products.filter(function(p){return urg(p)==='c'}).length;
+  var crit=products.filter(function(p){return urg(p)==='c'&&!isIndisp(p)}).length;
   var semPlan=products.filter(function(p){return urg(p)==='s'}).length;
-  var resumo='RESUMO: '+products.length+' produtos | '+crit+' críticos | '+semPlan+' sem planejamento (sem mín/máx, não contam como críticos) | '+gs.length+' grupos\n'
-    +'LEGENDA STATUS: [C]=Crítico [A]=Atenção [O]=Em estoque [S]=Sem planejamento (mín/máx não cadastrados no Cronos)\n';
+  var indisp=products.filter(isIndisp).length;
+  var resumo='RESUMO: '+products.length+' produtos | '+crit+' críticos | '+semPlan+' sem planejamento (sem mín/máx, não contam como críticos) | '+indisp+' indisponíveis p/ compra (não contam como críticos nem entram no ranking) | '+gs.length+' grupos\n'
+    +'LEGENDA STATUS: [C]=Crítico [A]=Atenção [O]=Em estoque [S]=Sem planejamento (mín/máx não cadastrados no Cronos). Sufixo INDISP.COMPRA = marcado "Indisponível na Compra" no Cronos (não comprar)\n';
   var subset=[];
   if(filterText){
     var ft=filterText.toLowerCase();
@@ -4767,13 +4789,13 @@ function buildCtx(filterText){
     }else{subset=products.filter(function(p){return p.nome.toLowerCase().includes(ft)}).slice(0,50)}
   }
   if(!subset.length)return resumo;
-  return resumo+'PRODUTOS:\n'+subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Grp:'+p.grupo+' | ABC:'+p.abc+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | Urg:'+Math.round(urgScore(p)*100)+'%'}).join('\n');
+  return resumo+'PRODUTOS:\n'+subset.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | Grp:'+p.grupo+' | ABC:'+p.abc+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | Urg:'+Math.round(urgScore(p)*100)+'%'+(isIndisp(p)?' | INDISP.COMPRA':'')}).join('\n');
 }
 
 async function askGrp(grp){
   var text='O que precisa repor no grupo "'+grp+'"?';addUserMsg(text);addTyping();
   var sub=products.filter(function(p){return p.grupo===grp});
-  var ctx='GRUPO: '+grp+'\n'+sub.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | ABC:'+p.abc+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | Urg:'+Math.round(urgScore(p)*100)+'%'}).join('\n');
+  var ctx='GRUPO: '+grp+'\n'+sub.map(function(p){return'['+urg(p).toUpperCase()+'] '+p.nome+' | ABC:'+p.abc+' | Atual:'+p.estoque_atual+' | Min:'+p.est_min+' | CmpMin:'+p.comprar_min+' | Urg:'+Math.round(urgScore(p)*100)+'%'+(isIndisp(p)?' | INDISP.COMPRA':'')}).join('\n');
   var sys='Você é um agente de compras da Casa São José. Responda em português, sem markdown, use HTML: <strong>, <br>, •.\n\n'+ctx;
   try{
     var r=await fetch(BACKEND+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1200,system:sys,messages:[{role:'user',content:text}]})});
