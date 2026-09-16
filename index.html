@@ -405,6 +405,20 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .modal-box{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:20px;width:420px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:13px}
 .modal-box h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
+/* Pop-up de novidades (versão = id da novidade; "não exibir" fica no localStorage) */
+#novidade-overlay .modal-box{width:520px;max-width:calc(100vw - 32px)}
+.novid-meta{font-size:11px;color:var(--text3);margin-top:-6px}
+.novid-corpo{font-size:13px;line-height:1.55;color:var(--text);white-space:pre-wrap;max-height:55vh;overflow-y:auto}
+.novid-badge{font-size:9px;font-weight:600;background:var(--blue);color:#fff;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;white-space:nowrap}
+/* Admin: Novidades / Avisos */
+#novid-list{margin-top:10px;max-height:340px;overflow-y:auto}
+.novid-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
+.novid-card .nv-t{flex:1;min-width:0}
+.novid-card .nv-titulo{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.novid-card .nv-info{font-size:11px;color:var(--text3)}
+.novid-card.editing{border-color:var(--blue);background:var(--blue-bg)}
+.fld textarea{padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font);outline:none;resize:vertical;min-height:110px;line-height:1.45}
+.fld textarea:focus{border-color:var(--blue)}
 /* Painel Urgentes (ranking de grupos) */
 .urg-filtros{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .urg-fbtn{font-size:11px;padding:4px 11px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:var(--font)}
@@ -813,6 +827,27 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div id="gloja-list"><div style="color:var(--text3)">Carregando...</div></div>
           <div class="manual-tip" style="margin-top:8px">⏱️ A mudança será aplicada no <strong>próximo sync de produtos</strong> — o "comprar" e o status são recalculados durante a sincronização, não em tempo real.</div>
         </div>
+        <div class="admin-section" style="margin-top:24px">
+          <h2>Novidades / Avisos</h2>
+          <p style="font-size:11px;color:var(--text3);margin:-4px 0 10px">A novidade <strong>mais recente</strong> aparece em um pop-up quando cada usuário abre o sistema. Quem clicar em <strong>"Não exibir novamente"</strong> só volta a ver um pop-up quando houver uma novidade <strong>mais nova</strong> (a lembrança fica no navegador de cada um). Editar uma novidade não a reexibe para quem já dispensou — para avisar todo mundo de novo, publique uma nova.</p>
+          <div class="novo-user-form" style="margin-top:0">
+            <h3 id="novid-form-title">Publicar novidade</h3>
+            <div class="form-row" style="grid-template-columns:1fr">
+              <div class="fld"><label>Título</label><input id="novid-titulo" placeholder="Ex: Novidade: itens Indisponíveis para Compra" maxlength="200"></div>
+            </div>
+            <div class="form-row" style="grid-template-columns:1fr;margin-top:7px">
+              <div class="fld"><label>Texto</label><textarea id="novid-corpo" placeholder="Explique a novidade em texto simples. Quebras de linha são respeitadas."></textarea></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:9px">
+              <button class="btn primary" id="novid-btn-pub" onclick="salvarNovidade()"><i class="ti ti-speakerphone"></i> Publicar</button>
+              <button class="btn" id="novid-btn-cancel" onclick="cancelarEdicaoNovidade()" style="display:none">Cancelar edição</button>
+              <button class="btn" onclick="previewNovidade()" title="Ver como o pop-up ficará"><i class="ti ti-eye"></i> Prévia</button>
+              <span style="font-size:11px;color:var(--text3)">Imagem: em breve.</span>
+            </div>
+            <div id="novid-msg" class="form-msg" style="display:none"></div>
+          </div>
+          <div id="novid-list"><div style="color:var(--text3)">Carregando...</div></div>
+        </div>
       </div>
     </div>
 
@@ -1177,6 +1212,12 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <li>Cadastrar (Nome + CNPJ) — mesmo formulário do dropdown, com a mesma validação</li>
                 <li>Remover (soft delete — não some do histórico antigo, só não aparece mais no dropdown)</li>
               </ul>
+              <p><strong>Novidades / Avisos:</strong></p>
+              <ul>
+                <li>Publicar uma novidade (título + texto): ela aparece em um pop-up para cada usuário ao abrir o sistema</li>
+                <li>"Não exibir novamente" esconde o pop-up naquele navegador até sair uma novidade mais nova; "Fechar" só fecha por enquanto</li>
+                <li>Editar não reexibe para quem já dispensou; remover é soft delete (a anterior volta a valer)</li>
+              </ul>
               <div class="manual-tip">Quer dar permissão de admin pra alguém? É manual no banco — fale com o desenvolvedor.</div>
             </div>
           </div>
@@ -1227,6 +1268,19 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
       <button class="btn" style="margin-right:auto;font-size:11px;color:var(--text3)" onclick="loadSample()">Carregar exemplo</button>
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn primary" onclick="importData()"><i class="ti ti-check"></i> Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVIDADE (pop-up de atualização do sistema) -->
+<div id="novidade-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3><i class="ti ti-speakerphone" style="color:var(--blue)"></i> <span id="novid-pop-titulo">Novidade</span></h3>
+    <div class="novid-meta" id="novid-pop-meta"></div>
+    <div class="novid-corpo" id="novid-pop-corpo"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharNovidade()">Fechar</button>
+      <button class="btn primary" id="novid-pop-dismiss" onclick="dispensarNovidade()"><i class="ti ti-check"></i> Não exibir novamente</button>
     </div>
   </div>
 </div>
@@ -1772,7 +1826,7 @@ function doLogin(){
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
 function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];favoritosCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFavoritos();carregarFornecedoresCadastrados();checarSyncInicial();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFavoritos();carregarFornecedoresCadastrados();checarSyncInicial();carregarNovidadePopup();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -1781,10 +1835,142 @@ function switchTab(id,el){
   el.classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if(id==='cotacoes')renderCotacoes();
-  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();carregarGrupoConfig();}
+  if(id==='admin'){carregarUsuarios();renderFornecedoresCadastrados();carregarGrupoConfig();carregarNovidadesAdmin();}
   if(id==='indicadores')carregarIndicadores();
   if(id==='historico'){abrirAbaHistorico();}
   if(id==='fluxo-caixa')carregarFluxoCaixa();
+}
+
+// ── NOVIDADES / AVISOS: pop-up ao abrir o sistema ──
+// A "versão" da novidade é o id (identity crescente). O navegador guarda no
+// localStorage o id da última novidade dispensada ("Não exibir novamente"); o pop-up
+// só aparece se a novidade mais recente tiver id MAIOR. "Fechar" não grava nada: o
+// pop-up volta no próximo acesso. Lembrança por navegador, de propósito (sem banco).
+var NOVID_LS_KEY='agcompras_novidade_vista_id';
+var novidadeAtual=null;        // novidade exibida no pop-up
+var novidadesCache=[];         // lista do admin (mais recentes primeiro)
+var novidadeEditandoId=null;   // id em edição no painel admin (null = publicando nova)
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function novidadeVistaId(){try{return Number(localStorage.getItem(NOVID_LS_KEY)||0)||0}catch(e){return 0}}
+function carregarNovidadePopup(){
+  fetch(BACKEND+'/novidades').then(function(r){return r.json()}).then(function(data){
+    var lista=Array.isArray(data)?data:[];
+    if(!lista.length)return;
+    var ultima=lista[0];
+    lista.forEach(function(n){if(Number(n.id)>Number(ultima.id))ultima=n});
+    if(Number(ultima.id)>novidadeVistaId())mostrarNovidade(ultima,false);
+  }).catch(function(){});
+}
+function mostrarNovidade(n,preview){
+  novidadeAtual=n;
+  document.getElementById('novid-pop-titulo').textContent=n.titulo||'Novidade';
+  var meta=[];
+  if(n.publicado_em)meta.push('Publicado em '+fmtDateShort(n.publicado_em));
+  if(n.publicado_por&&n.publicado_por!=='sistema')meta.push('por '+n.publicado_por);
+  if(preview)meta.push('(prévia — nada foi salvo)');
+  document.getElementById('novid-pop-meta').textContent=meta.join(' · ');
+  document.getElementById('novid-pop-corpo').textContent=n.corpo||'';
+  document.getElementById('novid-pop-dismiss').style.display=preview?'none':'';
+  document.getElementById('novidade-overlay').style.display='flex';
+}
+function fecharNovidade(){document.getElementById('novidade-overlay').style.display='none';novidadeAtual=null}
+function dispensarNovidade(){
+  if(novidadeAtual&&novidadeAtual.id){try{localStorage.setItem(NOVID_LS_KEY,String(novidadeAtual.id))}catch(e){}}
+  fecharNovidade();
+}
+
+// ── ADMIN: publicar / listar / editar / remover novidades ──
+function novidMsg(txt,ok){
+  var m=document.getElementById('novid-msg');if(!m)return;
+  if(!txt){m.style.display='none';return}
+  m.className='form-msg '+(ok?'ok':'bad');m.innerHTML='<i class="ti ti-'+(ok?'check':'alert-circle')+'"></i> '+escHtml(txt);m.style.display='flex';
+  if(ok)setTimeout(function(){m.style.display='none'},4000);
+}
+function carregarNovidadesAdmin(){
+  fetch(BACKEND+'/novidades').then(function(r){return r.json()}).then(function(data){
+    novidadesCache=Array.isArray(data)?data:[];
+    renderNovidadesAdmin();
+  }).catch(function(){var el=document.getElementById('novid-list');if(el)el.innerHTML='<div style="color:var(--text3)">Não foi possível carregar.</div>'});
+}
+function renderNovidadesAdmin(){
+  var el=document.getElementById('novid-list');if(!el)return;
+  if(!novidadesCache.length){el.innerHTML='<div style="color:var(--text3)">Nenhuma novidade publicada.</div>';return}
+  var maxId=0;novidadesCache.forEach(function(n){if(Number(n.id)>maxId)maxId=Number(n.id)});
+  el.innerHTML=novidadesCache.map(function(n){
+    var atual=Number(n.id)===maxId;
+    return '<div class="novid-card'+(novidadeEditandoId===n.id?' editing':'')+'" id="novid-card-'+n.id+'">'
+      +'<div class="nv-t"><div class="nv-titulo" title="'+escHtml(n.titulo)+'">'+(atual?'<span class="novid-badge" style="margin-right:6px">ATUAL</span>':'')+escHtml(n.titulo)+'</div>'
+      +'<div class="nv-info">#'+n.id+' · '+(n.publicado_em?fmtDateShort(n.publicado_em):'—')+(n.publicado_por?' · '+escHtml(n.publicado_por):'')+'</div></div>'
+      +'<button class="btn" style="font-size:11px" title="Ver pop-up" onclick="previewNovidadeId('+n.id+')"><i class="ti ti-eye"></i></button>'
+      +'<button class="btn btn-key" title="Editar" onclick="editarNovidade('+n.id+')"><i class="ti ti-pencil"></i></button>'
+      +'<button class="btn danger" style="font-size:11px" title="Remover" onclick="removerNovidade('+n.id+')"><i class="ti ti-trash"></i></button>'
+      +'</div>';
+  }).join('');
+}
+function _novidadeForm(){
+  return {titulo:(document.getElementById('novid-titulo').value||'').trim(),corpo:(document.getElementById('novid-corpo').value||'').trim()};
+}
+function previewNovidade(){
+  var f=_novidadeForm();
+  if(!f.titulo&&!f.corpo){novidMsg('Preencha título e texto para ver a prévia.',false);return}
+  mostrarNovidade({id:0,titulo:f.titulo||'Novidade',corpo:f.corpo,publicado_por:currentUser?currentUser.username:'',publicado_em:new Date().toISOString()},true);
+}
+function previewNovidadeId(id){
+  var n=novidadesCache.find(function(x){return x.id===id});
+  if(n)mostrarNovidade(n,true);
+}
+function salvarNovidade(){
+  var f=_novidadeForm();
+  if(!f.titulo){novidMsg('Informe o título.',false);return}
+  if(!f.corpo){novidMsg('Informe o texto.',false);return}
+  var editando=novidadeEditandoId!==null;
+  var url=BACKEND+'/novidades'+(editando?'/'+novidadeEditandoId:'');
+  var btn=document.getElementById('novid-btn-pub');btn.disabled=true;
+  fetch(url,{method:editando?'PUT':'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({titulo:f.titulo,corpo:f.corpo,username:currentUser.username})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(!d.ok){novidMsg(d.error||'Erro ao salvar.',false);return}
+    novidMsg(editando?'Novidade atualizada.':'Novidade publicada! Ela aparecerá para os usuários no próximo acesso.',true);
+    cancelarEdicaoNovidade();
+    carregarNovidadesAdmin();
+  })
+  .catch(function(){novidMsg('Erro de conexão.',false)})
+  .then(function(){btn.disabled=false});
+}
+function editarNovidade(id){
+  var n=novidadesCache.find(function(x){return x.id===id});if(!n)return;
+  novidadeEditandoId=id;
+  document.getElementById('novid-titulo').value=n.titulo||'';
+  document.getElementById('novid-corpo').value=n.corpo||'';
+  document.getElementById('novid-form-title').textContent='Editar novidade #'+id;
+  document.getElementById('novid-btn-pub').innerHTML='<i class="ti ti-device-floppy"></i> Salvar alterações';
+  document.getElementById('novid-btn-cancel').style.display='';
+  novidMsg('');
+  renderNovidadesAdmin();
+  document.getElementById('novid-titulo').focus();
+}
+function cancelarEdicaoNovidade(){
+  novidadeEditandoId=null;
+  document.getElementById('novid-titulo').value='';
+  document.getElementById('novid-corpo').value='';
+  document.getElementById('novid-form-title').textContent='Publicar novidade';
+  document.getElementById('novid-btn-pub').innerHTML='<i class="ti ti-speakerphone"></i> Publicar';
+  document.getElementById('novid-btn-cancel').style.display='none';
+  renderNovidadesAdmin();
+}
+function removerNovidade(id){
+  var n=novidadesCache.find(function(x){return x.id===id});if(!n)return;
+  if(!confirm('Remover a novidade "'+n.titulo+'"?\n\nEla deixa de aparecer no pop-up. Se for a mais recente, a anterior volta a valer.'))return;
+  fetch(BACKEND+'/novidades/'+id,{method:'DELETE'})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(!d.ok){novidMsg(d.error||'Erro ao remover.',false);return}
+    if(novidadeEditandoId===id)cancelarEdicaoNovidade();
+    novidMsg('Novidade removida.',true);
+    carregarNovidadesAdmin();
+  })
+  .catch(function(){novidMsg('Erro de conexão.',false)});
 }
 
 // ── ADMIN: grupos que somam o saldo da LOJA ao estoque ──
