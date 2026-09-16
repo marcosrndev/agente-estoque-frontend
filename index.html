@@ -409,6 +409,13 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #novidade-overlay .modal-box{width:520px;max-width:calc(100vw - 32px)}
 .novid-meta{font-size:11px;color:var(--text3);margin-top:-6px}
 .novid-corpo{font-size:13px;line-height:1.55;color:var(--text);white-space:pre-wrap;max-height:55vh;overflow-y:auto}
+#novidade-overlay .modal-box{position:relative}
+.novid-x{position:absolute;top:10px;right:10px;width:26px;height:26px;border:none;background:transparent;color:var(--text3);font-size:16px;cursor:pointer;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center}
+.novid-x:hover{background:var(--bg2);color:var(--text)}
+#novidade-overlay .modal-box h3{padding-right:28px}
+.novid-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.novid-chk{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none}
+.novid-chk input{cursor:pointer;margin:0}
 .novid-badge{font-size:9px;font-weight:600;background:var(--blue);color:#fff;padding:1px 7px;border-radius:10px;display:inline-flex;align-items:center;white-space:nowrap}
 /* Admin: Novidades / Avisos */
 #novid-list{margin-top:10px;max-height:340px;overflow-y:auto}
@@ -1215,7 +1222,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p><strong>Novidades / Avisos:</strong></p>
               <ul>
                 <li>Publicar uma novidade (título + texto): ela aparece em um pop-up para cada usuário ao abrir o sistema</li>
-                <li>"Não exibir novamente" esconde o pop-up naquele navegador até sair uma novidade mais nova; "Fechar" só fecha por enquanto</li>
+                <li>Marcar "Não exibir novamente" e clicar OK esconde o pop-up naquele navegador até sair uma novidade mais nova; OK sem marcar (ou o X) só fecha por enquanto</li>
                 <li>Editar não reexibe para quem já dispensou; remover é soft delete (a anterior volta a valer)</li>
               </ul>
               <div class="manual-tip">Quer dar permissão de admin pra alguém? É manual no banco — fale com o desenvolvedor.</div>
@@ -1275,12 +1282,13 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
 <!-- MODAL NOVIDADE (pop-up de atualização do sistema) -->
 <div id="novidade-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box">
+    <button class="novid-x" title="Fechar (volta a aparecer no próximo acesso)" onclick="fecharNovidade()"><i class="ti ti-x"></i></button>
     <h3><i class="ti ti-speakerphone" style="color:var(--blue)"></i> <span id="novid-pop-titulo">Novidade</span></h3>
     <div class="novid-meta" id="novid-pop-meta"></div>
     <div class="novid-corpo" id="novid-pop-corpo"></div>
-    <div class="modal-btns">
-      <button class="btn" onclick="fecharNovidade()">Fechar</button>
-      <button class="btn primary" id="novid-pop-dismiss" onclick="dispensarNovidade()"><i class="ti ti-check"></i> Não exibir novamente</button>
+    <div class="novid-foot">
+      <label class="novid-chk" id="novid-pop-dismiss" title="Marque para não ver esta novidade de novo neste navegador"><input type="checkbox" id="novid-pop-chk"> Não exibir novamente</label>
+      <button class="btn primary" onclick="okNovidade()"><i class="ti ti-check"></i> OK</button>
     </div>
   </div>
 </div>
@@ -1870,10 +1878,14 @@ function mostrarNovidade(n,preview){
   if(preview)meta.push('(prévia — nada foi salvo)');
   document.getElementById('novid-pop-meta').textContent=meta.join(' · ');
   document.getElementById('novid-pop-corpo').textContent=n.corpo||'';
+  document.getElementById('novid-pop-chk').checked=false; // sempre desmarcado ao abrir
   document.getElementById('novid-pop-dismiss').style.display=preview?'none':'';
   document.getElementById('novidade-overlay').style.display='flex';
 }
+// X no canto (e OK com o checkbox desmarcado): fecha agora, sem gravar — reaparece no próximo acesso.
 function fecharNovidade(){document.getElementById('novidade-overlay').style.display='none';novidadeAtual=null}
+// OK: com o checkbox marcado grava o id (não reaparece até sair novidade mais nova); desmarcado só fecha.
+function okNovidade(){if(document.getElementById('novid-pop-chk').checked)dispensarNovidade();else fecharNovidade()}
 function dispensarNovidade(){
   if(novidadeAtual&&novidadeAtual.id){try{localStorage.setItem(NOVID_LS_KEY,String(novidadeAtual.id))}catch(e){}}
   fecharNovidade();
