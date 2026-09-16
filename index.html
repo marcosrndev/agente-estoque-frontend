@@ -356,6 +356,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .item-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:11px;text-align:right;background:var(--bg);color:var(--text);font-family:var(--font);-moz-appearance:textfield}
 .item-input::-webkit-outer-spin-button,.item-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .item-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)}
+.item-input:disabled{opacity:.45;cursor:not-allowed;background:var(--bg3);color:var(--text3)}
 .auto-btn{font-size:9px;padding:1px 5px;border-radius:4px;border:1px solid var(--blue-light);background:var(--blue-bg);color:var(--blue);cursor:pointer;white-space:nowrap;font-family:var(--font)}
 .auto-btn:hover{background:var(--blue);color:#fff}
 #panel-cotacoes{flex-direction:column;overflow:hidden}
@@ -889,7 +890,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
               <p><span class="urg a">Atenção</span> — cobre o mínimo, mas não chega ao máximo</p>
               <p><span class="urg o">Em estoque</span> — cobre o máximo (nada a comprar)</p>
               <p><span class="urg s">Sem planejamento</span> — produto sem estoque mín/máx cadastrados no Cronos; sem cálculo de compra. Cadastre o mín/máx para o item entrar na régua.</p>
-              <p><span class="indisp-badge">Indisponível p/ compra</span> — produto marcado com o checkbox "Indisponível na Compra" no Cronos. Continua visível (nome em negrito, com esta tag), mas <strong>não conta</strong> no contador de críticos, nos indicadores nem no ranking de Urgentes. Desmarque no Cronos para o item voltar às métricas (vale a partir do próximo sync).</p>
+              <p><span class="indisp-badge">Indisponível p/ compra</span> — produto marcado com o checkbox "Indisponível na Compra" no Cronos. Continua visível (nome em negrito, com esta tag), mas <strong>não conta</strong> no contador de críticos, nos indicadores nem no ranking de Urgentes. Em Montar Pedido o campo <strong>Qtd</strong> fica bloqueado (cinza) e o <strong>Auto-preencher Qtd</strong> pula o item; ele também sai dos totais e das exportações (Excel/ERP). Desmarque no Cronos para o item voltar às métricas (vale a partir do próximo sync).</p>
               <p style="margin-top:8px"><strong>Urgência %:</strong> quanto falta para atingir o mínimo, já <strong>descontando o que está a chegar</strong> (pedido fornecedor) — fórmula: (mínimo − (estoque atual + pedido fornecedor)) ÷ mínimo. 100% = zerado.</p>
               <p><strong>Classe ABC do item:</strong> vem do ERP — A é o que mais gera receita, C o que menos. Em conflito, priorize A.</p>
               <p><strong>Prioridade dos grupos (#1, #2, #3...):</strong> calculada automaticamente por:</p>
@@ -1646,11 +1647,15 @@ function calcVt(cod,preco,qtd,qtdFallback){
   }
 }
 
+// Qtd de compra efetiva da linha: input desabilitado (item indisponível p/ compra) conta como 0,
+// mesmo que ainda exiba um valor antigo — não entra em Valor Total, totais nem exportações.
+function qtdDaLinha(qi){return(qi&&!qi.disabled)?pNum(qi.value):0}
+
 function onPrecoChange(input,qtdSug,grupo){
   var preco=pNum(input.value);
   var row=input.closest('.ptr');
   var qi=row?row.querySelector('.qtd-input'):null;
-  var qtd=qi?pNum(qi.value):0;
+  var qtd=qtdDaLinha(qi);
   // Só calcula total se QTD manual também estiver preenchida
   calcVt(input.dataset.cod,preco,qtd,0);
   atualizarTotais();
@@ -1733,6 +1738,7 @@ function autoFillQtd(grupo){
     if(!qi||!cod)return;
     var p=products.find(function(x){return x.codigo===cod&&x.grupo===grupo});
     if(!p)return;
+    if(isIndisp(p)||qi.disabled)return; // indisponível p/ compra: não sugere quantidade
     var qtd=calcQtdMeses(p,meses);
     qi.value=Math.ceil(qtd);
     onQtdChange(qi,qtd,grupo);
@@ -2859,7 +2865,7 @@ function _renderPedidoInterno(meses){
         melhorPreco=menor;
       }
       var initQtd=savedQtd>0?savedQtd:0;
-      var initVt=melhorPreco>0&&initQtd>0?'R$ '+fmtN(melhorPreco*initQtd):'—';
+      var initVt=melhorPreco>0&&initQtd>0&&!isIndisp(p)?'R$ '+fmtN(melhorPreco*initQtd):'—';
       var gEsc=g.replace(/'/g,"\\'");
 
       // Colunas de fornecedor (com pista do histórico abaixo do input)
@@ -2924,8 +2930,9 @@ function _renderPedidoInterno(meses){
         +fornCells
         // Preço / Melhor preço
         +precoCell
-        // Qtd
+        // Qtd — indisponível p/ compra: input DESABILITADO (não apaga valor que já exista, só bloqueia digitação)
         +'<span class="pcol" style="padding:1px"><input class="item-input qtd-input" type="text" inputmode="decimal" placeholder="qtd"'
+            +(isIndisp(p)?' disabled title="Item indisponível para compra no Cronos — quantidade bloqueada"':'')
             +' value="'+(savedQtd?fmtQtdInput(savedQtd):'')+'"'
             +' data-cod="'+p.codigo+'" data-grupo-key="'+g+'" data-qtd-sug="'+qtdSug+'"'
             +' oninput="marcarEdicaoPedido()"'
@@ -3057,7 +3064,7 @@ function atualizarMelhorPreco(codigo){
   var row=inputs[0].closest('.ptr');
   if(row){
     var qi=row.querySelector('.qtd-input');
-    var qtd=qi?pNum(qi.value):0;
+    var qtd=qtdDaLinha(qi);
     calcVt(codigo,menor,qtd,0);
   }
 }
@@ -3074,7 +3081,7 @@ function atualizarTotais(){
   fornecedoresCols.forEach(function(f){fornTot[f.id]=0});
   document.querySelectorAll('#ped-tbl-wrap .ptr').forEach(function(row){
     var qi=row.querySelector('.qtd-input');
-    var qtd=qi?pNum(qi.value):0;
+    var qtd=qtdDaLinha(qi); // indisponível p/ compra = 0
     if(qtd>0)qtdGeral+=qtd;
     var melhor=0;
     if(hasForn){
@@ -3117,6 +3124,7 @@ function _coletarPrecosQtds(fornId){
   // fornId: null/undefined = preço único; 'best' = melhor preço; <id> = preço daquele fornecedor
   var precos={},qtds={};
   document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    if(qi.disabled)return; // indisponível p/ compra: não exporta quantidade
     var cod=qi.dataset.cod;if(cod&&qi.value){var v=pNum(qi.value);if(v>0)qtds[cod]=v;}
   });
   if(fornId&&fornId!=='best'){
@@ -3375,8 +3383,9 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
       var isOk=u==='o'&&p.comprar_min<=0;
       var precosLinha=fornIds.map(function(fid){return precosForn[fid][p.codigo]||0});
       var menor=0;precosLinha.forEach(function(v){if(v>0&&(menor===0||v<menor))menor=v});
+      var semCompra=isOk||isSemPlan||isIndisp(p); // indisponível p/ compra: sem qtd nem valor
       var qtdManual=qtds[p.codigo]||0;
-      var qtdUsar=qtdManual>0?qtdManual:Math.ceil(qtdSug);
+      var qtdUsar=semCompra?0:qtdManual>0?qtdManual:Math.ceil(qtdSug);
       var vt=menor>0?menor*qtdUsar:0;
       totalGeral+=vt;
       var row=[
@@ -3384,7 +3393,7 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
       ];
       precosLinha.forEach(function(v){row.push(v>0?v:'')});
       row.push(menor>0?menor:'');
-      row.push((isOk||isSemPlan)?'':qtdManual>0?qtdManual:Math.ceil(qtdSug));
+      row.push(semCompra?'':qtdManual>0?qtdManual:Math.ceil(qtdSug));
       row.push(menor>0&&qtdUsar>0?menor*qtdUsar:'');
       row.push((isOk||isSemPlan)?'':p.comprar_min);
       row.push((isOk||isSemPlan)?'':Math.ceil(qtdSug));
@@ -3458,16 +3467,17 @@ function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
       var urgPct=isSemPlan?'—':us>=1?'100%':us>0?Math.min(100,Math.round(us*100))+'%':'OK';
       var qtdSug=calcQtdMeses(p,meses);
       var preco=precos[p.codigo]||precos[safeCod]||0;
+      var isOk=u==='o'&&p.comprar_min<=0;
+      var semCompra=isOk||isSemPlan||isIndisp(p); // indisponível p/ compra: sem qtd nem total
       var qtdManual=qtds[p.codigo]||qtds[safeCod]||0;
-      var qtdUsar=qtdManual>0?qtdManual:Math.ceil(qtdSug);
+      var qtdUsar=semCompra?0:qtdManual>0?qtdManual:Math.ceil(qtdSug);
       var vt=preco>0?preco*qtdUsar:0;
       totalGeral+=vt;
-      var isOk=u==='o'&&p.comprar_min<=0;
-      var total=preco>0&&qtdManual>0?preco*qtdManual:preco>0&&Math.ceil(qtdSug)>0?preco*Math.ceil(qtdSug):'';
+      var total=semCompra?'':preco>0&&qtdManual>0?preco*qtdManual:preco>0&&Math.ceil(qtdSug)>0?preco*Math.ceil(qtdSug):'';
       wsData.push([
         p.codigo, (isIndisp(p)?'[INDISPONÍVEL P/ COMPRA] ':'')+p.nome, p.un,
         isOk?'':preco||'',
-        (isOk||isSemPlan)?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
+        semCompra?'':qtdManual>0?qtdManual:Math.ceil(qtdSug),
         isOk?'':total,
         fid?nomeForn:'',
         p.estoque_atual, p.est_min, p.est_max,
@@ -4023,6 +4033,7 @@ function validarExportacao(fornId){
     });
   }
   document.querySelectorAll('#ped-tbl-wrap .qtd-input').forEach(function(qi){
+    if(qi.disabled)return;
     var cod=qi.dataset.cod;var v=pNum(qi.value);if(cod&&v>0)qtds[cod]=v;
   });
   var critSemPreco=0,semQtd=0,suspeitos=[];
