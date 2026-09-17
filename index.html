@@ -22,7 +22,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:100vh}
-#app{display:flex;flex-direction:column;height:100vh;max-width:1500px;margin:0 auto;background:var(--bg);box-shadow:var(--shadow-lg)}
+/* App ocupa a largura TOTAL da janela (antes: max-width:1500px + margin:0 auto deixava faixas vazias nas laterais) */
+#app{display:flex;flex-direction:column;height:100vh;width:100%;background:var(--bg)}
 #topbar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .logo-wrap{display:flex;align-items:center;gap:8px}
 .logo-wrap img{height:36px;width:auto}
@@ -73,7 +74,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #imp-btn2:hover{background:var(--bg);color:var(--text2)}
 #chat-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
-.msg{max-width:90%;display:flex;flex-direction:column;gap:2px}
+.msg{max-width:min(90%,960px);display:flex;flex-direction:column;gap:2px} /* limite de leitura só na bolha, em telas largas */
 .msg.u{align-self:flex-end;align-items:flex-end}.msg.b{align-self:flex-start;align-items:flex-start}
 .bbl{padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.6}
 .msg.u .bbl{background:var(--blue);color:#fff}
@@ -98,8 +99,16 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:bk 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes bk{0%,80%,100%{opacity:.2}40%{opacity:1}}
-#ped-wrap{flex:1;display:flex;overflow:hidden;min-height:0}
-#ped-sidebar{width:220px;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0}
+#ped-wrap{flex:1;display:flex;overflow:hidden;min-height:0;position:relative}
+#ped-sidebar{width:220px;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .2s ease}
+/* Filhos mantem a largura util (220px - 1px de borda) durante a animacao: o conteudo e cortado, nao espremido */
+#ped-sidebar>*{min-width:219px}
+/* Lateral oculta: colapsa totalmente; a tabela ocupa a largura liberada. Sempre inicia aberta (sem persistencia). */
+#ped-wrap.side-off #ped-sidebar{width:0;border-right:none}
+/* Botao de ocultar/mostrar a lateral: fica sobre a borda lateral/tabela, no meio da altura */
+#ped-side-toggle{position:absolute;left:220px;top:50%;transform:translate(-50%,-50%);width:18px;height:44px;padding:0 0 2px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text3);font-size:18px;line-height:1;font-family:var(--font);cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:left .2s ease,transform .2s ease}
+#ped-side-toggle:hover{color:var(--blue);border-color:var(--blue-light);background:var(--blue-bg)}
+#ped-wrap.side-off #ped-side-toggle{left:0;transform:translate(0,-50%);border-left:none;border-radius:0 9px 9px 0}
 #ped-search-wrap{padding:8px 10px;border-bottom:1px solid var(--border);position:relative}
 #ped-search{width:100%;padding:6px 26px 6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font);outline:none}
 #ped-search:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)}
@@ -116,8 +125,9 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .gitem-count{font-size:10px;opacity:.75;flex-shrink:0}
 .gitem-icon{font-size:12px;flex-shrink:0}
 .gitem-check{font-size:11px;flex-shrink:0;color:inherit}
-#ped-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-#meses-bar{display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#ped-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0}
+#meses-bar{display:flex;align-items:center;gap:8px;padding:3px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#meses-bar .btn{padding:4px 10px}
 #meses-bar label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
 #meses-sel{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font)}
 #cob-info{font-size:11px;color:var(--text3)}
@@ -125,33 +135,38 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #save-bar{display:flex;align-items:center;gap:6px;font-size:11px;margin-left:auto}
 #save-indicator{color:var(--text3)}
 #ped-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
-#ped-stats{display:flex;gap:7px;padding:8px 14px;flex-shrink:0}
-.ps{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:7px;text-align:center}
-.ps-n{font-size:16px;font-weight:600;color:var(--text);line-height:1}
+/* Contadores do grupo: linha fina de badges (antes eram 4 cards altos) */
+#ped-stats{display:flex;align-items:center;flex-wrap:wrap;gap:0;padding:4px 14px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border2)}
+.ps{display:inline-flex;align-items:baseline;gap:5px;padding:0 7px}
+.ps:not(:last-child)::after{content:'·';margin-left:2px;color:var(--text3);opacity:.55;font-weight:700}
+.ps-n{font-size:12px;font-weight:700;color:var(--text);line-height:1.4}
 .ps-n.r{color:var(--red)}.ps-n.w{color:var(--yellow)}
-.ps-l{font-size:10px;color:var(--text3);margin-top:2px}
+.ps-l{font-size:11px;color:var(--text3)}
 #ped-tbl-wrap{border-top:1px solid var(--border);overflow:auto;flex:1;min-height:0}
-.pth{display:grid;gap:3px;padding:5px 10px;background:var(--bg3);color:var(--text3);font-size:9px;font-weight:600;text-transform:uppercase;position:sticky;top:0;z-index:2}
-.ptr{display:grid;gap:3px;padding:5px 10px;border-top:1px solid var(--border2);align-items:center}
+/* Cabecalho da tabela: 1 linha fixa (22px). O .grph sticky abaixo depende
+   dessa altura — manter .pth{min-height} e .grph{top} sempre iguais. */
+.pth{display:grid;gap:3px;padding:4px 10px;min-height:22px;align-items:center;background:var(--bg3);color:var(--text3);font-size:9px;font-weight:600;text-transform:uppercase;position:sticky;top:0;z-index:2}
+.pth>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptr{display:grid;gap:3px;padding:3px 10px;border-top:1px solid var(--border2);align-items:center}
 .ptr:nth-child(even){background:var(--bg2)}.ptr:hover{background:var(--blue-bg)}
 .ptr.item-ok{opacity:.55}.ptr.item-ok:hover{opacity:1;background:var(--green-bg)}
-.grph{padding:5px 10px;background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px;cursor:pointer;position:sticky;top:32px;z-index:1}
+.grph{padding:4px 10px;background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px;cursor:pointer;position:sticky;top:22px;z-index:1}
 .grph:hover{background:var(--blue-light)}
 .grph-lock{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
 .grph-lock.em{background:var(--yellow-bg);color:var(--yellow)}
 .grph-lock.ok{background:var(--green-bg);color:var(--green)}
 .grph-lock.upd{background:var(--red-bg);color:var(--red)}
 .pcol{font-size:11px;text-align:right;color:var(--text2)}.pcol.hi{color:var(--text);font-weight:600}
-.ptf{display:grid;gap:3px;padding:8px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
+.ptf{display:grid;gap:3px;padding:5px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
 .ptf-num{font-size:11px;text-align:right;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis}
 .ptf-num.empty{color:var(--text3);font-weight:600}
 .ptf-num.best{color:var(--green)}
 .ptf-num.notbest{color:var(--red)}
 .ptf-lbl{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ok-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center}
-#forn-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:34px}
+#forn-bar{display:flex;align-items:center;gap:6px;padding:3px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:27px}
 #forn-bar>label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
-.forn-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px 4px}
+.forn-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1px 4px}
 .forn-chip input{border:none;outline:none;background:none;font-size:11px;color:var(--text);padding:2px 4px;width:120px;font-family:var(--font);font-weight:500}
 .forn-chip input:focus{background:var(--blue-bg)}
 .forn-chip .forn-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 3px}
@@ -641,6 +656,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
           <div id="sb-title" style="padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Grupos</div>
           <div id="ped-grupos-list"><span style="font-size:12px;color:var(--text3);padding:8px 10px;display:block">Importe produtos primeiro.</span></div>
         </div>
+        <button id="ped-side-toggle" onclick="togglePedSidebar()" title="Ocultar grupos" aria-expanded="true">‹</button>
         <div id="ped-main">
           <div id="meses-bar">
             <label>Cobertura:</label>
@@ -2821,6 +2837,12 @@ function sincronizarEstrelas(){
 // a seção ocupa só a linha do título — os Grupos ficam logo abaixo, sem empurrão,
 // por mais favoritos que existam. Estado só em memória (não persiste entre reloads).
 function toggleFavSection(){favSectionAberta=!favSectionAberta;aplicarFavSectionEstado();}
+// Oculta/mostra a lateral de grupos (Montar Pedido). Sem persistencia: sempre inicia aberta.
+function togglePedSidebar(){
+  var w=document.getElementById('ped-wrap'),b=document.getElementById('ped-side-toggle');
+  var off=w.classList.toggle('side-off');
+  b.textContent=off?'›':'‹';b.title=off?'Mostrar grupos':'Ocultar grupos';b.setAttribute('aria-expanded',off?'false':'true');
+}
 function aplicarFavSectionEstado(){
   var lista=document.getElementById('fav-list-pedido'),arrow=document.getElementById('fav-arrow');
   if(lista)lista.style.display=favSectionAberta?'':'none';
@@ -3021,11 +3043,12 @@ function _renderPedidoInterno(meses){
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
   var semPlan=selP.filter(function(p){return urg(p)==='s'}).length;
   var compraCount=selP.filter(function(p){return !isIndisp(p)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max))}).length;
-  stats.innerHTML='<div class="ps"><div class="ps-n">'+selP.length+'</div><div class="ps-l">'+(showAllItems?'total':'a comprar')+'</div></div>'
-    +'<div class="ps"><div class="ps-n r">'+crit+'</div><div class="ps-l">críticos</div></div>'
-    +'<div class="ps"><div class="ps-n w">'+atenc+'</div><div class="ps-l">atenção</div></div>'
-    +(semPlan>0?'<div class="ps" title="Itens sem estoque mín/máx cadastrados no Cronos"><div class="ps-n" style="color:var(--text3)">'+semPlan+'</div><div class="ps-l">sem planej.</div></div>':'')
-    +'<div class="ps"><div class="ps-n">'+selectedGroups.size+'</div><div class="ps-l">grupos</div></div>';
+  // Linha fina de contadores (mesma informação de antes, sem os 4 cards altos)
+  stats.innerHTML='<span class="ps"><span class="ps-n">'+selP.length+'</span><span class="ps-l">'+(showAllItems?'total':'a comprar')+'</span></span>'
+    +'<span class="ps"><span class="ps-n r">'+crit+'</span><span class="ps-l">críticos</span></span>'
+    +'<span class="ps"><span class="ps-n w">'+atenc+'</span><span class="ps-l">atenção</span></span>'
+    +(semPlan>0?'<span class="ps" title="Itens sem estoque mín/máx cadastrados no Cronos"><span class="ps-n" style="color:var(--text3)">'+semPlan+'</span><span class="ps-l">sem planej.</span></span>':'')
+    +'<span class="ps"><span class="ps-n">'+selectedGroups.size+'</span><span class="ps-l">'+(selectedGroups.size===1?'grupo':'grupos')+'</span></span>';
   info.textContent=(showAllItems?selP.length+' itens ('+compraCount+' a comprar)':compraCount+' a comprar')+' · '+selectedGroups.size+' grupo(s)';
 
   var byG={};selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
@@ -3040,7 +3063,8 @@ function _renderPedidoInterno(meses){
   var precoLabel=hasForn?'Melhor Preço':'Preço';
   // Colunas: Cód | Produto | Estoque | [forn1..N] | Preço | Qtd | Comprar Mín | Sugerido | Urgência | Valor Total | Status
   var fornColsTpl=fornecedoresCols.map(function(){return'76px'}).join(' ');
-  var COLS='46px 1fr 78px 60px '+(fornColsTpl?fornColsTpl+' ':'')+'76px 70px 64px 66px 58px 82px 54px';
+  // 70px na col. "Sugerido" (era 66px): comporta o rótulo "Sugerido (12m)" numa linha só
+  var COLS='46px 1fr 78px 60px '+(fornColsTpl?fornColsTpl+' ':'')+'76px 70px 64px 70px 58px 82px 54px';
   var fornHdr=fornecedoresCols.map(function(f){
     return'<span class="forn-col-h" data-forn-id="'+f.id+'" style="text-align:right;overflow:hidden;text-overflow:ellipsis">'+f.nome+'</span>';
   }).join('');
@@ -3052,7 +3076,7 @@ function _renderPedidoInterno(meses){
     +'<span style="text-align:right">'+precoLabel+'</span>'
     +'<span style="text-align:right">Qtd</span>'
     +'<span style="text-align:right">Comprar Mín</span>'
-    +'<span style="text-align:right">Sugerido ('+meses+'m)</span>'
+    +'<span style="text-align:right" title="Sugerido ('+meses+' meses de cobertura)">Sugerido ('+meses+'m)</span>'
     +'<span style="text-align:right">Urgência</span>'
     +'<span style="text-align:right">Valor Total</span>'
     +'<span>Status</span></div>';
