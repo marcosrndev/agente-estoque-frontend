@@ -117,7 +117,8 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .gitem-icon{font-size:12px;flex-shrink:0}
 .gitem-check{font-size:11px;flex-shrink:0;color:inherit}
 #ped-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-#meses-bar{display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#meses-bar{display:flex;align-items:center;gap:8px;padding:3px 14px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;flex-wrap:wrap}
+#meses-bar .btn{padding:4px 10px}
 #meses-bar label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
 #meses-sel{padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--text);font-family:var(--font)}
 #cob-info{font-size:11px;color:var(--text3)}
@@ -125,33 +126,38 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 #save-bar{display:flex;align-items:center;gap:6px;font-size:11px;margin-left:auto}
 #save-indicator{color:var(--text3)}
 #ped-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
-#ped-stats{display:flex;gap:7px;padding:8px 14px;flex-shrink:0}
-.ps{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:7px;text-align:center}
-.ps-n{font-size:16px;font-weight:600;color:var(--text);line-height:1}
+/* Contadores do grupo: linha fina de badges (antes eram 4 cards altos) */
+#ped-stats{display:flex;align-items:center;flex-wrap:wrap;gap:0;padding:4px 14px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border2)}
+.ps{display:inline-flex;align-items:baseline;gap:5px;padding:0 7px}
+.ps:not(:last-child)::after{content:'·';margin-left:2px;color:var(--text3);opacity:.55;font-weight:700}
+.ps-n{font-size:12px;font-weight:700;color:var(--text);line-height:1.4}
 .ps-n.r{color:var(--red)}.ps-n.w{color:var(--yellow)}
-.ps-l{font-size:10px;color:var(--text3);margin-top:2px}
+.ps-l{font-size:11px;color:var(--text3)}
 #ped-tbl-wrap{border-top:1px solid var(--border);overflow:auto;flex:1;min-height:0}
-.pth{display:grid;gap:3px;padding:5px 10px;background:var(--bg3);color:var(--text3);font-size:9px;font-weight:600;text-transform:uppercase;position:sticky;top:0;z-index:2}
-.ptr{display:grid;gap:3px;padding:5px 10px;border-top:1px solid var(--border2);align-items:center}
+/* Cabecalho da tabela: 1 linha fixa (22px). O .grph sticky abaixo depende
+   dessa altura — manter .pth{min-height} e .grph{top} sempre iguais. */
+.pth{display:grid;gap:3px;padding:4px 10px;min-height:22px;align-items:center;background:var(--bg3);color:var(--text3);font-size:9px;font-weight:600;text-transform:uppercase;position:sticky;top:0;z-index:2}
+.pth>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptr{display:grid;gap:3px;padding:3px 10px;border-top:1px solid var(--border2);align-items:center}
 .ptr:nth-child(even){background:var(--bg2)}.ptr:hover{background:var(--blue-bg)}
 .ptr.item-ok{opacity:.55}.ptr.item-ok:hover{opacity:1;background:var(--green-bg)}
-.grph{padding:5px 10px;background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px;cursor:pointer;position:sticky;top:32px;z-index:1}
+.grph{padding:4px 10px;background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);border-top:1px solid var(--border2);display:flex;align-items:center;gap:6px;cursor:pointer;position:sticky;top:22px;z-index:1}
 .grph:hover{background:var(--blue-light)}
 .grph-lock{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
 .grph-lock.em{background:var(--yellow-bg);color:var(--yellow)}
 .grph-lock.ok{background:var(--green-bg);color:var(--green)}
 .grph-lock.upd{background:var(--red-bg);color:var(--red)}
 .pcol{font-size:11px;text-align:right;color:var(--text2)}.pcol.hi{color:var(--text);font-weight:600}
-.ptf{display:grid;gap:3px;padding:8px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
+.ptf{display:grid;gap:3px;padding:5px 10px;background:var(--bg3);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:2;align-items:center}
 .ptf-num{font-size:11px;text-align:right;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis}
 .ptf-num.empty{color:var(--text3);font-weight:600}
 .ptf-num.best{color:var(--green)}
 .ptf-num.notbest{color:var(--red)}
 .ptf-lbl{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ok-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);font-weight:500;text-align:center}
-#forn-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:34px}
+#forn-bar{display:flex;align-items:center;gap:6px;padding:3px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap;min-height:27px}
 #forn-bar>label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
-.forn-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:2px 4px}
+.forn-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1px 4px}
 .forn-chip input{border:none;outline:none;background:none;font-size:11px;color:var(--text);padding:2px 4px;width:120px;font-family:var(--font);font-weight:500}
 .forn-chip input:focus{background:var(--blue-bg)}
 .forn-chip .forn-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 3px}
@@ -3021,11 +3027,12 @@ function _renderPedidoInterno(meses){
   var atenc=selP.filter(function(p){return urg(p)==='a'}).length;
   var semPlan=selP.filter(function(p){return urg(p)==='s'}).length;
   var compraCount=selP.filter(function(p){return !isIndisp(p)&&(p.comprar_min>0||(p.comprar_max>0&&p.estoque_atual<p.est_max))}).length;
-  stats.innerHTML='<div class="ps"><div class="ps-n">'+selP.length+'</div><div class="ps-l">'+(showAllItems?'total':'a comprar')+'</div></div>'
-    +'<div class="ps"><div class="ps-n r">'+crit+'</div><div class="ps-l">críticos</div></div>'
-    +'<div class="ps"><div class="ps-n w">'+atenc+'</div><div class="ps-l">atenção</div></div>'
-    +(semPlan>0?'<div class="ps" title="Itens sem estoque mín/máx cadastrados no Cronos"><div class="ps-n" style="color:var(--text3)">'+semPlan+'</div><div class="ps-l">sem planej.</div></div>':'')
-    +'<div class="ps"><div class="ps-n">'+selectedGroups.size+'</div><div class="ps-l">grupos</div></div>';
+  // Linha fina de contadores (mesma informação de antes, sem os 4 cards altos)
+  stats.innerHTML='<span class="ps"><span class="ps-n">'+selP.length+'</span><span class="ps-l">'+(showAllItems?'total':'a comprar')+'</span></span>'
+    +'<span class="ps"><span class="ps-n r">'+crit+'</span><span class="ps-l">críticos</span></span>'
+    +'<span class="ps"><span class="ps-n w">'+atenc+'</span><span class="ps-l">atenção</span></span>'
+    +(semPlan>0?'<span class="ps" title="Itens sem estoque mín/máx cadastrados no Cronos"><span class="ps-n" style="color:var(--text3)">'+semPlan+'</span><span class="ps-l">sem planej.</span></span>':'')
+    +'<span class="ps"><span class="ps-n">'+selectedGroups.size+'</span><span class="ps-l">'+(selectedGroups.size===1?'grupo':'grupos')+'</span></span>';
   info.textContent=(showAllItems?selP.length+' itens ('+compraCount+' a comprar)':compraCount+' a comprar')+' · '+selectedGroups.size+' grupo(s)';
 
   var byG={};selP.forEach(function(p){if(!byG[p.grupo])byG[p.grupo]=[];byG[p.grupo].push(p)});
@@ -3040,7 +3047,8 @@ function _renderPedidoInterno(meses){
   var precoLabel=hasForn?'Melhor Preço':'Preço';
   // Colunas: Cód | Produto | Estoque | [forn1..N] | Preço | Qtd | Comprar Mín | Sugerido | Urgência | Valor Total | Status
   var fornColsTpl=fornecedoresCols.map(function(){return'76px'}).join(' ');
-  var COLS='46px 1fr 78px 60px '+(fornColsTpl?fornColsTpl+' ':'')+'76px 70px 64px 66px 58px 82px 54px';
+  // 70px na col. "Sugerido" (era 66px): comporta o rótulo "Sugerido (12m)" numa linha só
+  var COLS='46px 1fr 78px 60px '+(fornColsTpl?fornColsTpl+' ':'')+'76px 70px 64px 70px 58px 82px 54px';
   var fornHdr=fornecedoresCols.map(function(f){
     return'<span class="forn-col-h" data-forn-id="'+f.id+'" style="text-align:right;overflow:hidden;text-overflow:ellipsis">'+f.nome+'</span>';
   }).join('');
@@ -3052,7 +3060,7 @@ function _renderPedidoInterno(meses){
     +'<span style="text-align:right">'+precoLabel+'</span>'
     +'<span style="text-align:right">Qtd</span>'
     +'<span style="text-align:right">Comprar Mín</span>'
-    +'<span style="text-align:right">Sugerido ('+meses+'m)</span>'
+    +'<span style="text-align:right" title="Sugerido ('+meses+' meses de cobertura)">Sugerido ('+meses+'m)</span>'
     +'<span style="text-align:right">Urgência</span>'
     +'<span style="text-align:right">Valor Total</span>'
     +'<span>Status</span></div>';
