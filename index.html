@@ -209,6 +209,35 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .grph-fav{color:var(--text3)}
 .grph-fav.on{color:var(--yellow);border-color:var(--yellow-light);background:var(--yellow-bg)}
 .grph-fav:hover{color:var(--yellow)}
+/* observações por grupo (lembretes de compra) — botão no cabeçalho + painel + alertas */
+.grph-obs{color:var(--text3);display:inline-flex;align-items:center;gap:3px}
+.grph-obs.on{color:var(--yellow);border-color:var(--yellow-light);background:var(--yellow-bg);font-weight:700}
+.grph-obs:hover{color:var(--yellow)}
+.grph-obs .obs-n{font-size:9px}
+.obs-list{display:flex;flex-direction:column;gap:6px;max-height:45vh;overflow-y:auto}
+.obs-item{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid var(--yellow-light);background:var(--yellow-bg);border-radius:var(--radius-sm)}
+.obs-item .obs-txt{flex:1;font-size:12px;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.obs-item .obs-meta{font-size:10px;color:var(--text3);margin-top:3px}
+.obs-item .fav-rm{flex-shrink:0}
+.obs-empty{font-size:12px;color:var(--text3)}
+#obs-novo{width:100%;min-height:58px;resize:vertical;font:inherit;font-size:12px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text)}
+#obs-toasts{position:fixed;right:16px;bottom:16px;z-index:90;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}
+.obs-toast{background:var(--bg);border:1px solid var(--yellow-light);border-left:4px solid var(--yellow);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:9px 30px 9px 11px;font-size:12px;position:relative;color:var(--text)}
+.obs-toast h4{font-size:11px;font-weight:700;color:var(--yellow);margin:0 0 4px;display:flex;align-items:center;gap:5px}
+.obs-toast ul{margin:0;padding-left:16px}
+.obs-toast li{white-space:pre-wrap;word-break:break-word}
+.obs-toast .novid-x{top:5px;right:5px;width:22px;height:22px;font-size:14px}
+.obs-conc-item{display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer}
+.obs-conc-item input{margin-top:2px;cursor:pointer}
+.obs-conc-item .obs-g{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase}
+#obs-pedido-box{margin-top:7px;font-size:12px}
+#obs-pedido-box .obs-ped-h{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
+#obs-pedido-box .obs-ped-row{display:flex;gap:6px;align-items:flex-start;padding:3px 0}
+#obs-pedido-box .obs-ped-row strong{color:var(--blue);white-space:nowrap}
+/* ordenação por coluna dentro do grupo (Montar Pedido) — só exibição */
+.pth .pth-sort{cursor:pointer;user-select:none}
+.pth .pth-sort:hover{color:var(--text)}
+.pth .pth-sort.on{color:var(--blue)}
 /* seção Favoritos dentro do overlay de Urgentes */
 .fav-urg-row.semfalta{opacity:.82;background:var(--bg)}
 .fav-rm{cursor:pointer;color:var(--text3);font-size:15px;font-weight:700;padding:0 5px;border-radius:3px;line-height:1}
@@ -392,7 +421,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--text);min-height:
 .cot-filter-btn:hover{background:var(--bg);color:var(--text)}
 .cot-filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 #dados-pedido-wrap{max-height:0;overflow:hidden;transition:max-height .3s ease;margin-top:0}
-#dados-pedido-wrap.open{max-height:400px;margin-top:7px}
+#dados-pedido-wrap.open{max-height:640px;margin-top:7px}
 .dados-toggle-arrow{display:inline-block;transition:transform .2s ease}
 .dados-toggle-arrow.open{transform:rotate(180deg)}
 #panel-admin{flex-direction:column;overflow:hidden}
@@ -712,6 +741,7 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
                 <div class="fld"><label>Data</label><input id="f-data" type="date"></div>
                 <div class="fld w3"><label>Observações</label><input id="f-obs" placeholder="Informações adicionais"></div>
               </div>
+              <div id="obs-pedido-box"></div>
             </div>
           </div>
         </div>
@@ -1335,6 +1365,34 @@ input.senha-bad{border-color:var(--red)!important;box-shadow:0 0 0 2px var(--red
   </div>
 </div>
 
+<!-- MODAL OBSERVAÇÕES DO GRUPO (cadastro/lista) -->
+<div id="obs-overlay" style="display:none" class="modal-overlay" onclick="if(event.target===this)fecharObsGrupo()">
+  <div class="modal-box" style="width:480px;max-width:calc(100vw - 32px)">
+    <h3><i class="ti ti-notes" style="color:var(--yellow)"></i> Observações — <span id="obs-titulo-grupo"></span></h3>
+    <div style="font-size:11px;color:var(--text3);margin-top:-6px">Lembretes para a hora de comprar este grupo. Aparecem ao montar o pedido e ao exportar.</div>
+    <div class="obs-list" id="obs-lista"></div>
+    <textarea id="obs-novo" maxlength="1000" placeholder="Nova observação (ex.: feltro sempre em rolo de 50m; faturar tudo no mesmo CNPJ)"></textarea>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharObsGrupo()">Fechar</button>
+      <button class="btn primary" id="obs-add-btn" onclick="adicionarObsGrupo()"><i class="ti ti-plus"></i> Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OBSERVAÇÕES AO CONCLUIR/EXPORTAR -->
+<div id="obs-conc-overlay" style="display:none" class="modal-overlay">
+  <div class="modal-box" style="width:500px;max-width:calc(100vw - 32px)">
+    <h3><i class="ti ti-notes" style="color:var(--yellow)"></i> Observações dos grupos do pedido</h3>
+    <div style="font-size:12px;color:var(--text2);margin-top:-4px">Marque as que devem ir nos <strong>Dados do Pedido</strong> e no <strong>Excel</strong>. As não marcadas ficam só como lembrete.</div>
+    <div class="obs-list" id="obs-conc-lista"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharObsConcluir()">Cancelar</button>
+      <button class="btn success" onclick="confirmarObsConcluir()"><i class="ti ti-arrow-right"></i> Continuar</button>
+    </div>
+  </div>
+</div>
+<div id="obs-toasts"></div>
+
 <!-- MODAL EXPORTAR EXCEL -->
 <div id="export-excel-overlay" style="display:none" class="modal-overlay">
   <div class="modal-box">
@@ -1482,7 +1540,12 @@ var products=[], chatHistory=[], selectedGroups=new Set(), showAllItems=false;
 var gruposPedidosSessao=new Set();
 var cotacoesCache=[], currentUser=null, grupoAtualCotacao=null;
 var favoritosCache=[];  // [{grupo,criado_por,criado_em}] — grupos favoritados (compartilhado)
-var favSectionAberta=false;  // acordeao da lateral: comeca FECHADA (so memoria da sessao)
+var favSectionAberta=false;
+var obsCache=[];  // [{id,grupo,texto,criado_por,criado_em}] — observações por grupo (compartilhado)
+var obsGrupoAberto=null;           // grupo cujo painel de observações está aberto
+var obsGruposAlertados=new Set();  // grupos selecionados já alertados (sai da seleção → alerta de novo)
+var obsIncluidas=new Set();        // ids marcados p/ ir nos Dados do Pedido e no Excel (memória da sessão)
+var pedSort={col:null,dir:1};      // ordenação de exibição dos itens no Montar Pedido (volta ao padrão ao trocar grupo)  // acordeao da lateral: comeca FECHADA (so memoria da sessao)
 var itensCache={}, saveTimers={};
 var userEditedInputs=false; // flag: user has typed in pedido
 var filtroUsuarioCot='todos';
@@ -1875,8 +1938,8 @@ function doLogin(){
   .catch(function(){showLoginErr('Erro de conexão');document.getElementById('login-submit').textContent='Entrar'});
 }
 function showLoginErr(msg){var e=document.getElementById('login-err');e.textContent=msg;e.style.display='block'}
-function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];favoritosCache=[];itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
-function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFavoritos();carregarFornecedoresCadastrados();checarSyncInicial();carregarNovidadePopup();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
+function doLogout(){currentUser=null;products=[];chatHistory=[];selectedGroups.clear();gruposPedidosSessao.clear();cotacoesCache=[];favoritosCache=[];obsCache=[];obsIncluidas.clear();obsGruposAlertados.clear();_pedSelKey=null;itensCache={};nomesFornCache={};historicoCache={};categoriasCache=[];fornecedoresCadastrados=[];fornecedoresCols=[];fornSeq=0;setUltimaAtualizacao('');setUltimaFinanceiro('');document.getElementById('login-overlay').style.display='flex';document.getElementById('login-user').value='';document.getElementById('login-pwd').value='';document.getElementById('login-err').style.display='none';document.getElementById('user-info').style.display='none';document.getElementById('tab-admin').style.display='none'}
+function inicializar(){document.getElementById('f-data').value=new Date().toISOString().slice(0,10);addBot('Olá, <strong>'+currentUser.nome+'</strong>! Carregando dados...');carregarProdutos();carregarResumoFinNav();carregarCategorias();carregarFavoritos();carregarObservacoes();carregarFornecedoresCadastrados();checarSyncInicial();carregarNovidadePopup();setInterval(function(){if(products.length>0)carregarCotacoes()},30000)}
 
 // ── TABS ──
 function switchTab(id,el){
@@ -2833,6 +2896,147 @@ function sincronizarEstrelas(){
     var ic=btn.querySelector('i');if(ic)ic.className='ti '+(on?'ti-star-filled':'ti-star');
   });
 }
+// ── OBSERVAÇÕES POR GRUPO (lembretes de compra, compartilhadas) ──
+// Cadastro no botão do cabeçalho do grupo; alerta discreto ao selecionar o grupo; resumo
+// com checkbox ao exportar (marcadas vão p/ Dados do Pedido + Excel). Carregadas no boot.
+function obsDoGrupo(g){return obsCache.filter(function(o){return o.grupo===g})}
+function carregarObservacoes(){
+  fetch(BACKEND+'/grupo-observacoes').then(function(r){return r.json()}).then(function(data){
+    obsCache=Array.isArray(data)?data:[];atualizarObsUI();alertarObsNovosGrupos();
+  }).catch(function(){obsCache=[];atualizarObsUI()});
+}
+// Atualiza a UI de observações sem re-render da tabela (preserva inputs digitados).
+function atualizarObsUI(){
+  sincronizarObsBotoes();
+  if(obsGrupoAberto)renderObsPainel();
+  renderObsPedidoBox();
+}
+function obsBtnTitle(n){return n?n+(n===1?' observação':' observações')+' — clique para ver/adicionar':'Adicionar observação (lembrete de compra)'}
+function obsBtnHtml(g){
+  var n=obsDoGrupo(g).length;
+  return'<button class="btn grph-obs'+(n?' on':'')+'" style="font-size:11px;padding:2px 7px" data-obs-grupo="'+escAttr(g)+'" title="'+obsBtnTitle(n)+'" onclick="event.stopPropagation();abrirObsGrupo(\''+jsStr(g)+'\')"><i class="ti '+(n?'ti-notes':'ti-note')+'"></i><span class="obs-n">'+(n||'')+'</span></button>';
+}
+function sincronizarObsBotoes(){
+  document.querySelectorAll('[data-obs-grupo]').forEach(function(btn){
+    var n=obsDoGrupo(btn.getAttribute('data-obs-grupo')).length;
+    btn.classList.toggle('on',n>0);
+    btn.title=obsBtnTitle(n);
+    var ic=btn.querySelector('i');if(ic)ic.className='ti '+(n?'ti-notes':'ti-note');
+    var sp=btn.querySelector('.obs-n');if(sp)sp.textContent=n||'';
+  });
+}
+function abrirObsGrupo(g){
+  if(!g)return;
+  obsGrupoAberto=g;
+  document.getElementById('obs-titulo-grupo').textContent=g;
+  document.getElementById('obs-novo').value='';
+  renderObsPainel();
+  document.getElementById('obs-overlay').style.display='flex';
+  setTimeout(function(){var t=document.getElementById('obs-novo');if(t)t.focus()},50);
+}
+function fecharObsGrupo(){obsGrupoAberto=null;document.getElementById('obs-overlay').style.display='none'}
+function renderObsPainel(){
+  var el=document.getElementById('obs-lista');if(!el||!obsGrupoAberto)return;
+  var obs=obsDoGrupo(obsGrupoAberto);
+  if(!obs.length){el.innerHTML='<div class="obs-empty">Nenhuma observação neste grupo ainda.</div>';return}
+  el.innerHTML=obs.map(function(o){
+    var meta='adicionado por '+escHtml(o.criado_por||'—')+(haDias(o.criado_em)?' · '+haDias(o.criado_em):'');
+    return'<div class="obs-item"><div style="flex:1"><div class="obs-txt">'+escHtml(o.texto)+'</div><div class="obs-meta">'+meta+'</div></div>'
+      +(o.id!=null?'<span class="fav-rm" title="Remover observação" onclick="removerObsGrupo('+Number(o.id)+')">×</span>':'')+'</div>';
+  }).join('');
+}
+function adicionarObsGrupo(){
+  var g=obsGrupoAberto,ta=document.getElementById('obs-novo'),texto=(ta.value||'').trim();
+  if(!g||!texto){ta.focus();return}
+  var por=(currentUser&&(currentUser.username||currentUser.nome))||'—';
+  var btn=document.getElementById('obs-add-btn');btn.disabled=true;
+  fetch(BACKEND+'/grupo-observacoes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({grupo:g,texto:texto,criado_por:por})})
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d&&d.error||'erro');return d})})
+    .then(function(d){
+      var o=(d&&d.observacao)||{grupo:g,texto:texto,criado_por:por,criado_em:new Date().toISOString()};
+      obsCache.push(o);ta.value='';
+      obsGruposAlertados.add(g);   // quem acabou de cadastrar não precisa do alerta
+      atualizarObsUI();
+    })
+    .catch(function(){alert('Não foi possível salvar a observação. Tente novamente.')})
+    .then(function(){btn.disabled=false});
+}
+function removerObsGrupo(id){
+  if(!confirm('Remover esta observação do grupo?'))return;
+  var antes=obsCache.slice();
+  obsCache=obsCache.filter(function(o){return Number(o.id)!==id});   // otimista
+  obsIncluidas.delete(id);
+  atualizarObsUI();
+  fetch(BACKEND+'/grupo-observacoes/'+id,{method:'DELETE'})
+    .then(function(r){if(!r.ok)throw new Error()})
+    .catch(function(){obsCache=antes;atualizarObsUI();alert('Não foi possível remover a observação.')});
+}
+// Alerta discreto (toast, não bloqueia) para grupos que ENTRARAM na seleção e têm observação.
+function alertarObsNovosGrupos(){
+  obsGruposAlertados.forEach(function(g){if(!selectedGroups.has(g))obsGruposAlertados.delete(g)});
+  selectedGroups.forEach(function(g){
+    if(obsGruposAlertados.has(g))return;
+    var obs=obsDoGrupo(g);
+    if(!obs.length)return;            // sem obs: não marca, p/ alertar se alguém cadastrar depois
+    obsGruposAlertados.add(g);
+    mostrarToastObs(g,obs);
+  });
+}
+function mostrarToastObs(g,obs){
+  var cont=document.getElementById('obs-toasts');if(!cont)return;
+  var t=document.createElement('div');t.className='obs-toast';
+  t.innerHTML='<button class="novid-x" title="Fechar" onclick="this.parentNode.remove()">×</button>'
+    +'<h4><i class="ti ti-notes"></i> Observação — '+escHtml(g)+'</h4>'
+    +'<ul>'+obs.map(function(o){return'<li>'+escHtml(o.texto)+'</li>'}).join('')+'</ul>';
+  cont.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.remove()},20000);
+}
+// Ao exportar: se os grupos do pedido têm observação, mostra o resumo com checkboxes
+// antes de seguir. Marcadas → Dados do Pedido + Excel (o "Exportar p/ ERP" não leva:
+// o arquivo é a planilha de importação de itens do ERP, sem lugar para texto livre).
+var _obsConcCallback=null;
+function obsDoPedido(){return obsCache.filter(function(o){return selectedGroups.has(o.grupo)&&o.id!=null})}
+function revisarObsAntes(cb){
+  var obs=obsDoPedido();
+  if(!obs.length){cb();return}
+  _obsConcCallback=cb;
+  document.getElementById('obs-conc-lista').innerHTML=obs.map(function(o){
+    var id=Number(o.id);
+    return'<label class="obs-conc-item"><input type="checkbox" value="'+id+'"'+(obsIncluidas.has(id)?' checked':'')+'>'
+      +'<div style="flex:1"><div class="obs-g">'+escHtml(o.grupo)+'</div><div style="white-space:pre-wrap;word-break:break-word">'+escHtml(o.texto)+'</div></div></label>';
+  }).join('');
+  document.getElementById('obs-conc-overlay').style.display='flex';
+}
+function fecharObsConcluir(){_obsConcCallback=null;document.getElementById('obs-conc-overlay').style.display='none'}
+function confirmarObsConcluir(){
+  document.querySelectorAll('#obs-conc-lista input[type="checkbox"]').forEach(function(c){
+    var id=Number(c.value);if(c.checked)obsIncluidas.add(id);else obsIncluidas.delete(id);
+  });
+  var cb=_obsConcCallback;
+  fecharObsConcluir();
+  renderObsPedidoBox();
+  if(cb)cb();
+}
+// Observações marcadas p/ o pedido (só dos grupos selecionados), na ordem do cache.
+function obsIncluidasNoPedido(){return obsDoPedido().filter(function(o){return obsIncluidas.has(Number(o.id))})}
+function desmarcarObsPedido(id){obsIncluidas.delete(id);renderObsPedidoBox()}
+function renderObsPedidoBox(){
+  var el=document.getElementById('obs-pedido-box');if(!el)return;
+  var obs=obsIncluidasNoPedido();
+  if(!obs.length){el.innerHTML='';return}
+  el.innerHTML='<div class="obs-ped-h"><i class="ti ti-notes"></i> Observações dos grupos (incluídas no pedido)</div>'
+    +obs.map(function(o){
+      return'<div class="obs-ped-row"><strong>'+escHtml(o.grupo)+':</strong><span style="flex:1;white-space:pre-wrap;word-break:break-word">'+escHtml(o.texto)+'</span>'
+        +'<span class="fav-rm" title="Não incluir no pedido" onclick="desmarcarObsPedido('+Number(o.id)+')">×</span></div>';
+    }).join('');
+}
+// Linhas da seção "OBSERVAÇÕES DOS GRUPOS" do Excel ([] se nenhuma marcada).
+function obsLinhasExcel(){
+  var obs=obsIncluidasNoPedido();
+  if(!obs.length)return[];
+  return[[''],['OBSERVAÇÕES DOS GRUPOS'],['Grupo','Observação']].concat(obs.map(function(o){return[o.grupo,o.texto]}));
+}
 // Acordeao da seção Favoritos na lateral: expande/recolhe a lista. Recolhida (padrão),
 // a seção ocupa só a linha do título — os Grupos ficam logo abaixo, sem empurrão,
 // por mais favoritos que existam. Estado só em memória (não persiste entre reloads).
@@ -3025,11 +3229,67 @@ function _restaurarFocoPedido(snap){
   try{inp.setSelectionRange(snap.selStart,snap.selEnd)}catch(e){}
 }
 
+// ── ORDENAÇÃO DOS ITENS NO MONTAR PEDIDO (só exibição, como planilha) ──
+// Clique no cabeçalho alterna crescente/decrescente (↑/↓). Ordena DENTRO de cada grupo
+// (a ordem dos grupos não muda). Valores vazios ("—") vão sempre para o fim. Não mexe em
+// dados: qtd/preços digitados ficam no itensCache (capturePedidoInputs) antes do re-render.
+// Volta ao padrão (urgência) quando a seleção de grupos muda (_pedSelKey).
+var _pedSelKey=null;
+function ordenarPedido(col){
+  if(pedSort.col===col)pedSort.dir=-pedSort.dir;
+  else pedSort={col:col,dir:col==='nome'?1:-1};   // texto começa A→Z; números começam do maior
+  _renderPedidoInterno();
+}
+function _pedSortHdr(col,label,extra){
+  var on=pedSort.col===col,arrow=on?(pedSort.dir>0?' ↑':' ↓'):'';
+  return'<span class="pth-sort'+(on?' on':'')+'"'+(extra||'')+' title="Clique para ordenar'+(on?(pedSort.dir>0?' (crescente)':' (decrescente)'):'')+'" onclick="ordenarPedido(\''+col+'\')">'+label+arrow+'</span>';
+}
+// Valor de ordenação da linha (null = vazio → fim da lista). Espelha o que a tela mostra.
+function _pedSortValor(p,g,col,meses){
+  var u=urg(p),isSemPlan=u==='s',isOk=u==='o'&&p.comprar_min<=0;
+  var it=(itensCache[g]&&itensCache[g][p.codigo])||{};
+  function preco(){
+    if(!fornecedoresCols.length)return parseFloat(it.preco)||0;
+    var menor=0,pf=it.precos_fornecedores||{};
+    fornecedoresCols.forEach(function(f){var v=parseFloat(pf[f.id])||0;if(v>0&&(menor===0||v<menor))menor=v});
+    return menor;
+  }
+  var qtd=isIndisp(p)?0:(parseFloat(it.qtd_manual)||0);
+  switch(col){
+    case'nome':return String(p.nome||'');
+    case'pedido_forn':return p.pedido_forn>0?p.pedido_forn:null;
+    case'estoque':return Number(p.estoque_atual)||0;
+    case'preco':var pr=preco();return pr>0?pr:null;
+    case'qtd':return qtd>0?qtd:null;
+    case'comprar_min':return(isOk||isSemPlan)?null:Number(p.comprar_min)||0;
+    case'sugerido':return(isOk||isSemPlan)?null:Math.ceil(calcQtdMeses(p,meses));
+    case'urgencia':return isSemPlan?null:urgScore(p);
+    case'valor':var pv=preco();return(pv>0&&qtd>0)?pv*qtd:null;
+  }
+  return null;
+}
+function ordenarItensPedido(itens,g,meses){
+  if(!pedSort.col)return itens;
+  var col=pedSort.col,dir=pedSort.dir;
+  var arr=itens.map(function(p,i){return{p:p,i:i,v:_pedSortValor(p,g,col,meses)}});
+  arr.sort(function(a,b){
+    if(a.v==null&&b.v==null)return a.i-b.i;
+    if(a.v==null)return 1;if(b.v==null)return -1;
+    var c=col==='nome'?a.v.localeCompare(b.v,'pt-BR',{sensitivity:'base',numeric:true}):(a.v-b.v);
+    return c!==0?c*dir:a.i-b.i;   // empate: mantém a ordem padrão (urgência)
+  });
+  return arr.map(function(x){return x.p});
+}
+
 function _renderPedidoInterno(meses){
   if(!meses)meses=getMeses();
   var foco=_snapshotFocoPedido();
   // Captura inputs antes de re-renderizar (preserva valores não-salvos)
   capturePedidoInputs();
+  // Seleção de grupos mudou (por qualquer caminho): ordenação volta ao padrão e grupos
+  // recém-abertos com observação disparam o alerta discreto.
+  var selKey=Array.from(selectedGroups).sort().join('\u0001');
+  if(selKey!==_pedSelKey){_pedSelKey=selKey;pedSort={col:null,dir:1};alertarObsNovosGrupos();renderObsPedidoBox()}
   var selP=products.filter(function(p){
     if(!selectedGroups.has(p.grupo))return false;
     if(showAllItems)return true;
@@ -3069,20 +3329,20 @@ function _renderPedidoInterno(meses){
     return'<span class="forn-col-h" data-forn-id="'+f.id+'" style="text-align:right;overflow:hidden;text-overflow:ellipsis">'+f.nome+'</span>';
   }).join('');
   var html='<div class="pth" style="grid-template-columns:'+COLS+'">'
-    +'<span>Cód</span><span>Produto</span>'
-    +'<span style="text-align:right" title="Pedido Fornecedor — quantidade já pedida ao fornecedor e ainda não recebida (a sugestão de compra já desconta isso)">Pedido Fornec.</span>'
-    +'<span style="text-align:right">Estoque</span>'
+    +'<span>Cód</span>'+_pedSortHdr('nome','Produto')
+    +_pedSortHdr('pedido_forn','Pedido Fornec.',' style="text-align:right"')
+    +_pedSortHdr('estoque','Estoque',' style="text-align:right"')
     +fornHdr
-    +'<span style="text-align:right">'+precoLabel+'</span>'
-    +'<span style="text-align:right">Qtd</span>'
-    +'<span style="text-align:right">Comprar Mín</span>'
-    +'<span style="text-align:right" title="Sugerido ('+meses+' meses de cobertura)">Sugerido ('+meses+'m)</span>'
-    +'<span style="text-align:right">Urgência</span>'
-    +'<span style="text-align:right">Valor Total</span>'
+    +_pedSortHdr('preco',precoLabel,' style="text-align:right"')
+    +_pedSortHdr('qtd','Qtd',' style="text-align:right"')
+    +_pedSortHdr('comprar_min','Comprar Mín',' style="text-align:right"')
+    +_pedSortHdr('sugerido','Sugerido ('+meses+'m)',' style="text-align:right"')
+    +_pedSortHdr('urgencia','Urgência',' style="text-align:right"')
+    +_pedSortHdr('valor','Valor Total',' style="text-align:right"')
     +'<span>Status</span></div>';
 
   sortedGroups.forEach(function(g){
-    var itens=sortItemsByUrgency(byG[g]);
+    var itens=ordenarItensPedido(sortItemsByUrgency(byG[g]),g,meses);
     var prio=allSorted.indexOf(g)+1;
     var aC=itens.filter(function(p){return p.abc==='A'}).length;
     var bC=itens.filter(function(p){return p.abc==='B'}).length;
@@ -3101,6 +3361,7 @@ function _renderPedidoInterno(meses){
       (bC?'<span style="font-size:9px;background:var(--yellow-bg);color:var(--yellow);padding:1px 5px;border-radius:10px">B:'+bC+'</span>':'')+
       (cC?'<span style="font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 5px;border-radius:10px">C:'+cC+'</span>':'')+
       '<button class="btn grph-fav'+(isFavorito(g)?' on':'')+'" style="font-size:11px;padding:2px 7px" data-fav-grupo="'+escAttr(g)+'" title="'+(isFavorito(g)?'Remover dos favoritos':'Adicionar aos favoritos')+'" onclick="event.stopPropagation();toggleFavorito(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti '+(isFavorito(g)?'ti-star-filled':'ti-star')+'"></i></button>'+
+      obsBtnHtml(g)+
       cotTag+
       '<button class="btn" style="font-size:9px;padding:2px 7px;margin-left:auto" onclick="event.stopPropagation();autoFillQtd(\''+g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><i class="ti ti-wand"></i> Auto-preencher Qtd</button>'+
       '</div>';
@@ -3413,7 +3674,8 @@ function _coletarPrecosQtds(fornId){
   return{precos:precos,qtds:qtds};
 }
 
-function iniciarExportERP(){
+function iniciarExportERP(){revisarObsAntes(_iniciarExportERP)}
+function _iniciarExportERP(){
   if(!fornecedoresCols.length){
     // Sem fornecedores: ainda assim mostra modal de aviso se houver problema
     var v=validarExportacao(null);
@@ -3552,7 +3814,8 @@ function exportERP(fornId){
 }
 
 // ── EXPORT EXCEL ──
-function iniciarExportExcel(){
+function iniciarExportExcel(){revisarObsAntes(_iniciarExportExcel)}
+function _iniciarExportExcel(){
   if(!fornecedoresCols.length){
     var v=validarExportacao(null);
     if(v.alerts.length&&!confirm('Atenção:\n\n'+v.alerts.map(function(a){return'• '+a.replace(/<[^>]+>/g,'')}).join('\n')+'\n\nExportar mesmo assim?'))return;
@@ -3681,6 +3944,7 @@ function _adicionarAbaMultiForn(wb,selP,fornIds,meses){
    ['Observações',document.getElementById('f-obs').value],
    ['Data',document.getElementById('f-data').value]
   ].forEach(function(f){wsData.push(fillRow([f[0],f[1]||'']))});
+  obsLinhasExcel().forEach(function(r){wsData.push(fillRow(r))});
 
   var ws=XLSX.utils.aoa_to_sheet(wsData);
   // Larguras: básicos + fornecedores + restante
@@ -3766,6 +4030,7 @@ function _adicionarAbaExcel(wb,selP,precos,qtds,meses,fid){
    ['Observações',document.getElementById('f-obs').value],
    ['Data',document.getElementById('f-data').value]
   ].forEach(function(f){wsData.push([f[0],f[1]||'','','','','','','','','','','','','','','',''])});
+  obsLinhasExcel().forEach(function(r){var row=r.slice();while(row.length<17)row.push('');wsData.push(row)});
   var ws=XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols']=[{wch:8},{wch:40},{wch:5},{wch:12},{wch:8},{wch:14},{wch:20},{wch:12},{wch:12},{wch:12},{wch:22},{wch:5},{wch:14},{wch:14},{wch:10},{wch:10},{wch:14}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:16}}];
